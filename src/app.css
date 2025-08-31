@@ -1,0 +1,37 @@
+/* ===== src/app.css ===== */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* brand tokens (custom CSS vars) */
+:root {
+  --fire-600: #dc3b21;
+  --fire-700: #b72c16;
+  --stone-900: #0b0b0c;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--stone-900);
+    background-color: white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-red-600 to-orange-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-red-700 hover:to-orange-700 transition-all duration-200 transform hover:scale-105;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors duration-200;
+  }
+
+  .fire-gradient {
+    @apply bg-gradient-to-br from-red-900 via-red-700 to-orange-600;
+  }
+
+  .ember-glow {
+    box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
+  }
+}

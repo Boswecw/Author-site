@@ -1,0 +1,23 @@
+{
+    // Let VS Code know these are PostCSS files
+    "files.associations": {
+      "*.css": "postcss"
+    },
+  
+    // Turn off the default CSS validator (it doesn’t understand @tailwind/@apply)
+    "css.validate": false,
+  
+    // Ensure Tailwind works in Svelte
+    "tailwindCSS.includeLanguages": {
+      "svelte": "html",
+      "postcss": "css"
+    },
+    "cSpell.words": [
+        "fireline",
+        "frontlines",
+        "rgba",
+        "wildland",
+        "worldbuilding"
+    ]
+  }
+  
