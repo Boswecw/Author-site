@@ -1,44 +1,100 @@
 <script lang="ts">
-    import type { Book } from '$lib/types';
-    export let book: Book;
-  
-    const isPublished = book.status === 'published';
-    const pub = new Date(book.publishDate).toLocaleDateString(undefined, {
-      year: 'numeric', month: 'short', day: 'numeric'
-    });
-  </script>
-  
-  <article class="grid gap-3 md:grid-cols-[180px,1fr] p-4 rounded-2xl shadow">
-    <img src={book.cover} alt={`Cover of ${book.title}`} class="w-[180px] h-auto rounded-xl object-cover" />
-    <div class="flex flex-col gap-2">
-      <h3 class="text-xl font-semibold">{book.title}</h3>
-      <p class="opacity-80">{book.description}</p>
-      <p class="text-sm">
-        <strong>Status:</strong> {isPublished ? 'Available' : 'Coming {pub}'}
-        {book.isbn ? ` • ISBN: ${book.isbn}` : ''}
-        {book.format ? ` • ${book.format}` : ''}
-      </p>
-  
-      {#if isPublished && Object.keys(book.buyLinks).length}
+  import type { Book } from '$lib/types';
+  export let book: Book;
+
+  // Safe checks to prevent undefined errors
+  $: isPublished = book?.status === 'published';
+  $: pub = book?.publishDate ? 
+    new Date(book.publishDate).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long'
+    }) : 'TBD';
+
+  let emailInput = '';
+  let notificationSent = false;
+
+  function handleNotification() {
+    if (!emailInput) return;
+    notificationSent = true;
+    emailInput = '';
+    setTimeout(() => notificationSent = false, 3000);
+  }
+</script>
+
+{#if book}
+<article class="grid gap-4 md:grid-cols-[140px,1fr] bg-white rounded-2xl shadow p-5">
+  <figure class="relative overflow-hidden rounded-xl">
+    <img
+      src={book.cover}
+      alt={`Cover of ${book.title}`}
+      width="300"
+      height="450"
+      loading="lazy"
+      decoding="async"
+      class="w-full h-auto object-cover"
+      style="aspect-ratio: 2 / 3;"
+    />
+  </figure>
+
+  <div class="min-w-0">
+    <h3 class="text-xl font-semibold">{book.title}</h3>
+
+    <p class="mt-2 text-gray-700 leading-relaxed break-words hyphens-auto">
+      {book.description}
+    </p>
+
+    <p class="mt-2 text-sm text-gray-500">
+      <strong>Status:</strong> {isPublished ? 'Available' : `Coming ${pub}`}
+      {#if book.isbn} • ISBN: {book.isbn}{/if}
+      {#if book.format} • {book.format}{/if}
+    </p>
+
+    <!-- Action Section -->
+    <div class="mt-4">
+      {#if isPublished && book.buyLinks && Object.keys(book.buyLinks).length > 0}
         <div class="flex gap-2 flex-wrap">
-          {#if book.buyLinks.amazon}<a class="btn" href={book.buyLinks.amazon}>Amazon</a>{/if}
-          {#if book.buyLinks.barnesNoble}<a class="btn" href={book.buyLinks.barnesNoble}>B&N</a>{/if}
-          {#if book.buyLinks.appleBooks}<a class="btn" href={book.buyLinks.appleBooks}>Apple Books</a>{/if}
-          {#if book.buyLinks.kobo}<a class="btn" href={book.buyLinks.kobo}>Kobo</a>{/if}
-          {#if book.buyLinks.googlePlay}<a class="btn" href={book.buyLinks.googlePlay}>Google Play</a>{/if}
+          {#each Object.entries(book.buyLinks) as [platform, url]}
+            {#if url}
+              <a 
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-primary !py-1 !px-3 !text-sm"
+              >
+                {platform}
+              </a>
+            {/if}
+          {/each}
         </div>
       {:else}
-        <form class="flex gap-2" method="post" action="/api/notify">
-          <input class="input" name="email" type="email" placeholder="Get release email…" required />
-          <input type="hidden" name="bookId" value={book.id} />
-          <button class="btn" type="submit">Notify me</button>
-        </form>
+        {#if notificationSent}
+          <div class="bg-green-50 border border-green-200 rounded p-2 text-center">
+            <p class="text-green-700 text-sm">✓ You'll be notified when {book.title} is released!</p>
+          </div>
+        {:else}
+          <form on:submit|preventDefault={handleNotification} class="flex gap-2">
+            <input 
+              bind:value={emailInput}
+              class="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-red-500" 
+              type="email" 
+              placeholder="Get release email..." 
+              required 
+            />
+            <button 
+              class="btn-primary !py-1 !px-3 !text-sm" 
+              type="submit"
+              disabled={!emailInput}
+            >
+              Notify Me
+            </button>
+          </form>
+        {/if}
       {/if}
     </div>
-  </article>
-  
-  <style>
-    .btn { padding: .5rem .9rem; border-radius: 9999px; border: 1px solid currentColor; }
-    .input { padding: .5rem .75rem; border-radius: .75rem; border: 1px solid #4443; }
-  </style>
-  
+  </div>
+</article>
+{:else}
+<div class="bg-gray-100 rounded p-4 text-center">
+  <p class="text-gray-500">Book information not available</p>
+</div>
+{/if}

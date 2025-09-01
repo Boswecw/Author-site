@@ -10,15 +10,19 @@
     { name: 'Blog', href: '/blog' },
     { name: 'Contact', href: '/contact' }
   ];
+
+  function closeMenu() {
+    mobileMenuOpen = false;
+  }
 </script>
 
 <nav class="bg-white shadow-lg sticky top-0 z-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between h-16">
       <div class="flex items-center">
-        <a href="/" class="flex-shrink-0 flex items-center">
+        <a href="/" class="flex-shrink-0 flex items-center" on:click={closeMenu}>
           <span class="text-2xl font-bold fire-gradient bg-clip-text text-transparent">
-            Author Name
+            Charles W. Boswell
           </span>
         </a>
       </div>
@@ -70,7 +74,7 @@
                 ? 'text-red-600 bg-red-50'
                 : 'text-gray-700 hover:text-red-600 hover:bg-gray-50'
             }"
-            on:click={() => mobileMenuOpen = false}
+            on:click={closeMenu}
           >
             {item.name}
           </a>

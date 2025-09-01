@@ -17,8 +17,7 @@
       <div class="text-center mb-16">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Featured Books</h2>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-          Fantasy novels that blend military precision with elemental magic,
-          inspired by years of service and firefighting.
+            “Veteran. Firefighter. Storyteller of battles fought with both sword and storm.”
         </p>
       </div>
   
@@ -50,7 +49,7 @@
         </div>
         <div class="flex justify-center">
           <img
-            src="/api/placeholder/500/600"
+            src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/CharlesBosewll_USFS.jpg?alt=media&token=46388a4c-27d2-4da6-9ad3-9d4c9b279e05"
             alt="Author in firefighting gear"
             class="rounded-lg shadow-xl w-full max-w-md"
           />

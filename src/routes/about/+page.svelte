@@ -1,5 +1,6 @@
+// ===== src/routes/about/+page.svelte =====
 <svelte:head>
-  <title>About Author Name - Navy Veteran & Firefighter Turned Fantasy Writer</title>
+  <title>About Charles W. Boswell - Navy Veteran & Firefighter Turned Fantasy Writer</title>
   <meta name="description" content="Learn about my journey from U.S. Navy service to 16 years of wildland firefighting, and how these experiences shape my epic fantasy novels." />
 </svelte:head>
 
@@ -73,12 +74,6 @@
           the stakes as high as they feel in real life when lives hang in the balance. Magic 
           systems in my books often mirror the unpredictable nature of fire, while military 
           formations and tactics ground the action in reality.
-        </p>
-        
-        <p class="text-gray-600 mb-6">
-          Every battle scene is informed by real strategy, every moment of brotherhood echoes 
-          actual bonds forged in crisis, and every character's courage is tested in ways that 
-          mirror the impossible choices real heroes make every day.
         </p>
       </div>
       
