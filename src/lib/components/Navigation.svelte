@@ -1,85 +1,110 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  
+  import { afterNavigate } from '$app/navigation';
+  import { onMount } from 'svelte';
+
+ 
+  const SIGNATURE_LOGO =
+    'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Signaturelogo.png?alt=media&token=11b771f1-789b-426a-b9e0-b24caf98150f';
+
   let mobileMenuOpen = false;
-  
+
   const navigation = [
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
     { name: 'Books', href: '/books' },
     { name: 'Blog', href: '/blog' },
     { name: 'Contact', href: '/contact' }
-  ];
+  ] as const;
 
-  function closeMenu() {
-    mobileMenuOpen = false;
+  function closeMenu() { mobileMenuOpen = false; }
+  function toggleMenu() { mobileMenuOpen = !mobileMenuOpen; }
+
+  // smaller fallback to match reduced logo size
+  function onLogoError(e: Event) {
+    const img = e.currentTarget as HTMLImageElement;
+    const span = document.createElement('span');
+    span.textContent = 'CB';
+    span.className =
+      'inline-flex items-center justify-center h-14 w-14 rounded bg-[var(--brand-cream)] text-[var(--brand-charcoal)] font-semibold';
+    img.replaceWith(span);
   }
+
+  $: pathname = $page.url.pathname;
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/' && pathname.startsWith(href));
+
+  onMount(() => afterNavigate(() => (mobileMenuOpen = false)));
 </script>
 
-<nav class="bg-white shadow-lg sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between h-16">
-      <div class="flex items-center">
-        <a href="/" class="flex-shrink-0 flex items-center" on:click={closeMenu}>
-          <span class="text-2xl font-bold fire-gradient bg-clip-text text-transparent">
-            Charles W. Boswell
-          </span>
-        </a>
-      </div>
-      
-      <!-- Desktop Navigation -->
-      <div class="hidden md:flex items-center space-x-8">
-        {#each navigation as item}
-          <a
-            href={item.href}
-            class="px-3 py-2 text-sm font-medium transition-colors duration-200 {
-              $page.url.pathname === item.href
-                ? 'text-red-600 border-b-2 border-red-600'
-                : 'text-gray-700 hover:text-red-600'
-            }"
-          >
-            {item.name}
-          </a>
-        {/each}
-      </div>
-      
-      <!-- Mobile menu button -->
-      <div class="md:hidden flex items-center">
-        <button
-          on:click={() => mobileMenuOpen = !mobileMenuOpen}
-          class="text-gray-700 hover:text-red-600 focus:outline-none focus:text-red-600"
-          aria-label="Toggle mobile menu"
+<!-- Use a slim, sticky header; expose --nav-h for layout/menu alignment -->
+<header
+  class="sticky top-0 z-[100] bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-200"
+  style="--nav-h: 64px;"
+>
+  <!-- Slimmer row: h-16 (64px). This reduces the perceived gap. -->
+  <div class="w-full h-16 px-3 md:px-6 grid grid-cols-[auto_1fr_auto] items-center gap-4">
+    <!-- Left: Brand -->
+    <a href="/" class="flex items-center gap-3 min-w-0" aria-label="Charles Boswell - Home">
+      <img
+        src={SIGNATURE_LOGO}
+        alt="Charles Boswell signature logo"
+        width="56"
+        height="56"
+        class="h-14 w-14 object-contain drop-shadow-sm"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+        on:error={onLogoError}
+      />
+      <span class="brand-name text-xl md:text-2xl tracking-wide text-[color:var(--stone-900)] truncate">
+        Charles Boswell
+      </span>
+    </a>
+
+    <div></div>
+
+    <!-- Right: Links (desktop) -->
+    <nav aria-label="Primary" class="hidden md:flex justify-end items-center gap-6">
+      {#each navigation as l}
+        <a
+          href={l.href}
+          aria-current={isActive(l.href) ? 'page' : undefined}
+          class={`text-sm font-medium transition-opacity hover:opacity-80 ${isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'}`}
         >
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {#if mobileMenuOpen}
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            {:else}
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            {/if}
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Mobile Navigation -->
-  {#if mobileMenuOpen}
-    <div class="md:hidden bg-white border-t border-gray-200">
-      <div class="px-2 pt-2 pb-3 space-y-1">
-        {#each navigation as item}
+          {l.name}
+        </a>
+      {/each}
+    </nav>
+
+    <!-- Mobile menu -->
+    <details class="md:hidden justify-self-end" bind:open={mobileMenuOpen}>
+      <summary
+        class="list-none cursor-pointer p-2 rounded-md hover:bg-gray-100"
+        aria-label="Open menu"
+        role="button"
+        aria-expanded={mobileMenuOpen}
+        on:click|preventDefault={toggleMenu}
+      >
+        ☰
+      </summary>
+
+      <!-- Align dropdown directly under the header using --nav-h -->
+      <div
+        class="absolute right-3 w-48 rounded-lg border border-gray-200 bg-white shadow-lg p-2 space-y-1"
+        style="top: var(--nav-h);"
+      >
+        {#each navigation as l}
           <a
-            href={item.href}
-            class="block px-3 py-2 text-base font-medium transition-colors duration-200 {
-              $page.url.pathname === item.href
-                ? 'text-red-600 bg-red-50'
-                : 'text-gray-700 hover:text-red-600 hover:bg-gray-50'
-            }"
+            href={l.href}
+            class={`block px-3 py-2 rounded-md text-sm transition-colors hover:bg-gray-50 ${isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'}`}
             on:click={closeMenu}
+            aria-current={isActive(l.href) ? 'page' : undefined}
           >
-            {item.name}
+            {l.name}
           </a>
         {/each}
       </div>
-    </div>
-  {/if}
-</nav>
+    </details>
+  </div>
+</header>

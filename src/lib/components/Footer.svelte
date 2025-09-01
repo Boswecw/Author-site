@@ -1,73 +1,88 @@
 <footer class="fire-gradient text-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div class="grid md:grid-cols-4 gap-8">
-        <!-- Brand Section -->
-        <div class="md:col-span-2">
-          <h3 class="text-lg font-bold mb-4">Charles W. Boswell</h3>
-          <p class="text-gray-200 mb-4 max-w-md">
-            Navy veteran turned wildland firefighter, now crafting faith-driven fantasy tales 
-            inspired by real-world courage and brotherhood. Author of <em>Faith in a FireStorm</em>.
-          </p>
-          <div class="flex space-x-4">
-            <a href="#" class="text-gray-200 hover:text-white transition-colors" aria-label="Twitter">
-              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
-              </svg>
-            </a>
-            <a href="#" class="text-gray-200 hover:text-white transition-colors" aria-label="Facebook">
-              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-            </a>
-            <a href="#" class="text-gray-200 hover:text-white transition-colors" aria-label="Instagram">
-              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.618 5.367 11.986 11.988 11.986c6.618 0 11.986-5.368 11.986-11.986C24.003 5.367 18.635.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.73-3.016-1.8L4.27 17.33c.568 1.07 1.719 1.8 3.016 1.8 1.297 0 2.448-.73 3.016-1.8l-1.163-2.142c-.568 1.07-1.719 1.8-3.016 1.8z"/>
-              </svg>
-            </a>
-          </div>
-        </div>
-        
-        <!-- Quick Links -->
-        <div>
-          <h4 class="font-semibold mb-4">Quick Links</h4>
-          <ul class="space-y-2">
-            <li><a href="/books" class="text-gray-200 hover:text-white transition-colors">Latest Books</a></li>
-            <li><a href="/blog" class="text-gray-200 hover:text-white transition-colors">Blog Updates</a></li>
-            <li><a href="/about" class="text-gray-200 hover:text-white transition-colors">About Me</a></li>
-            <li><a href="/contact" class="text-gray-200 hover:text-white transition-colors">Contact</a></li>
-          </ul>
-        </div>
-        
-        <!-- Connect -->
-        <div>
-          <h4 class="font-semibold mb-4">Connect</h4>
-          <div class="space-y-4">
-            <p class="text-gray-200 text-sm">
-              Get updates on new releases and behind-the-scenes stories.
-            </p>
-            <a href="/contact" class="btn-secondary !bg-white !text-red-600 hover:!bg-gray-100 inline-block !py-2 !px-4 !text-sm">
-              Subscribe Now
-            </a>
-          </div>
-          
-          <div class="mt-6 pt-4 border-t border-red-800">
-            <p class="text-gray-300 text-sm">
-              <strong>Faith in a FireStorm</strong><br>
-              Coming Fall 2025
-            </p>
-          </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid md:grid-cols-4 gap-8">
+      <!-- Brand Section -->
+      <div class="md:col-span-2">
+        <h3 class="text-lg font-bold mb-4">Charles Boswell</h3>
+        <p class="text-gray-200 mb-4 max-w-md">
+          Navy veteran turned wildland firefighter, now crafting faith-driven fantasy tales
+          inspired by real-world courage and brotherhood. Author of <em>Faith in a FireStorm</em>.
+        </p>
+
+        <!-- Social: replace with your real profiles -->
+        <div class="flex space-x-4">
+          <a
+            href="https://x.com/yourhandle"
+            target="_blank" rel="noopener"
+            class="text-gray-200 hover:text-white transition-colors"
+            aria-label="X (Twitter)"
+          >
+            <!-- icon unchanged -->
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.146 2H21l-6.9 7.89L22 22h-5.5l-4.3-5.59L6.2 22H3.34l7.41-8.47L2 2h5.6l3.88 5.18L18.146 2Zm-1.926 18h1.611L7.875 4H6.23l9.99 16Z"/></svg>
+          </a>
+
+          <a
+            href="https://www.facebook.com/yourpage"
+            target="_blank" rel="noopener"
+            class="text-gray-200 hover:text-white transition-colors"
+            aria-label="Facebook"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.06C22 6.48 17.52 2 11.94 2S2 6.48 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.9h2.54V9.41c0-2.5 1.5-3.87 3.79-3.87 1.1 0 2.25.2 2.25.2v2.48h-1.27c-1.25 0-1.64.78-1.64 1.58v1.9h2.79l-.45 2.9h-2.34V22c4.78-.79 8.44-4.94 8.44-9.94z"/></svg>
+          </a>
+
+          <a
+            href="https://instagram.com/yourhandle"
+            target="_blank" rel="noopener"
+            class="text-gray-200 hover:text-white transition-colors"
+            aria-label="Instagram"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm5 4.5A5.5 5.5 0 1 0 17.5 12 5.5 5.5 0 0 0 12 6.5Zm0 9A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Zm5.75-8.75a1 1 0 1 0 1 1 1 1 0 0 0-1-1Z"/></svg>
+          </a>
         </div>
       </div>
-      
-      <!-- Bottom Bar -->
-      <div class="border-t border-red-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-        <p class="text-gray-200 text-sm">
-          &copy; 2024 Charles W. Boswell. All rights reserved.
-        </p>
-        <div class="flex space-x-6 mt-4 md:mt-0">
-          <a href="#" class="text-gray-300 hover:text-white text-sm transition-colors">Privacy Policy</a>
-          <a href="#" class="text-gray-300 hover:text-white text-sm transition-colors">Terms of Service</a>
+
+      <!-- Quick Links (internal routes) -->
+      <div>
+        <h4 class="font-semibold mb-4">Quick Links</h4>
+        <ul class="space-y-2">
+          <li><a href="/books" class="text-gray-200 hover:text-white transition-colors">Latest Books</a></li>
+          <li><a href="/blog" class="text-gray-200 hover:text-white transition-colors">Blog Updates</a></li>
+          <li><a href="/about" class="text-gray-200 hover:text-white transition-colors">About Me</a></li>
+          <li><a href="/contact" class="text-gray-200 hover:text-white transition-colors">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Connect -->
+      <div>
+        <h4 class="font-semibold mb-4">Connect</h4>
+        <div class="space-y-4">
+          <p class="text-gray-200 text-sm">
+            Get updates on new releases and behind-the-scenes stories.
+          </p>
+          <!-- keep as contact for now, or swap to a real form action -->
+          <a href="/contact" class="btn-secondary !bg-white !text-red-600 hover:!bg-gray-100 inline-block !py-2 !px-4 !text-sm">
+            Subscribe Now
+          </a>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-red-800">
+          <p class="text-gray-300 text-sm">
+            <strong>Faith in a FireStorm</strong><br>
+            Coming Fall 2025
+          </p>
         </div>
       </div>
     </div>
-  </footer>
+
+    <!-- Bottom Bar -->
+    <div class="border-t border-red-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+      <p class="text-gray-200 text-sm">
+        © {new Date().getFullYear()} Charles Boswell. All rights reserved.
+      </p>
+      <div class="flex space-x-6 mt-4 md:mt-0">
+        <a href="/privacy" class="text-gray-300 hover:text-white text-sm transition-colors">Privacy Policy</a>
+        <a href="/terms" class="text-gray-300 hover:text-white text-sm transition-colors">Terms of Service</a>
+      </div>
+    </div>
+  </div>
+</footer>

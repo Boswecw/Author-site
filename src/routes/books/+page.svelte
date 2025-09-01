@@ -1,14 +1,46 @@
 <script lang="ts">
   import BookCard from '$lib/components/BookCard.svelte';
   import { books } from '$lib/data/books';
-  
-  $: publishedBooks = books.filter(book => book.status === 'published');
-  $: upcomingBooks = books.filter(book => book.status === 'upcoming');
+  import type { Book } from '$lib/types';
+
+  // Segment by genre
+  const faithBooks = books.filter((b) => b.genre === 'faith');
+  const epicBooks  = books.filter((b) => b.genre === 'epic');
+
+  // Group by status
+  const byStatus = (arr: Book[]) => ({
+    upcoming: arr.filter((b) => b.status === 'upcoming'),
+    published: arr.filter((b) => b.status === 'published')
+  });
+
+  const faith = byStatus(faithBooks);
+  const epic  = byStatus(epicBooks);
+
+  // Tiny mapper → Book → BookCard props
+  function toCardProps(b: Book) {
+    return {
+      title: b.title,
+      // @ts-expect-error not all books have subtitle
+      subtitle: (b as any).subtitle,
+      description: b.description,
+      status: b.status,
+      isbn: b.isbn,
+      format: b.format,
+      coverSrc: b.cover
+    };
+  }
+
+  function handleNotify(email: string) {
+    console.log('notify:', email);
+  }
 </script>
 
 <svelte:head>
-  <title>Books by Charles W. Boswell - Epic Fantasy Novels</title>
-  <meta name="description" content="Discover epic fantasy novels that blend military precision with elemental magic, inspired by real Navy and firefighting experience." />
+  <title>Books by Charles W. Boswell — Christian Fiction & Epic Fantasy</title>
+  <meta
+    name="description"
+    content="Explore Charles W. Boswell’s Christian faith-based fiction and epic fantasy—stories of courage, redemption, and fire."
+  />
 </svelte:head>
 
 <section class="py-20 bg-gray-50">
@@ -17,100 +49,94 @@
     <div class="text-center mb-16">
       <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">My Books</h1>
       <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-        Epic fantasy novels that combine military strategy with elemental magic, 
-        inspired by years of service and real-world courage.
+        Stories of courage, faith, and fire—told across Christian fiction and epic fantasy.
       </p>
     </div>
 
-    <!-- Upcoming Books -->
-    {#if upcomingBooks.length > 0}
-      <div class="mb-16">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Coming Soon</h2>
-        <div class="grid gap-8 max-w-4xl mx-auto">
-          {#each upcomingBooks as book}
-            <BookCard {book} />
+    <!-- Faith-Based Christian Fiction -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2 text-center">
+        Christian Faith-Based Fiction
+      </h2>
+      <p class="text-gray-600 text-center mb-8">
+        Real-world crises, hope, and redemption in contemporary settings.
+      </p>
+
+      {#if faith.published.length}
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">Available Now</h3>
+        <div
+          class="grid gap-8 sm:grid-cols-2 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]"
+        >
+          {#each faith.published as book}
+            <BookCard {...toCardProps(book)} onNotify={handleNotify} />
           {/each}
         </div>
-      </div>
-    {/if}
+      {/if}
 
-    <!-- Published Books -->
-    {#if publishedBooks.length > 0}
-      <div class="mb-16">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Available Now</h2>
-        <div class="grid gap-8 max-w-4xl mx-auto">
-          {#each publishedBooks as book}
-            <BookCard {book} />
+      {#if faith.upcoming.length}
+        <h3 class="text-xl font-semibold text-gray-900 mt-10 mb-4">Coming Soon</h3>
+        <div
+          class="grid gap-8 sm:grid-cols-2 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]"
+        >
+          {#each faith.upcoming as book}
+            <BookCard {...toCardProps(book)} onNotify={handleNotify} />
           {/each}
         </div>
-      </div>
-    {:else}
-      <div class="text-center mb-16">
-        <div class="bg-white rounded-lg shadow-lg p-12">
-          <div class="text-6xl mb-6">📚</div>
-          <h2 class="text-2xl font-bold text-gray-900 mb-4">More Books Coming Soon</h2>
-          <p class="text-gray-600 mb-6">
-            I'm currently working on exciting new fantasy novels. Stay tuned for updates!
-          </p>
-          <a href="/contact" class="btn-primary">
-            Get Notified of New Releases
-          </a>
-        </div>
-      </div>
-    {/if}
+      {/if}
 
-    <!-- Series Information (if applicable) -->
-    <div class="bg-white rounded-lg shadow-lg p-8 mb-16">
-      <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">About My Writing</h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="text-center">
-          <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">Authentic Experience</h3>
-          <p class="text-gray-600">
-            Every battle scene, every moment of brotherhood is grounded in real military and firefighting experience.
-          </p>
-        </div>
-        
-        <div class="text-center">
-          <div class="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-            <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">Elemental Magic</h3>
-          <p class="text-gray-600">
-            Magic systems that reflect the unpredictable, dangerous nature of the elements I've worked with.
-          </p>
-        </div>
-        
-        <div class="text-center">
-          <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-            <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">Brotherhood & Honor</h3>
-          <p class="text-gray-600">
-            Stories that explore the deep bonds forged in crisis and the codes that guide true warriors.
-          </p>
-        </div>
-      </div>
+      {#if !faith.published.length && !faith.upcoming.length}
+        <p class="text-center text-gray-600">
+          New faith-based titles are in development.
+        </p>
+      {/if}
     </div>
 
-    <!-- Newsletter Signup CTA -->
-    <div class="bg-white rounded-lg shadow-lg p-8 text-center max-w-2xl mx-auto">
+    <!-- Epic Fantasy -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2 text-center">Epic Fantasy</h2>
+      <p class="text-gray-600 text-center mb-8">
+        Secondary worlds, elemental magic, and battles against encroaching darkness.
+      </p>
+
+      {#if epic.published.length}
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">Available Now</h3>
+        <div
+          class="grid gap-8 sm:grid-cols-2 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]"
+        >
+          {#each epic.published as book}
+            <BookCard {...toCardProps(book)} onNotify={handleNotify} />
+          {/each}
+        </div>
+      {/if}
+
+      {#if epic.upcoming.length}
+        <h3 class="text-xl font-semibold text-gray-900 mt-10 mb-4">Coming Soon</h3>
+        <div
+          class="grid gap-8 sm:grid-cols-2 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]"
+        >
+          {#each epic.upcoming as book}
+            <BookCard {...toCardProps(book)} onNotify={handleNotify} />
+          {/each}
+        </div>
+      {/if}
+
+      {#if !epic.published.length && !epic.upcoming.length}
+        <p class="text-center text-gray-600">
+          Epic fantasy titles are in development.
+        </p>
+      {/if}
+    </div>
+
+    <!-- Newsletter CTA -->
+    <div
+      class="bg-white rounded-lg shadow-lg p-8 text-center max-w-2xl mx-auto"
+    >
       <h3 class="text-2xl font-bold text-gray-900 mb-4">Never Miss a Release</h3>
       <p class="text-gray-600 mb-6">
-        Be the first to know about new books, exclusive previews, and special offers. 
-        Plus, get behind-the-scenes stories from my firefighting and military days.
+        Be first to hear about new books, exclusive previews, and behind-the-scenes
+        notes from firefighting and service.
       </p>
-      <a href="/contact" class="btn-primary">
-        Join My Newsletter
-      </a>
+      <a href="/contact" class="btn-primary">Join My Newsletter</a>
     </div>
   </div>
 </section>

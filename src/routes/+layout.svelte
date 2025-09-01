@@ -2,12 +2,13 @@
   import '../app.css';
   import Navigation from '$lib/components/Navigation.svelte';
   import Footer from '$lib/components/Footer.svelte';
+  let { children } = $props();
 </script>
 
-<div class="min-h-screen flex flex-col">
+<div class="min-h-dvh flex flex-col">
   <Navigation />
-  <main class="flex-grow">
-    <slot />
+  <main class="flex-1">
+    {@render children?.()}
   </main>
   <Footer />
 </div>

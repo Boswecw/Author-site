@@ -1,93 +1,127 @@
 <script lang="ts">
-  export let data: {
-    posts: Array<{ slug: string; title: string; excerpt?: string; publishDate?: string; tags?: string[]; readTime?: string }>;
-    allCategories: string[];
-    selectedTag: string;
+  type Post = {
+    slug: string;
+    title: string;
+    excerpt?: string;
+    heroImage?: string;
+    publishDate?: string;
+    tags?: string[];
+    genre?: 'faith' | 'epic';
+    contentHtml: string; // provided by load()
   };
 
-  // Click handlers update the URL query (?tag=…) so it’s shareable
-  function setTag(tag: string) {
-    const url = new URL(window.location.href);
-    if (tag === 'All') url.searchParams.delete('tag');
-    else url.searchParams.set('tag', tag);
-    history.replaceState({}, '', url);
-    // naive client-side filter (optional) — or rely solely on server load via goto
-    location.reload(); // simplest; or use `goto(url, { replaceState: true })` if you prefer SPA feel
-  }
+  type DataShape = {
+    posts: Post[];
+    page: number;
+    pageSize: number;
+    total: number;
+    tag: string;
+    tags: string[];
+    __debug?: { db: string; found: number };
+  };
+
+  export let data: DataShape;
+
+  const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
+
+  const enc = (s: string) => encodeURIComponent(s);
+
+  const tagHref = (t: string | 'All') =>
+    t === 'All' ? '/blog' : `/blog?tag=${enc(t)}`;
+
+  const pageHref = (p: number) => {
+    const tagPart = data.tag && data.tag !== 'All' ? `&tag=${enc(data.tag)}` : '';
+    return `/blog?page=${p}${tagPart}`;
+  };
+
+  const prevHref = data.page > 1 ? pageHref(data.page - 1) : undefined;
+  const nextHref = data.page < totalPages ? pageHref(data.page + 1) : undefined;
+
+  const tagBtnClass = (t: string | 'All') =>
+    `px-3 py-1 rounded border transition ${
+      data.tag === t ? 'bg-gray-900 text-white' : 'bg-white hover:bg-gray-50'
+    }`;
 </script>
 
-<svelte:head>
-  <title>Blog & Updates - Charles W. Boswell</title>
-  <meta name="description" content="Writing insights, behind-the-scenes stories, and updates from Charles W. Boswell." />
-</svelte:head>
+<section class="max-w-3xl mx-auto px-4 py-10">
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold">Blog</h1>
 
-<section class="py-20 bg-gray-50">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Blog & Updates</h1>
-      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-        Writing insights, behind-the-scenes stories, and lessons learned from the fireline to fiction.
+    {#if data.__debug}
+      <p class="mt-2 text-xs opacity-60">
+        DB: {data.__debug.db} — posts found: {data.__debug.found}
       </p>
-    </div>
+    {/if}
 
-    <!-- Category Filter -->
-    <div class="mb-12">
-      <div class="flex flex-wrap gap-2 justify-center">
-        {#each data.allCategories as category}
-          <button
-            on:click={() => setTag(category)}
-            class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200
-              {data.selectedTag === category ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600'}
-              shadow-sm border border-gray-200">
-            {category}
-          </button>
+    {#if data.tags?.length}
+      <div class="mt-4 flex flex-wrap gap-2">
+        <a href={tagHref('All')} class={tagBtnClass('All')}>All</a>
+        {#each data.tags as t}
+          <a href={tagHref(t)} class={tagBtnClass(t)}>{t}</a>
         {/each}
       </div>
-    </div>
+    {/if}
+  </header>
 
-    <!-- Blog Posts -->
-    <div class="space-y-8">
+  {#if !data.posts?.length}
+    <p class="text-gray-500 mt-8">No published posts found.</p>
+  {:else}
+    <div class="space-y-12">
       {#each data.posts as post}
-        <article class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-          <div class="p-8">
-            <div class="flex flex-wrap gap-2 mb-4">
-              {#each post.tags ?? [] as tag}
-                <a href={`?tag=${encodeURIComponent(tag)}`} class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">{tag}</a>
-              {/each}
-            </div>
+        <article class="prose dark:prose-invert max-w-none">
+          <h2 class="!mt-0">
+            <a href={`/blog/${post.slug}`} class="no-underline hover:underline">{post.title}</a>
+          </h2>
 
-            <h2 class="text-2xl font-bold text-gray-900 mb-4 hover:text-red-600 transition-colors">
-              <a href={`/blog/${post.slug}`} class="no-underline">{post.title}</a>
-            </h2>
+          {#if post.publishDate}
+            <p class="text-sm text-gray-500">
+              <time datetime={post.publishDate}>
+                {new Date(post.publishDate).toLocaleDateString()}
+              </time>
+              {#if post.tags?.length} · {post.tags.join(' · ')}{/if}
+            </p>
+          {/if}
 
-            {#if post.excerpt}
-              <p class="text-gray-600 text-lg leading-relaxed mb-6">{post.excerpt}</p>
-            {/if}
+          {#if post.heroImage}
+            <img
+              src={post.heroImage}
+              alt={post.title}
+              class="rounded-lg my-4"
+              loading="lazy"
+              decoding="async"
+            />
+          {/if}
 
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-4">
-                {#if post.publishDate}
-                  <time class="text-sm text-gray-500">
-                    {new Date(post.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </time>
-                {/if}
-                {#if post.readTime}<span class="text-sm text-gray-500">{post.readTime}</span>{/if}
-              </div>
-
-              <a href={`/blog/${post.slug}`} class="text-red-600 font-semibold hover:text-red-700 transition-colors inline-flex items-center">
-                Read More
-                <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-              </a>
-            </div>
+          <!-- Safe server-rendered HTML -->
+          <div class="mt-4">
+            {@html post.contentHtml}
           </div>
+
+          <p class="mt-4">
+            <a href={`/blog/${post.slug}`} class="text-blue-600 hover:underline">
+              Read more →
+            </a>
+          </p>
         </article>
       {/each}
     </div>
+  {/if}
 
-    {#if data.posts.length === 0}
-      <div class="text-center py-12">
-        <p class="text-gray-500">No posts found in this category. Check back soon for new content!</p>
-      </div>
-    {/if}
-  </div>
+  {#if totalPages > 1}
+    <nav class="mt-10 flex items-center justify-between">
+      <a
+        class="px-4 py-2 border rounded disabled:opacity-50"
+        aria-disabled={data.page <= 1}
+        href={prevHref}
+        >← Prev</a
+      >
+      <span>Page {data.page} of {totalPages}</span>
+      <a
+        class="px-4 py-2 border rounded disabled:opacity-50"
+        aria-disabled={data.page >= totalPages}
+        href={nextHref}
+        >Next →</a
+      >
+    </nav>
+  {/if}
 </section>

@@ -1,13 +1,16 @@
 {
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
-	  "types": ["svelte"]
+	  "moduleResolution": "bundler",
+	  "types": ["svelte", "vite/client"]
 	},
-	"include": ["src/**/*"],
+	"include": [
+	  "src/**/*.ts",
+	  "src/**/*.svelte",
+	  "vite.config.ts"
+	],
 	"exclude": [
-	  "node_modules",
-	  "postcss.config.cjs",
-	  "tailwind.config.*"
+	  "node_modules"
 	]
   }
   

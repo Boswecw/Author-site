@@ -8,15 +8,16 @@ export type RetailLinks = {
     ingramSpark?: string;
   };
   
-  export type Book = {
-    id: string;
-    title: string;
-    cover: string;        // path under /static (e.g., /images/...)
-    description: string;
-    status: 'published' | 'upcoming';
-    publishDate: string;  // YYYY-MM-DD
-    isbn?: string;
-    format?: 'EPUB' | 'Paperback' | 'Hardcover';
-    buyLinks: RetailLinks;
-  };
-  
+ // src/lib/types.ts
+export type Book = {
+  id: string;
+  title: string;
+  cover: string;
+  description: string;
+  status: 'published' | 'upcoming';
+  publishDate: string;
+  isbn?: string;
+  format: string;
+  genre: 'faith' | 'epic';   // 👈 new field
+  buyLinks: Record<string, string>;
+};
