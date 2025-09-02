@@ -64,6 +64,8 @@
               alt="Featured book cover"
               class="w-64 md:w-80 h-auto rounded-lg shadow-2xl transform hover:scale-105 transition-transform duration-300"
               on:error={handleBookCoverError}
+              loading="lazy"
+              decoding="async"
             />
             <div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/10 rounded-lg"></div>
           </div>

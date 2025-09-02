@@ -77,6 +77,8 @@
           alt="Charles W. Boswell in firefighter gear"
           class="rounded-lg shadow-xl w-full h-96 object-cover"
           on:error={(e) => e.currentTarget.style.opacity = '0.7'}
+          loading="lazy"
+          decoding="async"
         />
       </div>
       <div>
