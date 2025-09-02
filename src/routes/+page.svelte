@@ -1,3 +1,4 @@
+<!-- src/routes/+page.svelte -->
 <script lang="ts">
   import Hero from '$lib/components/Hero.svelte';
   import BookCard from '$lib/components/BookCard.svelte';
@@ -5,27 +6,44 @@
   import { IMAGES } from '$lib/utils/image';
   import type { Book } from '$lib/types';
 
-  // Sample data - replace with your actual data loading
-  const featuredBook: Book = {
+  // Data from +page.server.ts
+  export let data: {
+    featured: {
+      id: string;
+      title: string;
+      description?: string | null;
+      cover?: string | null;
+      genre?: 'faith' | 'epic' | string | null;
+      status?: string | null;
+      publishDate?: string | null;
+    } | null;
+    upcoming: Array<{
+      id: string;
+      title: string;
+      description?: string | null;
+      cover?: string | null;
+      genre?: string | null;
+      status?: string | null;
+      publishDate?: string | null;
+    }>;
+  };
+
+  // ----- Local fallbacks (used only if server returns empty) -----
+  const fallbackFeatured: Book = {
     id: 'faith-in-firestorm',
     title: 'Faith in a Firestorm',
     description:
       "A Navy chaplain's faith is tested when supernatural forces threaten his crew during a dangerous rescue mission.",
-    cover: IMAGES.BOOKS.FAITH_FIRESTORM,
+    cover: IMAGES.BOOKS.FAITH_in_a_FIRESTORM,
     genre: 'faith',
-    status: 'published',
-    buyLinks: {
-      amazon: 'https://amazon.com/example',
-      barnes: 'https://barnesandnoble.com/example'
-    }
+    status: 'published'
   };
 
-  const upcomingBooks: Book[] = [
+  const fallbackUpcoming: Book[] = [
     {
       id: 'conviction-flood',
       title: 'Conviction in a Flood',
-      description:
-        'When ancient waters rise, a community must unite to survive the impossible.',
+      description: 'When ancient waters rise, a community must unite to survive the impossible.',
       cover: IMAGES.BOOKS.CONVICTION_FLOOD,
       genre: 'faith',
       status: 'coming-soon',
@@ -34,8 +52,7 @@
     {
       id: 'hurricane-eve',
       title: 'Hurricane Eve',
-      description:
-        'A storm unlike any other tests the limits of human resilience and divine protection.',
+      description: 'A storm unlike any other tests the limits of human resilience and divine protection.',
       cover: IMAGES.BOOKS.HURRICANE_EVE,
       genre: 'faith',
       status: 'coming-soon',
@@ -44,13 +61,21 @@
     {
       id: 'hunters-faith',
       title: "Hunter's Faith Adventure",
-      description:
-        'An epic journey through mystical lands where faith becomes the ultimate weapon.',
+      description: 'An epic journey through mystical lands where faith becomes the ultimate weapon.',
       cover: IMAGES.BOOKS.HUNTERS_FAITH,
       genre: 'epic',
       status: 'writing'
     }
   ];
+
+  // Choose server data if present, otherwise fallbacks
+  const featuredBook = data.featured ?? fallbackFeatured;
+  const upcomingBooks: Book[] = (data.upcoming?.length ? data.upcoming : fallbackUpcoming) as Book[];
+
+  // Safe image error handler
+  function dimOnError(e: Event) {
+    (e.currentTarget as HTMLImageElement).style.opacity = '0.7';
+  }
 </script>
 
 <svelte:head>
@@ -70,11 +95,11 @@
 <!-- Hero Section -->
 <Hero
   title={featuredBook.title}
-  subtitle="A Navy chaplain's faith tested by supernatural forces during a dangerous rescue mission."
-  bookCover={featuredBook.cover}
-  genre={featuredBook.genre}
+  subtitle={featuredBook.description ?? "A Navy chaplain's faith tested by supernatural forces during a dangerous rescue mission."}
+  bookCover={featuredBook.cover ?? null}
+  genre={(featuredBook.genre as 'faith' | 'epic') ?? 'faith'}
   ctaText="Get the Book"
-  ctaLink="/books/faith-in-firestorm"
+  ctaLink={`/books/${featuredBook.id}`}
 />
 
 <!-- About Preview -->
@@ -86,15 +111,13 @@
           src={IMAGES.AUTHOR_FIREFIGHTER}
           alt="Charles W. Boswell in firefighter gear"
           class="rounded-lg shadow-xl w-full h-96 object-cover"
-          on:error={(e) => (e.currentTarget as HTMLImageElement).style.opacity = '0.7'}
+          on:error={dimOnError}
           loading="lazy"
           decoding="async"
         />
       </div>
       <div>
-        <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-          Stories Forged in Fire
-        </h2>
+        <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Stories Forged in Fire</h2>
         <p class="text-lg text-gray-600 mb-6">
           From serving aboard Navy ships to battling wildfires across the American West,
           my experiences have shaped every story I tell. Sixteen years of firefighting
@@ -139,7 +162,7 @@
     </div>
 
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {#each upcomingBooks as book}
+      {#each upcomingBooks as book (book.id)}
         <BookCard {book} />
       {/each}
     </div>

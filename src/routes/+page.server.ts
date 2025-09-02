@@ -3,19 +3,16 @@ import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { getFeaturedBook, type BookDoc } from '$lib/server/books';
 
-/**
- * Normalize older firebase domain variants to the standard appspot host.
- * Return null if the input is nullish; never return undefined to keep shapes stable.
- */
+/** Normalize older firebase domain variants to the standard appspot host. */
 function normalizeFirebaseUrl(url?: string | null): string | null {
   if (!url) return null;
-  return url.replace('endless-fire-467204-n2.firebasestorage.app', 'endless-fire-467204-n2.appspot.com');
+  return url.replace(
+    'endless-fire-467204-n2.firebasestorage.app',
+    'endless-fire-467204-n2.appspot.com'
+  );
 }
 
-/**
- * Public shape that is guaranteed to be JSON-serializable for SvelteKit.
- * (Dates -> ISO strings; no ObjectId; stable nulls, not undefined)
- */
+/** Public, JSON-serializable shape for the client */
 type PublicBook = {
   id: string;
   title: string;
@@ -23,15 +20,14 @@ type PublicBook = {
   cover?: string | null;
   genre?: string | null;
   status?: string | null;
-  publishDate?: string | null; // ISO string if present
+  publishDate?: string | null; // ISO string
   isbn?: string | null;
   format?: string | null;
 };
 
-/** Convert a BookDoc (from Mongo) into a serializable PublicBook */
 function toPublicBook(b: BookDoc): PublicBook {
   return {
-    id: b.id, // assuming your code writes a string id; if not, map _id.toString() where you create BookDoc
+    id: b.id, // if you store only _id: ObjectId in Mongo, adjust where you build BookDoc to include a string id
     title: b.title,
     description: b.description ?? null,
     cover: normalizeFirebaseUrl(b.cover),
@@ -47,16 +43,17 @@ function toPublicBook(b: BookDoc): PublicBook {
 
 export const load: PageServerLoad = async () => {
   try {
+    // fetch the featured book and a db handle in parallel
     const [featuredRaw, db] = await Promise.all([getFeaturedBook(), getDb()]);
 
-    // Query only the fields you actually render (keeps payload small and serializable)
+    // keep payload tight with projection, and ensure no ObjectId leaks
     const upcomingRaw = await db
       .collection<BookDoc>('books')
       .find(
         { genre: 'faith', status: 'upcoming' },
         {
           projection: {
-            _id: 0,          // ensure no ObjectId leaks into the payload
+            _id: 0,
             id: 1,
             title: 1,
             description: 1,
@@ -79,7 +76,7 @@ export const load: PageServerLoad = async () => {
     return { featured, upcoming };
   } catch (err) {
     console.error('Error in home loader:', err);
-    // Return a fully-typed, serializable fallback
+    // fail-soft so the page still renders
     return { featured: null, upcoming: [] as PublicBook[] };
   }
 };

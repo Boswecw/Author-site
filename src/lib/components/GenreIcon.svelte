@@ -1,38 +1,38 @@
-<!-- src/lib/components/GenreIcon.svelte -->
 <script lang="ts">
-  import { IMAGES } from '$lib/utils/image';
-
+  // Props
+  export let src: string;
+  export let alt: string = '';
   export let genre: 'faith' | 'epic' = 'faith';
-  export let size: 'small' | 'medium' | 'large' = 'medium';
+  export let size: 'sm' | 'md' | 'lg' = 'md';
 
-  $: iconUrl = genre === 'epic' ? IMAGES.EPIC_ICON : IMAGES.FAITH_ICON;
-  $: iconAlt = genre === 'epic' ? 'Epic Fantasy' : 'Christian Fiction';
+  // Classic Svelte (no runes)
+  let showFallback = false;
 
-  $: sizeClasses = {
-    small: 'w-16 h-16',
-    medium: 'w-24 h-24',
-    large: 'w-40 h-40 md:w-56 md:h-56'
-  }[size];
+  // Size classes
+  $: sizeClasses =
+    size === 'sm' ? 'w-8 h-8'
+    : size === 'lg' ? 'w-20 h-20'
+    : 'w-12 h-12';
 
-  $: fallbackText = genre === 'epic' ? 'EPIC' : 'FAITH';
-  $: fallbackColors = genre === 'epic'
-    ? 'bg-red-800 text-white'
-    : 'bg-blue-800 text-white';
+  function handleError() {
+    showFallback = true;
+  }
 </script>
 
-<div class="relative inline-block">
+{#if !showFallback}
   <img
-    src={iconUrl}
-    alt={iconAlt}
+    src={src}
+    alt={alt}
     class="{sizeClasses} rounded-full shadow-lg object-cover"
     loading="lazy"
-    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+    on:error={handleError}
   />
-
-  <!-- Fallback if image fails -->
+{:else}
   <div
-    class="{sizeClasses} {fallbackColors} rounded-full shadow-lg items-center justify-center font-bold text-sm hidden"
+    class="{sizeClasses} rounded-full shadow-lg flex items-center justify-center font-semibold
+            {genre === 'epic' ? 'bg-indigo-700 text-white' : 'bg-amber-600 text-white'}"
+    aria-label="Genre icon fallback"
   >
-    {fallbackText}
+    {genre === 'epic' ? 'EPIC' : 'FAITH'}
   </div>
-</div>
+{/if}

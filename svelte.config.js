@@ -1,12 +1,9 @@
-import adapter from '@sveltejs/adapter-vercel';
+// svelte.config.js
+import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-  kit: {
-    adapter: adapter()
-  },
-  preprocess: vitePreprocess()
+export default {
+  kit: { adapter: adapter() },
+  preprocess: vitePreprocess(),
+  compilerOptions: { runes: false }  // ← disable runes
 };
-
-export default config;

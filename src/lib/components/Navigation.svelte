@@ -17,7 +17,6 @@
   ] as const;
 
   function closeMenu() { mobileMenuOpen = false; }
-  function toggleMenu() { mobileMenuOpen = !mobileMenuOpen; }
 
   // smaller fallback to match reduced logo size
   function onLogoError(e: Event) {
@@ -29,19 +28,19 @@
     img.replaceWith(span);
   }
 
+  // current path, for active link state
   $: pathname = $page.url.pathname;
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));
 
+  // auto-close mobile menu after nav
   onMount(() => afterNavigate(() => (mobileMenuOpen = false)));
 </script>
 
-<!-- Use a slim, sticky header; expose --nav-h for layout/menu alignment -->
 <header
   class="sticky top-0 z-[100] bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-200"
   style="--nav-h: 64px;"
 >
-  <!-- Slimmer row: h-16 (64px). This reduces the perceived gap. -->
   <div class="w-full h-16 px-3 md:px-6 grid grid-cols-[auto_1fr_auto] items-center gap-4">
     <!-- Left: Brand -->
     <a href="/" class="flex items-center gap-3 min-w-0" aria-label="Charles Boswell - Home">
@@ -76,19 +75,16 @@
       {/each}
     </nav>
 
-    <!-- Mobile menu -->
+    <!-- Mobile menu (use native details/summary; no redundant role/button hacks) -->
     <details class="md:hidden justify-self-end" bind:open={mobileMenuOpen}>
       <summary
         class="list-none cursor-pointer p-2 rounded-md hover:bg-gray-100"
-        aria-label="Open menu"
-        role="button"
-        aria-expanded={mobileMenuOpen}
-        on:click|preventDefault={toggleMenu}
+        aria-label="Toggle menu"
       >
         ☰
       </summary>
 
-      <!-- Align dropdown directly under the header using --nav-h -->
+      <!-- Dropdown under header using --nav-h -->
       <div
         class="absolute right-3 w-48 rounded-lg border border-gray-200 bg-white shadow-lg p-2 space-y-1"
         style="top: var(--nav-h);"

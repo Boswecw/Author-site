@@ -12,7 +12,7 @@
         <!-- Social: replace with your real profiles -->
         <div class="flex space-x-4">
           <a
-            href="https://x.com/yourhandle"
+            href="https://x.com/charliewboswell"
             target="_blank" rel="noopener"
             class="text-gray-200 hover:text-white transition-colors"
             aria-label="X (Twitter)"
@@ -22,7 +22,7 @@
           </a>
 
           <a
-            href="https://www.facebook.com/yourpage"
+            href="https://www.facebook.com/chuck.boswell.2025/"
             target="_blank" rel="noopener"
             class="text-gray-200 hover:text-white transition-colors"
             aria-label="Facebook"
@@ -31,7 +31,7 @@
           </a>
 
           <a
-            href="https://instagram.com/yourhandle"
+            href="https://www.instagram.com/chuck.boswell/"
             target="_blank" rel="noopener"
             class="text-gray-200 hover:text-white transition-colors"
             aria-label="Instagram"
