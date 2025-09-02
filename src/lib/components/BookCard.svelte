@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Book } from '$lib/types';
-  import { createImageFallback } from '$lib/utils/images';
+  import { lazyImage } from '$lib/actions/progressiveImage';
+  import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
 
   export let book: Book;
 
@@ -22,19 +23,14 @@
 
   $: genreText = book.genre === 'epic' ? 'Epic Fantasy' : 'Christian Fiction';
 
-  function handleCoverError(e: Event) {
-    const img = e.currentTarget as HTMLImageElement;
-    img.src = createImageFallback(book.title);
-  }
 </script>
 
 <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
   <div class="aspect-w-3 aspect-h-4 bg-gray-200">
     <img
-      src={book.cover}
       alt="Cover of {book.title}"
       class="w-full h-80 object-cover"
-      on:error={handleCoverError}
+      use:lazyImage={{ src: book.cover, fallback: FALLBACK_IMAGES.BOOK_COVER }}
     />
   </div>
   

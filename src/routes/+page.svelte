@@ -3,6 +3,8 @@
   import BookCard from '$lib/components/BookCard.svelte';
   import NewsletterSignup from '$lib/components/NewsletterSignup.svelte';
   import { IMAGES } from '$lib/utils/images';
+  import { progressiveImage } from '$lib/actions/progressiveImage';
+  import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
   import type { Book } from '$lib/types';
 
   // Sample data - replace with your actual data loading
@@ -76,7 +78,7 @@
           src={IMAGES.AUTHOR_FIREFIGHTER}
           alt="Charles W. Boswell in firefighter gear"
           class="rounded-lg shadow-xl w-full h-96 object-cover"
-          on:error={(e) => e.currentTarget.style.opacity = '0.7'}
+          use:progressiveImage={{ fallback: FALLBACK_IMAGES.AUTHOR_PHOTO }}
         />
       </div>
       <div>

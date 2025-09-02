@@ -1,5 +1,7 @@
 <script lang="ts">
   import { IMAGES } from '$lib/utils/images';
+  import { progressiveImage } from '$lib/actions/progressiveImage';
+  import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
 
   export let title = 'Epic Fantasy Born from Real Experience';
   export let subtitle = 'From Navy decks to wildfire frontlines, now crafting tales of courage, brotherhood, and faith.';
@@ -17,11 +19,6 @@
     img.outerHTML = `<div class="w-32 h-32 bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-bold ember-glow">${fallbackText}</div>`;
   }
 
-  function handleBookCoverError(e: Event) {
-    const img = e.currentTarget as HTMLImageElement;
-    img.style.opacity = '0.7';
-    img.style.filter = 'grayscale(50%)';
-  }
 </script>
 
 <section class="fire-gradient text-white section-padding relative overflow-hidden">
@@ -63,7 +60,7 @@
               src={bookCover}
               alt="Featured book cover"
               class="w-64 md:w-80 h-auto rounded-lg shadow-2xl transform hover:scale-105 transition-transform duration-300"
-              on:error={handleBookCoverError}
+              use:progressiveImage={{ fallback: FALLBACK_IMAGES.BOOK_COVER }}
             />
             <div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/10 rounded-lg"></div>
           </div>
