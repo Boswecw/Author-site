@@ -76,7 +76,11 @@ export class ImageLoadingService {
    */
   generateFallback(type: 'avatar' | 'book' | 'logo' | 'hero', text?: string): string {
     const svg = this.createSVGFallback(type, text);
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    const base64 =
+      typeof window === 'undefined'
+        ? Buffer.from(svg).toString('base64')
+        : btoa(svg);
+    return `data:image/svg+xml;base64,${base64}`;
   }
 
   private createSVGFallback(type: string, text?: string): string {

@@ -1,131 +1,115 @@
 <script lang="ts">
-  import { progressiveImage } from '$lib/actions/progressiveImage';
-  import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
-
-  type Post = {
-    slug: string;
-    title: string;
-    excerpt?: string;
-    heroImage?: string;
-    publishDate?: string;
-    tags?: string[];
-    genre?: 'faith' | 'epic';
-    contentHtml: string; // provided by load()
-  };
-
-  type DataShape = {
-    posts: Post[];
+  export let data: {
+    posts: Array<{
+      slug: string;
+      title: string;
+      excerpt?: string;
+      heroImage?: string;
+      publishDate?: string;
+      tags: string[];
+      genre?: 'faith' | 'epic' | string;
+      contentHtml?: string;
+    }>;
+    total: number;
     page: number;
     pageSize: number;
-    total: number;
     tag: string;
     tags: string[];
-    __debug?: { db: string; found: number };
+    __debug?: Record<string, unknown>;
   };
 
-  export let data: DataShape;
-
-  const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
-
-  const enc = (s: string) => encodeURIComponent(s);
-
-  const tagHref = (t: string | 'All') =>
-    t === 'All' ? '/blog' : `/blog?tag=${enc(t)}`;
-
-  const pageHref = (p: number) => {
-    const tagPart = data.tag && data.tag !== 'All' ? `&tag=${enc(data.tag)}` : '';
-    return `/blog?page=${p}${tagPart}`;
-  };
-
-  const prevHref = data.page > 1 ? pageHref(data.page - 1) : undefined;
-  const nextHref = data.page < totalPages ? pageHref(data.page + 1) : undefined;
-
-  const tagBtnClass = (t: string | 'All') =>
-    `px-3 py-1 rounded border transition ${
-      data.tag === t ? 'bg-gray-900 text-white' : 'bg-white hover:bg-gray-50'
-    }`;
+  function fmt(date?: string) {
+    return date
+      ? new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      : '';
+  }
 </script>
 
-<section class="max-w-3xl mx-auto px-4 py-10">
-  <header class="mb-8">
-    <h1 class="text-3xl font-bold">Blog</h1>
+<svelte:head>
+  <title>Blog — Charles Boswell</title>
+  <meta
+    name="description"
+    content="Read insights on writing, military service, firefighting, and the intersection of faith and fantasy from author Charles W. Boswell."
+  />
+</svelte:head>
 
-    {#if data.__debug}
-      <p class="mt-2 text-xs opacity-60">
-        DB: {data.__debug.db} — posts found: {data.__debug.found}
+<section class="pt-28 pb-20 bg-white scroll-mt-28">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-3">From the Fire Line</h1>
+      <p class="text-lg text-gray-600">
+        Insights on writing, faith, service, and the real experiences that shape my fantasy worlds.
       </p>
-    {/if}
+    </div>
 
-    {#if data.tags?.length}
-      <div class="mt-4 flex flex-wrap gap-2">
-        <a href={tagHref('All')} class={tagBtnClass('All')}>All</a>
-        {#each data.tags as t}
-          <a href={tagHref(t)} class={tagBtnClass(t)}>{t}</a>
-        {/each}
-      </div>
-    {/if}
-  </header>
-
-  {#if !data.posts?.length}
-    <p class="text-gray-500 mt-8">No published posts found.</p>
-  {:else}
-    <div class="space-y-12">
+    <!-- Posts -->
+    <div class="grid gap-10">
       {#each data.posts as post}
-        <article class="prose dark:prose-invert max-w-none">
-          <h2 class="!mt-0">
-            <a href={`/blog/${post.slug}`} class="no-underline hover:underline">{post.title}</a>
-          </h2>
-
-          {#if post.publishDate}
-            <p class="text-sm text-gray-500">
-              <time datetime={post.publishDate}>
-                {new Date(post.publishDate).toLocaleDateString()}
-              </time>
-              {#if post.tags?.length} · {post.tags.join(' · ')}{/if}
-            </p>
-          {/if}
-
+        <article class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden hover:shadow-md transition">
           {#if post.heroImage}
-            <img
-              src={post.heroImage}
-              alt={post.title}
-              class="rounded-lg my-4"
-              loading="lazy"
-              decoding="async"
-              use:progressiveImage={{ fallback: FALLBACK_IMAGES.BOOK_COVER }}
-            />
+            <a href={`/blog/${post.slug}`} class="block">
+              <img
+                src={post.heroImage}
+                alt={post.title}
+                class="w-full h-56 object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
           {/if}
 
-          <!-- Safe server-rendered HTML -->
-          <div class="mt-4">
-            {@html post.contentHtml}
-          </div>
+          <div class="p-6 lg:p-8">
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-3">
+              {#if post.publishDate}
+                <time datetime={post.publishDate}>{fmt(post.publishDate)}</time>
+              {/if}
 
-          <p class="mt-4">
-            <a href={`/blog/${post.slug}`} class="text-blue-600 hover:underline">
-              Read more →
+              {#if post.tags?.length}
+                <span>•</span>
+                <div class="flex flex-wrap gap-2">
+                  {#each post.tags as tag}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      {tag}
+                    </span>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+
+            <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 hover:text-red-600 transition-colors">
+              <a href={`/blog/${post.slug}`}>{post.title}</a>
+            </h2>
+
+            {#if post.excerpt}
+              <p class="text-lg text-gray-600 mb-6 leading-relaxed">{post.excerpt}</p>
+            {/if}
+
+            <a
+              href={`/blog/${post.slug}`}
+              class="inline-flex items-center text-red-600 font-semibold hover:text-red-700 transition-colors"
+            >
+              Read Full Post
+              <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
             </a>
-          </p>
+          </div>
         </article>
       {/each}
     </div>
-  {/if}
 
-  {#if totalPages > 1}
-    <nav class="mt-10 flex items-center justify-between">
-      <a
-        class="px-4 py-2 border rounded disabled:opacity-50"
-        aria-disabled={data.page <= 1}
-        href={prevHref}
-        >← Prev</a
-      >
-      <span>Page {data.page} of {totalPages}</span>
-      <a
-        class="px-4 py-2 border rounded disabled:opacity-50"
-        aria-disabled={data.page >= totalPages}
-        href={nextHref}
-        >Next →</a
-      >
-    </nav>
-  {/if}
+    <!-- Coming Soon Message -->
+    <div class="mt-16 text-center bg-gray-50 rounded-xl p-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">More Stories Coming Soon</h2>
+      <p class="text-lg text-gray-600 mb-6">
+        I'm regularly sharing insights about writing, military life, firefighting, and the creative process. Subscribe to stay updated with new posts.
+      </p>
+      <a href="/contact" class="btn-primary">Subscribe for Updates</a>
+    </div>
+  </div>
 </section>
