@@ -207,20 +207,6 @@ export class ImageLoadingService {
 // Export singleton instance
 export const imageService = ImageLoadingService.getInstance();
 
-// Common image URLs used throughout the app
-export const APP_IMAGES = {
-  SIGNATURE_LOGO: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/Signaturelogo.png?alt=media&token=11b771f1-789b-426a-b9e0-b24caf98150f',
-  
-  AUTHOR_PHOTO: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/August25.png?alt=media&token=ae2aa914-5e2e-4519-9749-077037b54e58',
-  
-  FIREFIGHTER_PHOTO: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/CharlesBosewll_USFS.jpg?alt=media&token=46388a4c-27d2-4da6-9ad3-9d4c9b279e05',
-  
-  ICONS: {
-    FAITH: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/ChristianFiction.png?alt=media&token=6f8f6512-0818-44aa-8fd6-2c29b80c570d',
-    EPIC: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/EpicFantasy.png?alt=media&token=3534891a-927d-4a4b-aa82-911ea6e03025'
-  }
-} as const;
-
 // Fallback data URIs for instant loading
 export const FALLBACK_IMAGES = {
   SIGNATURE_LOGO: imageService.generateFallback('logo', 'CB'),
