@@ -1,19 +1,41 @@
 <script lang="ts">
-  import { IMAGES } from '$lib/utils/images';
+  // FIX: your util file is singular: src/lib/utils/image.ts
+  // and should export IMAGES (or adjust as needed)
+  import { IMAGES } from '$lib/utils/image';
 </script>
 
 <svelte:head>
   <title>About Charles W. Boswell — Navy Veteran & Fantasy Author</title>
-  <meta name="description" content="Learn about Charles W. Boswell's journey from U.S. Navy service to wildland firefighting to becoming a published fantasy author." />
+  <meta
+    name="description"
+    content="Learn about Charles W. Boswell's journey from U.S. Navy service to wildland firefighting to becoming a published fantasy author."
+  />
 </svelte:head>
 
-<div class="section-padding">
-  <div class="container-width">
-    <!-- Header -->
-    <div class="text-center mb-16">
-      <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">My Story</h1>
-      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-        From Navy decks to wildfire frontlines, my life has been shaped by service, 
+<section class="pt-28 pb-20 bg-white scroll-mt-28">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+      <!-- Top-center oval portrait -->
+      <figure class="flex justify-center mb-6">
+        <img
+          src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/August25.png?alt=media&token=ae2aa914-5e2e-4519-9749-077037b54e58"
+          alt="Portrait of Charles W. Boswell"
+          width="320"
+          height="384"
+          class="w-40 h-48 md:w-48 md:h-56 object-cover rounded-[9999px] ring-2 ring-[var(--brand-gold)] shadow-lg"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+        />
+      </figure>
+
+      <!-- Visible page title (tab <title> is for SEO, this is for users) -->
+      <h1 class="brand-name text-4xl md:text-5xl text-gray-900 mb-3">
+        About Charles W. Boswell
+      </h1>
+      <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+        From Navy decks to wildfire frontlines, my life has been shaped by service,
         courage, and the unbreakable bonds forged in extreme circumstances.
       </p>
     </div>
@@ -26,7 +48,7 @@
           src={IMAGES.AUTHOR_PORTRAIT}
           alt="Charles W. Boswell, author portrait"
           class="rounded-lg shadow-xl w-full h-auto sticky top-8"
-          on:error={(e) => e.currentTarget.style.opacity = '0.7'}
+          on:error={(e) => (e.currentTarget.style.opacity = '0.7')}
         />
       </div>
 
@@ -35,14 +57,14 @@
         <div>
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Navy Service</h2>
           <p class="text-gray-600 mb-4">
-            My journey began in the United States Navy, where I learned the values of honor, 
-            courage, and commitment that would guide me throughout my life. Serving aboard 
-            naval vessels, I witnessed firsthand the power of brotherhood and the strength 
+            My journey began in the United States Navy, where I learned the values of honor,
+            courage, and commitment that would guide me throughout my life. Serving aboard
+            naval vessels, I witnessed firsthand the power of brotherhood and the strength
             that comes from shared purpose in the face of danger.
           </p>
           <p class="text-gray-600">
-            The disciplined environment of military service taught me about leadership, 
-            sacrifice, and the importance of faith during challenging times. These experiences 
+            The disciplined environment of military service taught me about leadership,
+            sacrifice, and the importance of faith during challenging times. These experiences
             became the foundation for the authentic military characters and scenarios in my novels.
           </p>
         </div>
@@ -50,16 +72,16 @@
         <div>
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Wildland Firefighting</h2>
           <p class="text-gray-600 mb-4">
-            After my naval service, I spent sixteen years as a wildland firefighter, 
-            battling some of the most dangerous fires across the American West. This career 
-            put me face-to-face with nature's raw power and taught me about courage, 
-            teamwork, and the split-second decisions that can mean the difference between 
+            After my naval service, I spent sixteen years as a wildland firefighter,
+            battling some of the most dangerous fires across the American West. This career
+            put me face-to-face with nature's raw power and taught me about courage,
+            teamwork, and the split-second decisions that can mean the difference between
             life and death.
           </p>
           <p class="text-gray-600">
-            The camaraderie among firefighters mirrors the brotherhood found in military units, 
-            and these bonds of trust and mutual reliance feature prominently in my writing. 
-            The elemental forces I battled in real life inspire the magical systems and 
+            The camaraderie among firefighters mirrors the brotherhood found in military units,
+            and these bonds of trust and mutual reliance feature prominently in my writing.
+            The elemental forces I battled in real life inspire the magical systems and
             environmental challenges in my fantasy worlds.
           </p>
         </div>
@@ -67,15 +89,15 @@
         <div>
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Faith & Writing</h2>
           <p class="text-gray-600 mb-4">
-            Throughout my military and firefighting careers, faith has been my anchor. 
-            The trials I've faced and the miracles I've witnessed have deepened my 
-            understanding of divine purpose and human resilience. This spiritual foundation 
+            Throughout my military and firefighting careers, faith has been my anchor.
+            The trials I've faced and the miracles I've witnessed have deepened my
+            understanding of divine purpose and human resilience. This spiritual foundation
             permeates every story I write.
           </p>
           <p class="text-gray-600">
-            My novels blend Christian themes with epic fantasy elements, creating stories 
-            that explore questions of faith, sacrifice, and redemption within imaginative 
-            worlds filled with magic and adventure. Each book reflects the truth that 
+            My novels blend Christian themes with epic fantasy elements, creating stories
+            that explore questions of faith, sacrifice, and redemption within imaginative
+            worlds filled with magic and adventure. Each book reflects the truth that
             courage and faith can overcome any darkness.
           </p>
         </div>
@@ -122,14 +144,12 @@
     <div class="text-center">
       <h2 class="text-3xl font-bold text-gray-900 mb-6">Beyond the Books</h2>
       <p class="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
-        When I'm not writing, you'll find me spending time with family, enjoying the 
-        Kentucky countryside, or sharing stories with fellow veterans and first responders. 
-        I believe in the power of community and the importance of passing on the lessons 
+        When I'm not writing, you'll find me spending time with family, enjoying the
+        Kentucky countryside, or sharing stories with fellow veterans and first responders.
+        I believe in the power of community and the importance of passing on the lessons
         learned through service to others.
       </p>
-      <a href="/contact" class="btn-primary">
-        Get in Touch
-      </a>
+      <a href="/contact" class="btn-primary">Get in Touch</a>
     </div>
   </div>
-</div>
+</section>

@@ -1,29 +1,29 @@
 import type { RequestHandler } from '@sveltejs/kit';
+import { getPublishedPosts } from '$lib/server/posts';
 
 export const GET: RequestHandler = async () => {
-  const modules = import.meta.glob('/src/lib/posts/*.md', { eager: true }) as any;
-  const posts = Object.entries(modules).map(([path, mod]: any) => {
-    const slug = path.split('/').pop().replace('.md', '');
-    return { slug, ...mod.metadata };
-  }).sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
-
+  const { items } = await getPublishedPosts(1, 20);
   const site = 'https://your-domain.com';
-  const items = posts.map((p) => `
+
+  const itemsXml = items
+    .map(
+      (p) => `
     <item>
       <title><![CDATA[${p.title}]]></title>
       <link>${site}/blog/${p.slug}</link>
-      <pubDate>${new Date(p.publishDate).toUTCString()}</pubDate>
+      <pubDate>${new Date(p.publishDate ?? '').toUTCString()}</pubDate>
       <description><![CDATA[${p.excerpt ?? ''}]]></description>
       <guid>${site}/blog/${p.slug}</guid>
     </item>`
-  ).join('');
+    )
+    .join('');
 
   const xml = `<?xml version="1.0" encoding="UTF-8" ?>
   <rss version="2.0"><channel>
     <title>Charles W. Boswell — Blog</title>
     <link>${site}</link>
     <description>Writing insights and updates</description>
-    ${items}
+    ${itemsXml}
   </channel></rss>`;
 
   return new Response(xml, {
