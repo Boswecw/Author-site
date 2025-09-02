@@ -2,9 +2,6 @@
   import { page } from '$app/stores';
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { IMAGES } from '$lib/utils/image';
-
-  const SIGNATURE_LOGO = IMAGES.SIGNATURE_LOGO;
 
   let mobileMenuOpen = false;
 
@@ -16,7 +13,9 @@
     { name: 'Contact', href: '/contact' }
   ] as const;
 
-  function closeMenu() { mobileMenuOpen = false; }
+  function closeMenu() {
+    mobileMenuOpen = false;
+  }
 
   // smaller fallback to match reduced logo size
   function onLogoError(e: Event) {
@@ -45,7 +44,7 @@
     <!-- Left: Brand -->
     <a href="/" class="flex items-center gap-3 min-w-0" aria-label="Charles Boswell - Home">
       <img
-        src={SIGNATURE_LOGO}
+        src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Signaturelogo.png?alt=media&token=11b771f1-789b-426a-b9e0-b24caf98150f"
         alt="Charles Boswell signature logo"
         width="56"
         height="56"
@@ -68,14 +67,16 @@
         <a
           href={l.href}
           aria-current={isActive(l.href) ? 'page' : undefined}
-          class={`text-sm font-medium transition-opacity hover:opacity-80 ${isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'}`}
+          class={`text-sm font-medium transition-opacity hover:opacity-80 ${
+            isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'
+          }`}
         >
           {l.name}
         </a>
       {/each}
     </nav>
 
-    <!-- Mobile menu (use native details/summary; no redundant role/button hacks) -->
+    <!-- Mobile menu -->
     <details class="md:hidden justify-self-end" bind:open={mobileMenuOpen}>
       <summary
         class="list-none cursor-pointer p-2 rounded-md hover:bg-gray-100"
@@ -84,7 +85,6 @@
         ☰
       </summary>
 
-      <!-- Dropdown under header using --nav-h -->
       <div
         class="absolute right-3 w-48 rounded-lg border border-gray-200 bg-white shadow-lg p-2 space-y-1"
         style="top: var(--nav-h);"
@@ -92,7 +92,9 @@
         {#each navigation as l}
           <a
             href={l.href}
-            class={`block px-3 py-2 rounded-md text-sm transition-colors hover:bg-gray-50 ${isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'}`}
+            class={`block px-3 py-2 rounded-md text-sm transition-colors hover:bg-gray-50 ${
+              isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'
+            }`}
             on:click={closeMenu}
             aria-current={isActive(l.href) ? 'page' : undefined}
           >

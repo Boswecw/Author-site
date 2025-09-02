@@ -1,36 +1,73 @@
+// src/routes/blog/+page.server.ts
 import type { PageServerLoad } from './$types';
-import { getPublishedPosts, getAllTags } from '$lib/server/posts';
-import { mdToHtml } from '$lib/server/markdown';
-import { env } from '$env/dynamic/private';
+import { getDb } from '$lib/server/db';
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
+import { mdToHtml } from '$lib/server/markdown';
 
 export const load: PageServerLoad = async ({ url }) => {
-  const page = Number(url.searchParams.get('page') ?? '1');
-  const tagParam = url.searchParams.get('tag') ?? undefined;
+  const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
   const pageSize = 10;
 
-  const { items, total } = await getPublishedPosts(page, pageSize, tagParam);
-  const tags = await getAllTags();
+  const db = await getDb();
+  const col = db.collection('posts');
 
-  const posts = items.map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    excerpt: p.excerpt,
-    heroImage: normalizeFirebaseUrl(p.heroImage) ?? undefined,
-    publishDate: p.publishDate ?? undefined,
-    tags: p.tags ?? [],
-    genre: p.genre,
-    contentHtml: mdToHtml(p.contentMarkdown ?? '')
-  }));
+  // Only published posts
+  const match = { status: 'published' as const };
+
+  // Counts with same filter
+  const [collList, totalDocs, totalPublished] = await Promise.all([
+    db.listCollections().toArray(),
+    col.estimatedDocumentCount(),
+    col.countDocuments(match)
+  ]);
+
+  console.log('[blog] using db:', db.databaseName);
+  console.log('[blog] collections:', collList.map((c) => c.name));
+  console.log('[blog] posts total:', totalDocs, 'published:', totalPublished);
+
+  // Fetch posts
+  const docs = await col
+    .find(match, {
+      projection: {
+        _id: 0,
+        slug: 1,
+        title: 1,
+        excerpt: 1,
+        contentMarkdown: 1,
+        heroImage: 1,
+        publishDate: 1,
+        publishedAt: 1,
+        tags: 1,
+        genre: 1
+      }
+    })
+    .sort({ publishDate: -1, publishedAt: -1, _id: -1 })
+    .skip((page - 1) * pageSize)
+    .limit(pageSize)
+    .toArray();
+
+  // Map to public shape
+  const posts = await Promise.all(
+    docs.map(async (p: any) => ({
+      slug: p.slug,
+      title: p.title,
+      excerpt: p.excerpt,
+      heroImage: normalizeFirebaseUrl(p.heroImage ?? null) ?? undefined,
+      publishDate: p.publishDate ?? p.publishedAt ?? undefined,
+      tags: Array.isArray(p.tags) ? p.tags : [],
+      genre: p.genre ?? undefined,
+      contentHtml: await mdToHtml(p.contentMarkdown ?? '')
+    }))
+  );
+
+  console.log('[blog] fetched slugs:', posts.map((p) => p.slug));
 
   return {
     posts,
-    total,
+    total: totalPublished,
     page,
     pageSize,
-    tag: tagParam ?? 'All',
-    tags,
-    __debug: { db: env.MONGODB_DB, found: posts.length }
+    tag: 'All',
+    tags: []
   };
 };
-

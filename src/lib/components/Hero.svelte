@@ -1,6 +1,7 @@
 <script lang="ts">
   import GenreIcon from './GenreIcon.svelte';
   import { createImageFallback } from '$lib/utils/image';
+  import { normalizeFirebaseUrl } from '$lib/utils/urls'; // <-- make sure this exists
 
   export let title = 'Epic Fantasy Born from Real Experience';
   export let subtitle = 'From Navy decks to wildfire frontlines, now crafting tales of courage, brotherhood, and Faith.';
@@ -19,11 +20,16 @@
     ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700'
     : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700';
 
-  // fallback if cover is missing/broken
-  let coverSrc: string | null = bookCover ?? null;
+  // Normalize covers from Mongo (handles .firebasestorage.app → .appspot.com)
+  $: coverSrc = bookCover ? normalizeFirebaseUrl(bookCover) : null;
+
   function dimOrFallback(e: Event) {
     const img = e.currentTarget as HTMLImageElement;
-    // show a readable fallback if network fails
+    // optional: log the failing URL once
+    if (!img.dataset._logged) {
+      console.warn('[Hero cover] failed to load:', img.src);
+      img.dataset._logged = '1';
+    }
     img.src = createImageFallback('Cover Unavailable');
     img.style.opacity = '1';
   }
@@ -56,8 +62,9 @@
           alt={`Featured book cover: ${title}`}
           class="w-64 md:w-80 lg:w-96 h-auto rounded-lg shadow-2xl transform hover:scale-105 transition-transform duration-300 bg-white/5"
           loading="eager"
-          fetchpriority="high"
           decoding="async"
+         
+          referrerpolicy="no-referrer"
           on:error={dimOrFallback}
         />
       </div>

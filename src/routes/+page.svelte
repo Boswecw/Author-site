@@ -135,19 +135,21 @@
 {/if}
 
 <!-- About Preview -->
-<section class="section-padding bg-gray-50">
-  <div class="container-width">
-    <div class="grid lg:grid-cols-2 gap-12 items-center">
-      <div>
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+      <div class="flex justify-center lg:justify-start">
         <img
-          src={IMAGES.AUTHOR_FIREFIGHTER}
+          src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/CharlesBosewll_USFS.jpg?alt=media&token=46388a4c-27d2-4da6-9ad3-9d4c9b279e05"
           alt="Charles W. Boswell in firefighter gear"
-          class="rounded-lg shadow-xl w-full h-96 object-cover"
+          class="rounded-xl shadow-xl w-32 sm:w-40 md:w-48 lg:w-56 h-auto object-contain mx-auto lg:mx-0"
           on:error={dimOnError}
           loading="lazy"
           decoding="async"
+          referrerpolicy="no-referrer"
         />
       </div>
+
       <div>
         <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Stories Forged in Fire</h2>
         <p class="text-lg text-gray-600 mb-6">
@@ -156,6 +158,7 @@
           and military service provide the authentic foundation for tales of courage,
           brotherhood, and unwavering faith.
         </p>
+
         <div class="flex flex-wrap gap-4 mb-8">
           <div class="flex items-center text-sm font-medium text-gray-700">
             <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
@@ -176,6 +179,7 @@
             Fantasy Author
           </div>
         </div>
+
         <a href="/about" class="btn-primary">Read My Full Story</a>
       </div>
     </div>

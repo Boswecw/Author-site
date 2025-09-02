@@ -1,16 +1,19 @@
 // src/lib/utils/urls.ts
 /**
- * Normalize Firebase Storage URLs to the canonical REST download form and
- * fix common issues (legacy domain, double-encoding, stray spaces).
+ * Normalize Firebase Storage URLs:
+ * - swap legacy *.firebasestorage.app -> *.appspot.com
+ * - fix double-encoding/spaces in the /o/<object> segment
  */
 export function normalizeFirebaseUrl(url?: string | null): string | null {
     if (!url) return null;
   
+    let out = url.trim();
+  
     // 1) Swap legacy domain → canonical host
-    let out = url
-      .replace('endless-fire-467204-n2.firebasestorage.app', 'endless-fire-467204-n2.appspot.com')
-      // If someone pasted the bucket host, prefer the REST endpoint
-      .replace('https://endless-fire-467204-n2.appspot.com', 'https://firebasestorage.googleapis.com');
+    out = out.replace(
+      /endless-fire-467204-n2\.firebasestorage\.app/gi,
+      'endless-fire-467204-n2.appspot.com'
+    );
   
     // 2) Ensure object path is single-encoded when using /o/<object>
     try {
@@ -19,13 +22,13 @@ export function normalizeFirebaseUrl(url?: string | null): string | null {
       if (oIndex !== -1) {
         const before = u.pathname.slice(0, oIndex + 3);
         const objectPathRaw = u.pathname.slice(oIndex + 3);
-        // Decode once, then encode once (fixes double-encoding and stray spaces)
+        // Decode once, then encode once (fixes %2520 or raw spaces)
         const fixedObject = encodeURIComponent(decodeURIComponent(objectPathRaw));
         u.pathname = before + fixedObject;
         out = u.toString();
       }
     } catch {
-      // If URL() fails (non-absolute), just return best-effort string
+      // If URL() fails (not absolute), just return best-effort string
     }
   
     return out;
