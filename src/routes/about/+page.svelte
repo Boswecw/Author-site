@@ -10,7 +10,7 @@
       <!-- Top-center oval portrait -->
       <figure class="flex justify-center mb-6">
         <img
-          src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/August25.png?alt=media&token=ae2aa914-5e2e-4519-9749-077037b54e58"
+          src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/August25.png?alt=media&token=ae2aa914-5e2e-4519-9749-077037b54e58"
           alt="Portrait of Charles W. Boswell"
           width="320" height="384"
           class="w-40 h-48 md:w-48 md:h-56 object-cover rounded-[9999px] ring-2 ring-[var(--brand-gold)] shadow-lg"
