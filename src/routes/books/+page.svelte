@@ -3,7 +3,9 @@
   import { IMAGES } from '$lib/utils/image';
   import type { Book } from '$lib/types';
 
-  const allBooks: Book[] = [
+  export let data: { books: Book[] };
+
+  const fallbackBooks: Book[] = [
     {
       id: 'faith-in-firestorm',
       title: 'Faith in a Firestorm',
@@ -55,11 +57,12 @@
       status: 'writing'
     }
   ];
+    const books: Book[] = data?.books?.length ? data.books : fallbackBooks;
 
   let selectedGenre: 'all' | 'faith' | 'epic' = 'all';
   let selectedStatus: 'all' | 'published' | 'coming-soon' | 'writing' = 'all';
 
-  $: filteredBooks = allBooks.filter(book => {
+  $: filteredBooks = books.filter(book => {
     const genreMatch = selectedGenre === 'all' || book.genre === selectedGenre;
     const statusMatch = selectedStatus === 'all' || book.status === selectedStatus;
     return genreMatch && statusMatch;
