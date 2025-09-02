@@ -1,70 +1,89 @@
 <script lang="ts">
-  export let title: string;
-  export let subtitle: string | undefined = undefined;
-  export let description: string;
-  export let status: string;
-  export let isbn: string | undefined = undefined;
-  export let format: string | undefined = "EPUB";
-  export let coverSrc: string;
-  export let ctaLabel: string = "Notify Me";
-  export let onNotify: (email: string) => void = () => {};
-  let email = "";
+  import type { Book } from '$lib/types';
+  import { createImageFallback } from '$lib/utils/images';
+
+  export let book: Book;
+
+  $: statusColor = {
+    'published': 'bg-green-100 text-green-800',
+    'coming-soon': 'bg-blue-100 text-blue-800', 
+    'writing': 'bg-yellow-100 text-yellow-800'
+  }[book.status];
+
+  $: statusText = {
+    'published': 'Available Now',
+    'coming-soon': 'Coming Soon',
+    'writing': 'In Progress'
+  }[book.status];
+
+  $: genreBadge = book.genre === 'epic' 
+    ? 'bg-red-100 text-red-800' 
+    : 'bg-blue-100 text-blue-800';
+
+  $: genreText = book.genre === 'epic' ? 'Epic Fantasy' : 'Christian Fiction';
+
+  function handleCoverError(e: Event) {
+    const img = e.currentTarget as HTMLImageElement;
+    img.src = createImageFallback(book.title);
+  }
 </script>
 
-<div class="h-full rounded-2xl border border-gray-200/70 bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col">
-  <!-- Top: media + copy -->
-  <div class="p-5 sm:p-6 flex gap-5">
+<div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+  <div class="aspect-w-3 aspect-h-4 bg-gray-200">
     <img
-      src={coverSrc}
-      alt={title}
-      class="h-40 w-28 sm:h-44 sm:w-32 rounded-md object-cover shadow"
-      loading="lazy"
+      src={book.cover}
+      alt="Cover of {book.title}"
+      class="w-full h-80 object-cover"
+      on:error={handleCoverError}
     />
-    <div class="min-w-0">
-      <h3 class="text-lg font-semibold text-gray-900 leading-tight">{title}</h3>
-      {#if subtitle}<p class="text-sm text-gray-500 mt-0.5">{subtitle}</p>{/if}
-      <p class="mt-3 text-sm text-gray-700 leading-relaxed line-clamp-6">{description}</p>
-
-      <dl class="mt-4 space-x-3 text-xs text-gray-500">
-        <span class="inline-flex items-center gap-1">
-          <dt class="font-medium text-gray-600">Status:</dt>
-          <dd>{status}</dd>
-        </span>
-        {#if isbn}
-          <span class="inline-flex items-center gap-1">
-            <dt class="font-medium text-gray-600">ISBN:</dt>
-            <dd>{isbn}</dd>
-          </span>
-        {/if}
-        {#if format}
-          <span class="inline-flex items-center gap-1">
-            <dt class="font-medium text-gray-600">•</dt>
-            <dd>{format}</dd>
-          </span>
-        {/if}
-      </dl>
-    </div>
   </div>
-
-  <!-- Footer: sticks to bottom -->
-  <div class="mt-auto border-t border-gray-100 px-5 sm:px-6 py-4">
-    <form
-      class="flex items-center gap-3"
-      on:submit|preventDefault={() => onNotify(email)}
-    >
-      <input
-        class="flex-1 h-10 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500"
-        type="email"
-        placeholder="Get release updates…"
-        bind:value={email}
-      />
-      <button
-        type="submit"
-        class="h-10 shrink-0 rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-4 text-white text-sm font-medium shadow hover:opacity-95 active:opacity-90"
-        aria-label={ctaLabel}
-      >
-        {ctaLabel}
+  
+  <div class="p-6">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {genreBadge}">
+        {genreText}
+      </span>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusColor}">
+        {statusText}
+      </span>
+    </div>
+    
+    <h3 class="text-xl font-bold text-gray-900 mb-2">
+      {book.title}
+    </h3>
+    
+    <p class="text-gray-600 mb-4 line-clamp-3">
+      {book.description}
+    </p>
+    
+    {#if book.publishDate}
+      <p class="text-sm text-gray-500 mb-4">
+        Expected: {new Date(book.publishDate).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long' 
+        })}
+      </p>
+    {/if}
+    
+    {#if book.buyLinks && book.status === 'published'}
+      <div class="flex gap-3">
+        {#if book.buyLinks.amazon}
+          <a href={book.buyLinks.amazon} target="_blank" rel="noopener noreferrer" 
+             class="btn-primary text-sm py-2 px-4">
+            Amazon
+          </a>
+        {/if}
+        {#if book.buyLinks.barnes}
+          <a href={book.buyLinks.barnes} target="_blank" rel="noopener noreferrer"
+             class="btn-secondary text-sm py-2 px-4">
+            Barnes & Noble
+          </a>
+        {/if}
+      </div>
+    {:else}
+      <button class="btn-secondary text-sm py-2 px-4 opacity-50 cursor-not-allowed" disabled>
+        {statusText}
       </button>
-    </form>
+    {/if}
   </div>
 </div>

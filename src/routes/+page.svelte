@@ -1,176 +1,140 @@
-<!-- src/routes/+page.svelte -->
 <script lang="ts">
-  import { onMount } from 'svelte';
   import Hero from '$lib/components/Hero.svelte';
   import BookCard from '$lib/components/BookCard.svelte';
-  import { imageService, APP_IMAGES, FALLBACK_IMAGES } from '$lib/services/imageLoading';
-  import type { BookDoc } from '$lib/server/books';
+  import NewsletterSignup from '$lib/components/NewsletterSignup.svelte';
+  import { IMAGES } from '$lib/utils/images';
+  import type { Book } from '$lib/types';
 
-  export let data: {
-    featured: BookDoc | null;
-    upcoming: BookDoc[];
+  // Sample data - replace with your actual data loading
+  const featuredBook: Book = {
+    id: 'faith-in-firestorm',
+    title: 'Faith in a Firestorm',
+    description: 'A Navy chaplain\'s faith is tested when supernatural forces threaten his crew during a dangerous rescue mission.',
+    cover: IMAGES.BOOKS.FAITH_FIRESTORM,
+    genre: 'faith',
+    status: 'published',
+    buyLinks: {
+      amazon: 'https://amazon.com/example',
+      barnes: 'https://barnesandnoble.com/example'
+    }
   };
 
-  // Preload critical images on mount
-  onMount(() => {
-    const criticalImages = [
-      APP_IMAGES.SIGNATURE_LOGO,
-      APP_IMAGES.ICONS.FAITH,
-      APP_IMAGES.ICONS.EPIC,
-      APP_IMAGES.FIREFIGHTER_PHOTO
-    ];
-
-    if (data.featured?.cover) {
-      criticalImages.push(data.featured.cover);
+  const upcomingBooks: Book[] = [
+    {
+      id: 'conviction-flood',
+      title: 'Conviction in a Flood',
+      description: 'When ancient waters rise, a community must unite to survive the impossible.',
+      cover: IMAGES.BOOKS.CONVICTION_FLOOD,
+      genre: 'faith',
+      status: 'coming-soon',
+      publishDate: '2025-06-01'
+    },
+    {
+      id: 'hurricane-eve',
+      title: 'Hurricane Eve',
+      description: 'A storm unlike any other tests the limits of human resilience and divine protection.',
+      cover: IMAGES.BOOKS.HURRICANE_EVE,
+      genre: 'faith',
+      status: 'coming-soon',
+      publishDate: '2025-09-01'
+    },
+    {
+      id: 'hunters-faith',
+      title: 'Hunter\'s Faith Adventure',
+      description: 'An epic journey through mystical lands where faith becomes the ultimate weapon.',
+      cover: IMAGES.BOOKS.HUNTERS_FAITH,
+      genre: 'epic',
+      status: 'writing'
     }
-
-    // Preload in background with progress tracking
-    imageService.preloadImages(criticalImages, (loaded, total) => {
-      console.log(`Preloaded ${loaded}/${total} critical images`);
-    });
-  });
-
-  function toCardProps(b: BookDoc) {
-    return {
-      title: b.title,
-      description: b.description,
-      status: b.publishDate
-        ? `Coming ${new Date(b.publishDate).toLocaleString('en-US', {
-            month: 'long',
-            year: 'numeric'
-          })}`
-        : 'Coming Soon',
-      isbn: b.isbn,
-      format: b.format,
-      coverSrc: imageService.normalizeFirebaseUrl(b.cover) || b.cover
-    };
-  }
-
-  // Fix the cover URL if needed
-  $: featuredCover = data.featured?.cover ? imageService.normalizeFirebaseUrl(data.featured.cover) : null;
+  ];
 </script>
 
 <svelte:head>
-  <title>Charles W. Boswell — Navy Veteran & Fantasy Author</title>
+  <title>Charles Boswell — Navy Veteran & Fantasy Author</title>
   <meta name="description" content="From U.S. Navy service to wildland firefighting to epic fantasy novels. Stories of courage, brotherhood, and faith forged in fire." />
-  
-  <!-- Preload critical images -->
-  <link rel="preload" href={APP_IMAGES.SIGNATURE_LOGO} as="image" />
-  <link rel="preload" href={APP_IMAGES.ICONS.FAITH} as="image" />
-  {#if featuredCover}
-    <link rel="preload" href={featuredCover} as="image" />
-  {/if}
+  <meta property="og:title" content="Charles W. Boswell — Navy Veteran & Fantasy Author" />
+  <meta property="og:description" content="Epic fantasy and Christian fiction born from real military and firefighting experience." />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
-{#if data.featured}
-  <Hero
-    title={data.featured.title}
-    subtitle={data.featured.description}
-    bookCover={featuredCover}
-    ctaText="View Book Details"
-    ctaLink={`/books/${data.featured.id}`}
-    genre={data.featured.genre}
-  />
-{:else}
-  <Hero />
-{/if}
+<!-- Hero Section -->
+<Hero
+  title={featuredBook.title}
+  subtitle="A Navy chaplain's faith tested by supernatural forces during a dangerous rescue mission."
+  bookCover={featuredBook.cover}
+  genre={featuredBook.genre}
+  ctaText="Get the Book"
+  ctaLink="/books/faith-in-firestorm"
+/>
 
-<!-- Upcoming Books -->
-<section class="py-16 bg-gray-50">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6">
-    <div class="text-center mb-12">
-      <h2 class="text-3xl font-bold text-gray-900 mb-4">Upcoming Books</h2>
-      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-        New stories of faith, courage, and elemental magic are on their way.
-      </p>
-    </div>
-    
-    {#if data.upcoming.length > 0}
-      <div class="grid gap-6 sm:gap-8 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
-        {#each data.upcoming as book}
-          <BookCard {...toCardProps(book)} />
-        {/each}
+<!-- About Preview -->
+<section class="section-padding bg-gray-50">
+  <div class="container-width">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <img
+          src={IMAGES.AUTHOR_FIREFIGHTER}
+          alt="Charles W. Boswell in firefighter gear"
+          class="rounded-lg shadow-xl w-full h-96 object-cover"
+          on:error={(e) => e.currentTarget.style.opacity = '0.7'}
+        />
       </div>
-    {:else}
-      <div class="text-center py-12">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-full mb-4">
-          <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">More Books Coming Soon</h3>
-        <p class="text-gray-600 max-w-md mx-auto">
-          I'm working on new stories that blend real-world experience with fantasy adventure.
+      <div>
+        <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
+          Stories Forged in Fire
+        </h2>
+        <p class="text-lg text-gray-600 mb-6">
+          From serving aboard Navy ships to battling wildfires across the American West, 
+          my experiences have shaped every story I tell. Sixteen years of firefighting 
+          and military service provide the authentic foundation for tales of courage, 
+          brotherhood, and unwavering faith.
         </p>
+        <div class="flex flex-wrap gap-4 mb-8">
+          <div class="flex items-center text-sm font-medium text-gray-700">
+            <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            U.S. Navy Veteran
+          </div>
+          <div class="flex items-center text-sm font-medium text-gray-700">
+            <svg class="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+            </svg>
+            16 Years Wildland Firefighting
+          </div>
+          <div class="flex items-center text-sm font-medium text-gray-700">
+            <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            </svg>
+            Fantasy Author
+          </div>
+        </div>
+        <a href="/about" class="btn-primary">
+          Read My Full Story
+        </a>
       </div>
-    {/if}
+    </div>
   </div>
 </section>
 
-<!-- About Author with Fire Gear Photo -->
-<section class="py-20 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid lg:grid-cols-2 gap-12 items-center">
-      <div>
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-          From Frontlines to Fiction
-        </h2>
-        <p class="text-lg text-gray-600 mb-6">
-          My journey from Navy service to 16 years of wildland firefighting has
-          given me unique insight into courage, brotherhood, and the power of
-          faith under fire.
-        </p>
-        <p class="text-lg text-gray-600 mb-8">
-          Each story combines Christian conviction with elemental trials —
-          fantasy with the depth of lived experience.
-        </p>
-        <a href="/about" class="btn-primary">Read My Full Story</a>
-      </div>
-      
-      <div class="flex justify-center">
-        <div class="relative">
-          <!-- Show fallback immediately -->
-          <img
-            src={FALLBACK_IMAGES.AUTHOR_PHOTO}
-            alt="Charles Boswell in firefighting gear"
-            class="rounded-lg shadow-xl w-full max-w-md"
-            width="640"
-            height="800"
-          />
-          
-          <!-- Load real image on top -->
-          <img
-            src={imageService.normalizeFirebaseUrl(APP_IMAGES.FIREFIGHTER_PHOTO)}
-            alt="Charles Boswell in firefighting gear"
-            class="absolute inset-0 rounded-lg shadow-xl w-full max-w-md transition-opacity duration-500 opacity-0"
-            width="640"
-            height="800"
-            loading="lazy"
-            on:load={(e) => e.currentTarget.classList.replace('opacity-0', 'opacity-100')}
-            on:error={(e) => e.currentTarget.style.display = 'none'}
-          />
-        </div>
-      </div>
+<!-- Upcoming Books -->
+<section class="section-padding">
+  <div class="container-width">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Upcoming Books</h2>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        New stories of faith, courage, and elemental magic are on their way. 
+        Each book draws from real experiences to create authentic tales of heroism.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {#each upcomingBooks as book}
+        <BookCard {book} />
+      {/each}
     </div>
   </div>
 </section>
 
 <!-- Newsletter Signup -->
-<section class="py-16 bg-gradient-to-r from-red-50 to-orange-50">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-    <h2 class="text-3xl font-bold text-gray-900 mb-4">Stay Connected</h2>
-    <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-      Get exclusive updates on new releases, behind-the-scenes stories from the fireline,
-      and insights into the writing process.
-    </p>
-    
-    <div class="inline-flex flex-col sm:flex-row gap-4 items-center">
-      <a href="/contact" class="btn-primary">
-        Join My Newsletter
-      </a>
-      <span class="text-sm text-gray-500">
-        No spam, unsubscribe anytime
-      </span>
-    </div>
-  </div>
-</section>
+<NewsletterSignup />
