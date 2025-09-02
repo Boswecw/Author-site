@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { progressiveImage } from '$lib/actions/progressiveImage';
+  import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
+
   type Post = {
     slug: string;
     title: string;
@@ -37,6 +40,7 @@
       class="rounded-lg my-4"
       loading="lazy"
       decoding="async"
+      use:progressiveImage={{ fallback: FALLBACK_IMAGES.BOOK_COVER }}
     />
   {/if}
 

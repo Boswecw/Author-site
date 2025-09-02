@@ -2,10 +2,9 @@
   import { page } from '$app/stores';
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { IMAGES } from '$lib/utils/image';
 
- 
-  const SIGNATURE_LOGO =
-    'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/Signaturelogo.png?alt=media&token=11b771f1-789b-426a-b9e0-b24caf98150f';
+  const SIGNATURE_LOGO = IMAGES.SIGNATURE_LOGO;
 
   let mobileMenuOpen = false;
 
