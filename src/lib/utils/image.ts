@@ -42,16 +42,3 @@ export const IMAGES = {
         : btoa(svg);
     return `data:image/svg+xml;base64,${base64}`;
   }
-  
-  /**
-   * Simple image error handler
-   */
-  export function handleImageError(event: Event, fallback?: string) {
-    const img = event.currentTarget as HTMLImageElement;
-    if (fallback) {
-      img.src = fallback;
-    } else {
-      img.style.opacity = '0.5';
-      img.style.filter = 'grayscale(100%)';
-    }
-  }
