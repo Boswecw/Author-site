@@ -1,17 +1,132 @@
-<script>
-    export let genre; // expects "faith" or "epic"
-    export let size = "w-10 h-10";
+<!-- src/lib/components/GenreIcon.svelte -->
+<script lang="ts">
+  import { IMAGES } from '$lib/utils/images';
   
-    // Firebase URLs for your branded icons
-    const icons = {
-      faith: "https://firebasestorage.googleapis.com/v0/b/YOUR_BUCKET/o/icons%2Ffaith-icon.png?alt=media",
-      epic: "https://firebasestorage.googleapis.com/v0/b/YOUR_BUCKET/o/icons%2Fepic-icon.png?alt=media"
-    };
+  export let genre: 'faith' | 'epic' = 'faith';
+  export let size: 'small' | 'medium' | 'large' = 'medium';
   
-    $: iconUrl = icons[genre] || null;
-  </script>
+  $: iconUrl = genre === 'epic' ? IMAGES.EPIC_ICON : IMAGES.FAITH_ICON;
+  $: iconAlt = genre === 'epic' ? 'Epic Fantasy' : 'Christian Fiction';
   
-  {#if iconUrl}
-    <img src={iconUrl} alt={`${genre} icon`} class={`${size} object-contain mx-auto`} />
-  {/if}
+  $: sizeClasses = {
+    small: 'w-16 h-16',
+    medium: 'w-24 h-24', 
+    large: 'w-40 h-40 md:w-56 md:h-56'
+  }[size];
   
+  $: fallbackText = genre === 'epic' ? 'EPIC' : 'FAITH';
+  $: fallbackColors = genre === 'epic' 
+    ? 'bg-red-800 text-white' 
+    : 'bg-blue-800 text-white';
+</script>
+
+<div class="relative inline-block">
+  <img
+    src={iconUrl}
+    alt={iconAlt}
+    class="{sizeClasses} rounded-full shadow-lg object-cover"
+    loading="lazy"
+    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+  />
+  
+  <!-- Fallback if image fails -->
+  <div 
+    class="{sizeClasses} {fallbackColors} rounded-full shadow-lg items-center justify-center font-bold text-sm hidden"
+  >
+    {fallbackText}
+  </div>
+</div>
+
+---
+
+<!-- src/lib/components/GenreBadge.svelte -->
+<script lang="ts">
+  export let genre: 'faith' | 'epic';
+  export let size: 'small' | 'medium' = 'medium';
+  
+  $: badgeStyle = genre === 'epic' 
+    ? 'bg-red-100 text-red-800 border-red-200'
+    : 'bg-blue-100 text-blue-800 border-blue-200';
+    
+  $: textSize = size === 'small' ? 'text-xs' : 'text-sm';
+  $: padding = size === 'small' ? 'px-2 py-1' : 'px-3 py-1';
+  
+  $: displayText = genre === 'epic' ? 'Epic Fantasy' : 'Christian Fiction';
+</script>
+
+<span class="inline-flex items-center {padding} {textSize} font-medium rounded-full border {badgeStyle}">
+  {displayText}
+</span>
+
+---
+
+<!-- Updated Hero Component with Genre Support -->
+<!-- src/lib/components/Hero.svelte -->
+<script lang="ts">
+  import { IMAGES } from '$lib/utils/images';
+  import GenreIcon from './GenreIcon.svelte';
+
+  export let title = 'Epic Fantasy Born from Real Experience';
+  export let subtitle = 'From Navy decks to wildfire frontlines, now crafting tales of courage, brotherhood, and Faith.';
+  export let ctaText = 'Read Latest Book';
+  export let ctaLink = '/books';
+  export let genre: 'faith' | 'epic' = 'faith';
+  export let bookCover: string | null = null;
+
+  // Dynamic styling based on genre
+  $: gradientClass = genre === 'epic' 
+    ? 'bg-gradient-to-br from-red-900 via-red-700 to-orange-600'
+    : 'bg-gradient-to-br from-blue-900 via-blue-700 to-indigo-600';
+    
+  $: ctaStyle = genre === 'epic' 
+    ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700'
+    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700';
+</script>
+
+<section class="text-white pt-10 pb-20 lg:pt-16 lg:pb-28 relative overflow-hidden {gradientClass}">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    
+    <!-- Genre Icon -->
+    <div class="text-center mb-10">
+      <GenreIcon {genre} size="large" />
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-10 items-center">
+      <div class="text-center lg:text-left">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+          {title}
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed">
+          {subtitle}
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+          <a 
+            href={ctaLink} 
+            class="px-8 py-4 rounded-lg font-semibold text-white shadow-lg transform hover:scale-105 transition-all duration-200 {ctaStyle}"
+          >
+            {ctaText}
+          </a>
+          <a 
+            href="/about" 
+            class="px-8 py-4 rounded-lg font-semibold bg-white/10 text-white hover:bg-white/20 border border-white/30 transform hover:scale-105 transition-all duration-200"
+          >
+            Learn My Story
+          </a>
+        </div>
+      </div>
+
+      {#if bookCover}
+        <div class="flex justify-center lg:justify-end">
+          <img
+            src={bookCover}
+            alt={`Featured book cover: ${title}`}
+            class="w-64 md:w-80 lg:w-96 h-auto rounded-lg shadow-2xl transform hover:scale-105 transition-transform duration-300"
+            loading="eager"
+            onerror="this.style.opacity='0.5';"
+          />
+        </div>
+      {/if}
+    </div>
+  </div>
+</section>

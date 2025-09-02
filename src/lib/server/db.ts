@@ -1,33 +1,48 @@
 // src/lib/server/db.ts
-import { MongoClient, ServerApiVersion } from 'mongodb';
-import { env } from '$env/dynamic/private';
+// Use one of these imports — not both:
 
-if (!env.MONGODB_URI) throw new Error('Missing MONGODB_URI');
-if (!env.MONGODB_DB) throw new Error('Missing MONGODB_DB');
+// ✅ Static (best for production builds/adapters like Vercel/Netlify)
+import { MONGODB_URI, MONGODB_DB } from '$env/static/private';
 
-type GlobalWithMongo = typeof globalThis & {
-  __mongoClientPromise?: Promise<MongoClient>;
-};
+// OR
+// ✅ Dynamic (reads process.env at runtime; useful if envs change after build)
+// import { env } from '$env/dynamic/private';
+// const MONGODB_URI = env.MONGODB_URI;
+// const MONGODB_DB = env.MONGODB_DB;
 
-const g = globalThis as GlobalWithMongo;
+import { MongoClient } from 'mongodb';
 
-const clientPromise =
-  g.__mongoClientPromise ??
-  new MongoClient(env.MONGODB_URI, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,          // keep guardrails ON
-      deprecationErrors: true
-    }
-  }).connect();
+let client: MongoClient | null = null;
+let connecting: Promise<MongoClient> | null = null;
 
-if (import.meta.env.DEV) g.__mongoClientPromise = clientPromise;
+async function getClient(): Promise<MongoClient> {
+  if (client) return client;
 
-export async function getDb() {
-  const client = await clientPromise;
-  return client.db(env.MONGODB_DB);
+  if (!connecting) {
+    connecting = (async () => {
+      if (!MONGODB_URI) throw new Error('MONGODB_URI is missing');
+      if (!MONGODB_DB) throw new Error('MONGODB_DB is missing');
+
+      const c = new MongoClient(MONGODB_URI);
+      await c.connect();
+
+      // Optional: quick ping to confirm connectivity
+      await c.db(MONGODB_DB).command({ ping: 1 });
+      console.log('[Mongo] Connected successfully');
+
+      client = c;
+      return c;
+    })().catch((e) => {
+      // Reset so future calls retry
+      connecting = null;
+      throw e;
+    });
+  }
+
+  return connecting;
 }
 
-export async function getClient() {
-  return clientPromise;
+export async function getDb() {
+  const c = await getClient();
+  return c.db(MONGODB_DB);
 }
