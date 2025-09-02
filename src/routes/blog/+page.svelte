@@ -7,7 +7,7 @@
       heroImage?: string;
       publishDate?: string;
       tags: string[];
-      genre?: string;
+      genre?: 'faith' | 'epic' | string;
       contentHtml?: string;
     }>;
     total: number;
@@ -19,13 +19,22 @@
   };
 
   function fmt(date?: string) {
-    return date ? new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    return date
+      ? new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      : '';
   }
 </script>
 
 <svelte:head>
   <title>Blog — Charles Boswell</title>
-  <meta name="description" content="Read insights on writing, military service, firefighting, and the intersection of faith and fantasy from author Charles W. Boswell." />
+  <meta
+    name="description"
+    content="Read insights on writing, military service, firefighting, and the intersection of faith and fantasy from author Charles W. Boswell."
+  />
 </svelte:head>
 
 <section class="pt-28 pb-20 bg-white scroll-mt-28">
@@ -80,9 +89,12 @@
               <p class="text-lg text-gray-600 mb-6 leading-relaxed">{post.excerpt}</p>
             {/if}
 
-            <a href={`/blog/${post.slug}`} class="inline-flex items-center text-red-600 font-semibold hover:text-red-700 transition-colors">
+            <a
+              href={`/blog/${post.slug}`}
+              class="inline-flex items-center text-red-600 font-semibold hover:text-red-700 transition-colors"
+            >
               Read Full Post
-              <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </a>
