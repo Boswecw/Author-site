@@ -2,10 +2,7 @@ import type { PageServerLoad } from './$types';
 import { getPublishedPosts, getAllTags } from '$lib/server/posts';
 import { mdToHtml } from '$lib/server/markdown';
 import { env } from '$env/dynamic/private';
-
-function normalizeFirebaseUrl(url?: string | null): string | undefined {
-  return url?.replace('endless-fire-467204-n2.firebasestorage.app', 'endless-fire-467204-n2.appspot.com');
-}
+import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 export const load: PageServerLoad = async ({ url }) => {
   const page = Number(url.searchParams.get('page') ?? '1');
@@ -19,7 +16,7 @@ export const load: PageServerLoad = async ({ url }) => {
     slug: p.slug,
     title: p.title,
     excerpt: p.excerpt,
-    heroImage: normalizeFirebaseUrl(p.heroImage),
+    heroImage: normalizeFirebaseUrl(p.heroImage) ?? undefined,
     publishDate: p.publishDate ?? undefined,
     tags: p.tags ?? [],
     genre: p.genre,

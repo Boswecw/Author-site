@@ -2,15 +2,7 @@
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { getFeaturedBook, type BookDoc } from '$lib/server/books';
-
-/** Normalize older firebase domain variants to the standard appspot host. */
-function normalizeFirebaseUrl(url?: string | null): string | null {
-  if (!url) return null;
-  return url.replace(
-    'endless-fire-467204-n2.firebasestorage.app',
-    'endless-fire-467204-n2.appspot.com'
-  );
-}
+import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 /** Public, JSON-serializable shape for the client */
 type PublicBook = {

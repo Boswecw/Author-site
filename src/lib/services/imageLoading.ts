@@ -1,5 +1,6 @@
 // src/lib/services/imageLoading.ts
 import { writable } from 'svelte/store';
+import { normalizeFirebaseUrl as normalizeUrl } from '$lib/utils/urls';
 
 /**
  * Firebase Storage URL normalization and fallback management
@@ -17,15 +18,10 @@ export class ImageLoadingService {
   }
 
   /**
-   * Normalize Firebase Storage URLs to use correct domain
+   * Normalize Firebase Storage URLs using the shared utility
    */
   normalizeFirebaseUrl(url?: string | null): string | undefined {
-    if (!url) return undefined;
-    
-    // Fix common Firebase Storage domain issues
-    return url
-      .replace('endless-fire-467204-n2.firebasestorage.app', 'endless-fire-467204-n2.appspot.com')
-      .replace(/([?&])alt=media&?/g, '$1alt=media'); // Clean up duplicate parameters
+    return normalizeUrl(url) ?? undefined;
   }
 
   /**

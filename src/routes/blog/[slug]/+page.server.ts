@@ -2,10 +2,7 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { getPostBySlug } from '$lib/server/posts';
 import { mdToHtml } from '$lib/server/markdown';
-
-function normalizeFirebaseUrl(url?: string | null): string | undefined {
-  return url?.replace('endless-fire-467204-n2.firebasestorage.app', 'endless-fire-467204-n2.appspot.com');
-}
+import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 export const load: PageServerLoad = async ({ params }) => {
   const post = await getPostBySlug(params.slug);
@@ -14,7 +11,7 @@ export const load: PageServerLoad = async ({ params }) => {
   return {
     post: {
       ...post,
-      heroImage: normalizeFirebaseUrl(post.heroImage),
+      heroImage: normalizeFirebaseUrl(post.heroImage) ?? undefined,
       contentHtml: mdToHtml(post.contentMarkdown ?? '')
     }
   };
