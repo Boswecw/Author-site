@@ -118,7 +118,7 @@
     featuredBook={{
       id: featuredBook.id,
       title: featuredBook.title,
-      description: featuredBook.description ?? "A Navy chaplain's faith tested by supernatural forces during a dangerous rescue mission.",
+      description: featuredBook.description ?? "A U.S. Forest Service officer and a wounded family fight for survival in the heart of a wildfire. Their faith, love, and courage are tested by the flames that threaten to consume everything.",
       cover: featuredBook.cover ?? null,
       status: featuredBook.status ?? 'featured',
       buyLinks: (featuredBook as any).buyLinks // optional, passed through if present

@@ -1,5 +1,5 @@
 // src/routes/+page.server.ts
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { getFeaturedBook, type BookDoc } from '$lib/server/books';
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
@@ -15,11 +15,17 @@ type PublicBook = {
   publishDate?: string | null; // ISO string
   isbn?: string | null;
   format?: string | null;
+  buyLinks?: {
+    amazon?: string;
+    barnes?: string;
+    other?: string;
+  } | null;
+  pages?: number | null;
 };
 
 function toPublicBook(b: BookDoc): PublicBook {
   return {
-    id: b.id, // if you store only _id: ObjectId in Mongo, adjust where you build BookDoc to include a string id
+    id: b.id,
     title: b.title,
     description: b.description ?? null,
     cover: normalizeFirebaseUrl(b.cover),
@@ -29,7 +35,9 @@ function toPublicBook(b: BookDoc): PublicBook {
       ? (b.publishDate instanceof Date ? b.publishDate.toISOString() : String(b.publishDate))
       : null,
     isbn: b.isbn ?? null,
-    format: b.format ?? null
+    format: b.format ?? null,
+    buyLinks: b.buyLinks ?? null,
+    pages: typeof b.pages === 'number' ? b.pages : null
   };
 }
 
@@ -54,7 +62,9 @@ export const load: PageServerLoad = async () => {
             status: 1,
             publishDate: 1,
             isbn: 1,
-            format: 1
+            format: 1,
+            buyLinks: 1,
+            pages: 1
           }
         }
       )
