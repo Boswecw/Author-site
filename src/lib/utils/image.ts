@@ -36,7 +36,11 @@ export const IMAGES = {
         <text x="50%" y="50%" font-family="serif" font-size="24" font-weight="bold" fill="${textColor}" text-anchor="middle" dominant-baseline="middle">${text}</text>
       </svg>
     `;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    const base64 =
+      typeof window === 'undefined'
+        ? Buffer.from(svg).toString('base64')
+        : btoa(svg);
+    return `data:image/svg+xml;base64,${base64}`;
   }
   
   /**
