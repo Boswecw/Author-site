@@ -1,23 +1,24 @@
-// src/lib/types.ts
-export type RetailLinks = {
-    amazon?: string;
-    barnesNoble?: string;
-    appleBooks?: string;
-    kobo?: string;
-    googlePlay?: string;
-    ingramSpark?: string;
-  };
-  
- // src/lib/types.ts
-export type Book = {
+export interface Book {
   id: string;
   title: string;
-  cover: string;
   description: string;
-  status: 'published' | 'upcoming';
-  publishDate: string;
+  cover: string;
+  genre: 'faith' | 'epic';
+  status: 'published' | 'coming-soon' | 'writing';
+  publishDate?: string;
   isbn?: string;
-  format: string;
-  genre: 'faith' | 'epic';   // 👈 new field
-  buyLinks: Record<string, string>;
-};
+  pages?: number;
+  buyLinks?: {
+    amazon?: string;
+    barnes?: string;
+    other?: string;
+  };
+}
+
+export interface BlogPost {
+  title: string;
+  excerpt: string;
+  date: string;
+  slug: string;
+  tags?: string[];
+}

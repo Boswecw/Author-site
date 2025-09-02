@@ -1,129 +1,149 @@
-<!-- src/routes/books/+page.svelte -->
+## 12. Books Page (src/routes/books/+page.svelte)
+
+```svelte
 <script lang="ts">
   import BookCard from '$lib/components/BookCard.svelte';
-  import GenreIcon from '$lib/components/GenreIcon.svelte';
-  import GenreBadge from '$lib/components/GenreBadge.svelte';
-  import { books } from '$lib/data/books';
+  import { IMAGES } from '$lib/utils/images';
   import type { Book } from '$lib/types';
 
-  // Separate by genre
-  const faithBooks = books.filter((b) => b.genre === 'faith');
-  const epicBooks = books.filter((b) => b.genre === 'epic');
+  const allBooks: Book[] = [
+    {
+      id: 'faith-in-firestorm',
+      title: 'Faith in a Firestorm',
+      description: 'A Navy chaplain\'s faith is tested when supernatural forces threaten his crew during a dangerous rescue mission. Blending military realism with Christian fantasy elements.',
+      cover: IMAGES.BOOKS.FAITH_FIRESTORM,
+      genre: 'faith',
+      status: 'published',
+      buyLinks: {
+        amazon: 'https://amazon.com/example',
+        barnes: 'https://barnesandnoble.com/example'
+      },
+      pages: 324,
+      isbn: '978-1234567890'
+    },
+    {
+      id: 'conviction-flood',
+      title: 'Conviction in a Flood',
+      description: 'When ancient waters rise and threaten to destroy everything, a small community must unite their faith and courage to survive the impossible.',
+      cover: IMAGES.BOOKS.CONVICTION_FLOOD,
+      genre: 'faith',
+      status: 'coming-soon',
+      publishDate: '2025-06-01',
+      pages: 356
+    },
+    {
+      id: 'hurricane-eve',
+      title: 'Hurricane Eve',
+      description: 'A storm unlike any other tests the limits of human resilience and divine protection as a family fights to save their community.',
+      cover: IMAGES.BOOKS.HURRICANE_EVE,
+      genre: 'faith',
+      status: 'coming-soon',
+      publishDate: '2025-09-01',
+      pages: 298
+    },
+    {
+      id: 'hunters-faith',
+      title: 'Hunter\'s Faith Adventure',
+      description: 'An epic journey through mystical lands where faith becomes the ultimate weapon against dark forces threatening the realm.',
+      cover: IMAGES.BOOKS.HUNTERS_FAITH,
+      genre: 'epic',
+      status: 'writing'
+    },
+    {
+      id: 'heart-of-storm',
+      title: 'Heart of the Storm: Elf and Wolf',
+      description: 'A tale of unlikely alliance between an elf warrior and a mystical wolf as they battle to restore balance to their war-torn world.',
+      cover: IMAGES.BOOKS.HEART_OF_STORM,
+      genre: 'epic',
+      status: 'writing'
+    }
+  ];
 
-  // Helper function for book card props
-  function toCardProps(b: Book) {
-    return {
-      title: b.title,
-      description: b.description,
-      status: b.status === 'published' ? 'Available Now' : 
-              b.publishDate ? `Coming ${new Date(b.publishDate).toLocaleString('en-US', { month: 'long', year: 'numeric' })}` : 
-              'Coming Soon',
-      isbn: b.isbn,
-      format: b.format,
-      coverSrc: b.cover
-    };
-  }
+  let selectedGenre: 'all' | 'faith' | 'epic' = 'all';
+  let selectedStatus: 'all' | 'published' | 'coming-soon' | 'writing' = 'all';
+
+  $: filteredBooks = allBooks.filter(book => {
+    const genreMatch = selectedGenre === 'all' || book.genre === selectedGenre;
+    const statusMatch = selectedStatus === 'all' || book.status === selectedStatus;
+    return genreMatch && statusMatch;
+  });
 </script>
 
 <svelte:head>
-  <title>Books by Charles W. Boswell — Christian Fiction & Epic Fantasy</title>
-  <meta name="description" content="Discover stories of faith and courage across two genres: Christian contemporary fiction and epic fantasy adventures." />
+  <title>Books by Charles W. Boswell — Christian Fantasy & Epic Fantasy Novels</title>
+  <meta name="description" content="Explore Charles W. Boswell's collection of Christian fantasy and epic fantasy novels, featuring military heroes, elemental magic, and themes of faith and courage." />
 </svelte:head>
 
-<section class="py-16 bg-gray-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    
-    <!-- Page Header -->
+<div class="section-padding">
+  <div class="container-width">
+    <!-- Header -->
     <div class="text-center mb-16">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">My Books</h1>
+      <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">My Books</h1>
       <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-        Stories spanning two worlds: contemporary Christian fiction rooted in real experience, 
-        and epic fantasy adventures where faith meets fire and steel.
+        Stories of courage, faith, and brotherhood forged from real military and 
+        firefighting experiences. Each book blends authentic heroism with imaginative 
+        fantasy elements.
       </p>
     </div>
 
-    <!-- Christian Fiction Section -->
-    <div class="mb-20">
-      <div class="flex items-center justify-center gap-4 mb-8">
-        <GenreIcon genre="faith" size="medium" />
-        <div class="text-center">
-          <h2 class="text-3xl font-bold text-gray-900">Christian Fiction</h2>
-          <p class="text-gray-600 mt-2">Contemporary stories of faith, courage, and redemption</p>
-        </div>
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-4 justify-center mb-12">
+      <div class="flex items-center space-x-2">
+        <label for="genre-filter" class="text-sm font-medium text-gray-700">Genre:</label>
+        <select 
+          id="genre-filter"
+          bind:value={selectedGenre}
+          class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          <option value="all">All Genres</option>
+          <option value="faith">Christian Fiction</option>
+          <option value="epic">Epic Fantasy</option>
+        </select>
       </div>
 
-      {#if faithBooks.length > 0}
-        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {#each faithBooks as book}
-            <div class="relative">
-              <BookCard {...toCardProps(book)} />
-              <div class="absolute top-4 right-4">
-                <GenreBadge genre="faith" size="small" />
-              </div>
-            </div>
-          {/each}
-        </div>
-      {:else}
-        <div class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
-          <GenreIcon genre="faith" size="medium" />
-          <h3 class="mt-4 text-lg font-medium text-gray-900">Christian Fiction Coming Soon</h3>
-          <p class="mt-2 text-gray-600">New contemporary stories are in development.</p>
-        </div>
-      {/if}
-    </div>
-
-    <!-- Epic Fantasy Section -->
-    <div class="mb-20">
-      <div class="flex items-center justify-center gap-4 mb-8">
-        <GenreIcon genre="epic" size="medium" />
-        <div class="text-center">
-          <h2 class="text-3xl font-bold text-gray-900">Epic Fantasy</h2>
-          <p class="text-gray-600 mt-2">Secondary worlds where magic meets military precision</p>
-        </div>
+      <div class="flex items-center space-x-2">
+        <label for="status-filter" class="text-sm font-medium text-gray-700">Status:</label>
+        <select 
+          id="status-filter"
+          bind:value={selectedStatus}
+          class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          <option value="all">All Status</option>
+          <option value="published">Published</option>
+          <option value="coming-soon">Coming Soon</option>
+          <option value="writing">In Progress</option>
+        </select>
       </div>
-
-      {#if epicBooks.length > 0}
-        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {#each epicBooks as book}
-            <div class="relative">
-              <BookCard {...toCardProps(book)} />
-              <div class="absolute top-4 right-4">
-                <GenreBadge genre="epic" size="small" />
-              </div>
-            </div>
-          {/each}
-        </div>
-      {:else}
-        <div class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
-          <GenreIcon genre="epic" size="medium" />
-          <h3 class="mt-4 text-lg font-medium text-gray-900">Epic Fantasy Coming Soon</h3>
-          <p class="mt-2 text-gray-600">Secondary world adventures are in development.</p>
-        </div>
-      {/if}
     </div>
+
+    <!-- Books Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {#each filteredBooks as book}
+        <BookCard {book} />
+      {/each}
+    </div>
+
+    {#if filteredBooks.length === 0}
+      <div class="text-center py-16">
+        <p class="text-lg text-gray-600">No books match your current filters.</p>
+        <button 
+          on:click={() => { selectedGenre = 'all'; selectedStatus = 'all'; }}
+          class="mt-4 btn-secondary"
+        >
+          Clear Filters
+        </button>
+      </div>
+    {/if}
 
     <!-- Newsletter CTA -->
-    <div class="bg-gradient-to-r from-blue-50 via-purple-50 to-red-50 rounded-2xl p-8 text-center">
-      <div class="flex justify-center gap-6 mb-6">
-        <GenreIcon genre="faith" size="small" />
-        <GenreIcon genre="epic" size="small" />
-      </div>
-      
-      <h3 class="text-2xl font-bold text-gray-900 mb-4">Never Miss a Release</h3>
-      <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
-        Be the first to know about new books in both genres. Get exclusive previews, 
-        behind-the-scenes stories, and updates from the frontlines of both worlds.
+    <div class="mt-20 bg-gray-50 rounded-xl p-8 text-center">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Stay Updated</h2>
+      <p class="text-lg text-gray-600 mb-6">
+        Be the first to know when new books are released and get exclusive behind-the-scenes content.
       </p>
-      
       <a href="/contact" class="btn-primary">
         Join My Newsletter
       </a>
     </div>
   </div>
-</section>
-
-<style>
-  .btn-primary {
-    @apply bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200;
-  }
-</style>
+</div>

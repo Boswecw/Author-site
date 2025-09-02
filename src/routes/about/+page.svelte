@@ -1,6 +1,15 @@
+<script lang="ts">
+  // FIX: your util file is singular: src/lib/utils/image.ts
+  // and should export IMAGES (or adjust as needed)
+  import { IMAGES } from '$lib/utils/image';
+</script>
+
 <svelte:head>
-  <title>About Charles W. Boswell - Navy Veteran & Firefighter Turned Fantasy Writer</title>
-  <meta name="description" content="Learn about my journey from U.S. Navy service to 16 years of wildland firefighting, and how these experiences shape my epic fantasy novels." />
+  <title>About Charles W. Boswell — Navy Veteran & Fantasy Author</title>
+  <meta
+    name="description"
+    content="Learn about Charles W. Boswell's journey from U.S. Navy service to wildland firefighting to becoming a published fantasy author."
+  />
 </svelte:head>
 
 <section class="pt-28 pb-20 bg-white scroll-mt-28">
@@ -12,9 +21,12 @@
         <img
           src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/August25.png?alt=media&token=ae2aa914-5e2e-4519-9749-077037b54e58"
           alt="Portrait of Charles W. Boswell"
-          width="320" height="384"
+          width="320"
+          height="384"
           class="w-40 h-48 md:w-48 md:h-56 object-cover rounded-[9999px] ring-2 ring-[var(--brand-gold)] shadow-lg"
-          loading="eager" decoding="async" fetchpriority="high"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
         />
       </figure>
 
@@ -22,77 +34,122 @@
       <h1 class="brand-name text-4xl md:text-5xl text-gray-900 mb-3">
         About Charles W. Boswell
       </h1>
-      <p class="text-lg md:text-xl text-gray-600">
-        Navy veteran & wildland firefighter turned fantasy author.
+      <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+        From Navy decks to wildfire frontlines, my life has been shaped by service,
+        courage, and the unbreakable bonds forged in extreme circumstances.
       </p>
     </div>
 
     <!-- Main Content -->
-    <div class="prose prose-lg max-w-none">
-      <div class="grid lg:grid-cols-3 gap-12 mb-16">
-        <div class="lg:col-span-2">
-          <h2 class="text-2xl font-bold text-gray-900 mb-4">My Journey</h2>
-          <p class="text-gray-600 mb-6">
-            My path to writing fantasy wasn't traditional, but it's been authentic. I started my career 
-            serving in the U.S. Navy, where I learned discipline, leadership, and the importance of 
-            brotherhood under pressure. Those early years taught me about courage—not the absence of fear, 
-            but acting despite it.
+    <div class="grid lg:grid-cols-3 gap-12 mb-16">
+      <!-- Author Photo -->
+      <div class="lg:col-span-1">
+        <img
+          src={IMAGES.AUTHOR_PORTRAIT}
+          alt="Charles W. Boswell, author portrait"
+          class="rounded-lg shadow-xl w-full h-auto sticky top-8"
+          on:error={(e) => (e.currentTarget.style.opacity = '0.7')}
+        />
+      </div>
+
+      <!-- Biography Content -->
+      <div class="lg:col-span-2 space-y-8">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Navy Service</h2>
+          <p class="text-gray-600 mb-4">
+            My journey began in the United States Navy, where I learned the values of honor,
+            courage, and commitment that would guide me throughout my life. Serving aboard
+            naval vessels, I witnessed firsthand the power of brotherhood and the strength
+            that comes from shared purpose in the face of danger.
           </p>
-          <p class="text-gray-600 mb-6">
-            After my naval service, I spent 16 years as a wildland firefighter, battling some of the 
-            most dangerous fires across the American West. Standing before walls of flame that tower 
-            hundreds of feet high, working alongside crews who become family—these experiences gave me 
-            intimate knowledge of how people respond when everything is on the line.
-          </p>
-          <p class="text-gray-600 mb-6">
-            Now, as a novelist, I channel those real-world experiences into fantasy realms where courage 
-            matters, where brotherhood runs deeper than blood, and where the elements themselves become 
-            both weapon and adversary. My military background brings tactical precision to battle scenes, 
-            while my firefighting years provide authentic insight into working with dangerous elemental forces.
+          <p class="text-gray-600">
+            The disciplined environment of military service taught me about leadership,
+            sacrifice, and the importance of faith during challenging times. These experiences
+            became the foundation for the authentic military characters and scenarios in my novels.
           </p>
         </div>
 
-        <div class="space-y-6">
-          <div class="bg-gray-50 p-6 rounded-lg">
-            <h3 class="font-bold text-gray-900 mb-2">Service Years</h3>
-            <p class="text-gray-600">I proudly served in the United States Navy from 1993 to 1995, beginning my tour aboard the USS Carl Vinson (CVN-70), where I was part of Operation Desert Shield during a pivotal time in American military history. My service later took me beneath the waves on the USS Albuquerque (SSN-706), a Los Angeles-class fast-attack submarine, where discipline, teamwork, and precision were essential every single day. These experiences, both on the vast decks of a carrier and in the silent depths of a submarine, instilled in me resilience, adaptability, and a deep respect for service—qualities that continue to shape my life and my writing today.</p>
-          </div>
-          <div class="bg-gray-50 p-6 rounded-lg">
-            <h3 class="font-bold text-gray-900 mb-2">Firefighting Career</h3>
-            <p class="text-gray-600">After my naval service, I dedicated the next 16 years to battling wildfires, managing forests, and restoring wildlife habitat across the American West and heartland. From February 2003 to February 2009, I served with the Kentucky Division of Forestry as a Forest Ranger Technician III, where I worked on the front lines of wildfire suppression, forest management, and habitat improvement. I then joined the Fort Campbell Forestry Division as a Forestry Technician from 2009 to 2010, continuing hands-on fire management, resource stewardship, and wildlife habitat projects. From 2010 until March 2020, I served with the Hoosier National Forest as a Forestry Technician, where I helped protect and sustain public lands through fire prevention, habitat management, and conservation. These years in forestry taught me endurance, leadership under pressure, and a deep respect for the natural world—experiences that continue to influence my work and writing today.</p>
-          </div>
-          <div class="bg-gray-50 p-6 rounded-lg">
-            <h3 class="font-bold text-gray-900 mb-2">Writing Focus</h3>
-            <p class="text-gray-600">Drawing on the discipline and adaptability of my years as a U.S. Navy Petty Officer, I craft worlds where strategy and survival matter as much as sorcery. My stories blend the grit of service at sea with the wonder of high fantasy, where battles are waged with both steel and the primal forces of storm, fire, and shadow. This is epic fantasy shaped by naval precision and elemental magic.</p>
-          </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Wildland Firefighting</h2>
+          <p class="text-gray-600 mb-4">
+            After my naval service, I spent sixteen years as a wildland firefighter,
+            battling some of the most dangerous fires across the American West. This career
+            put me face-to-face with nature's raw power and taught me about courage,
+            teamwork, and the split-second decisions that can mean the difference between
+            life and death.
+          </p>
+          <p class="text-gray-600">
+            The camaraderie among firefighters mirrors the brotherhood found in military units,
+            and these bonds of trust and mutual reliance feature prominently in my writing.
+            The elemental forces I battled in real life inspire the magical systems and
+            environmental challenges in my fantasy worlds.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Faith & Writing</h2>
+          <p class="text-gray-600 mb-4">
+            Throughout my military and firefighting careers, faith has been my anchor.
+            The trials I've faced and the miracles I've witnessed have deepened my
+            understanding of divine purpose and human resilience. This spiritual foundation
+            permeates every story I write.
+          </p>
+          <p class="text-gray-600">
+            My novels blend Christian themes with epic fantasy elements, creating stories
+            that explore questions of faith, sacrifice, and redemption within imaginative
+            worlds filled with magic and adventure. Each book reflects the truth that
+            courage and faith can overcome any darkness.
+          </p>
         </div>
       </div>
+    </div>
 
-      <div class="border-t border-gray-200 pt-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Why I Write Fantasy</h2>
-        <p class="text-gray-600 mb-6">
-          Fantasy allows me to explore the deepest truths about courage, sacrifice, and loyalty 
-          in ways that purely realistic fiction cannot. When I write about a character facing 
-          down a dragon, I'm really writing about every firefighter who has stood before an 
-          impossible blaze. When I describe the bond between warriors in my novels, I'm drawing 
-          from the unbreakable connections formed in foxholes and fire camps.
-        </p>
-        <p class="text-gray-600 mb-6">
-          The fantasy genre gives me the freedom to magnify these human experiences—to make 
-          the stakes as high as they feel in real life when lives hang in the balance. Magic 
-          systems in my books often mirror the unpredictable nature of fire, while military 
-          formations and tactics ground the action in reality.
-        </p>
-      </div>
+    <!-- Career Highlights -->
+    <div class="bg-gray-50 rounded-xl p-8 mb-16">
+      <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Career Highlights</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div class="bg-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">U.S. Navy Veteran</h3>
+          <p class="text-gray-600">Honorable service protecting our nation's interests at sea</p>
+        </div>
 
-      <div class="bg-gradient-to-r from-red-50 to-orange-50 p-8 rounded-lg mt-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Connect With Me</h2>
-        <p class="text-gray-600 mb-6">
-          I love hearing from readers, especially fellow veterans, first responders, 
-          and anyone who appreciates fantasy grounded in real experience.
-        </p>
-        <a href="/contact" class="btn-primary">Get In Touch</a>
+        <div class="text-center">
+          <div class="bg-red-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">16 Years Firefighting</h3>
+          <p class="text-gray-600">Protecting communities from devastating wildland fires</p>
+        </div>
+
+        <div class="text-center">
+          <div class="bg-yellow-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">Published Author</h3>
+          <p class="text-gray-600">Crafting epic tales of faith, courage, and brotherhood</p>
+        </div>
       </div>
+    </div>
+
+    <!-- Personal Touch -->
+    <div class="text-center">
+      <h2 class="text-3xl font-bold text-gray-900 mb-6">Beyond the Books</h2>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+        When I'm not writing, you'll find me spending time with family, enjoying the
+        Kentucky countryside, or sharing stories with fellow veterans and first responders.
+        I believe in the power of community and the importance of passing on the lessons
+        learned through service to others.
+      </p>
+      <a href="/contact" class="btn-primary">Get in Touch</a>
     </div>
   </div>
 </section>
