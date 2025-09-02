@@ -3,8 +3,10 @@
   import Hero from '$lib/components/Hero.svelte';
   import BookCard from '$lib/components/BookCard.svelte';
   import NewsletterSignup from '$lib/components/NewsletterSignup.svelte';
-  import { IMAGES } from '$lib/utils/image';
+
+  import { IMAGES, preloadImage } from '$lib/utils/image';
   import type { Book } from '$lib/types';
+  import { onMount } from 'svelte';
 
   // Data from +page.server.ts
   export let data: {
@@ -14,7 +16,7 @@
       description?: string | null;
       cover?: string | null;
       genre?: 'faith' | 'epic' | string | null;
-      status?: string | null;
+      status?: 'featured' | 'published' | 'upcoming' | string | null;
       publishDate?: string | null;
     } | null;
     upcoming: Array<{
@@ -23,7 +25,7 @@
       description?: string | null;
       cover?: string | null;
       genre?: string | null;
-      status?: string | null;
+      status?: 'featured' | 'published' | 'upcoming' | string | null;
       publishDate?: string | null;
     }>;
   };
@@ -34,43 +36,61 @@
     title: 'Faith in a Firestorm',
     description:
       "A Navy chaplain's faith is tested when supernatural forces threaten his crew during a dangerous rescue mission.",
-    cover: IMAGES.BOOKS.FAITH_in_a_FIRESTORM,
+    cover: IMAGES.BOOKS.FAITH_IN_A_FIRESTORM,
     genre: 'faith',
-    status: 'published'
+    status: 'featured'
   };
 
   const fallbackUpcoming: Book[] = [
     {
-      id: 'conviction-flood',
+      id: 'conviction-in-a-flood',
       title: 'Conviction in a Flood',
-      description: 'When ancient waters rise, a community must unite to survive the impossible.',
-      cover: IMAGES.BOOKS.CONVICTION_FLOOD,
+      description: 'A companion novel exploring faith and resilience when rising waters test a community’s resolve.',
+      cover: IMAGES.BOOKS.CONVICTION_IN_A_FLOOD,
       genre: 'faith',
-      status: 'coming-soon',
-      publishDate: '2025-06-01'
+      status: 'upcoming',
+      publishDate: '2026-03-15'
     },
     {
       id: 'hurricane-eve',
       title: 'Hurricane Eve',
-      description: 'A storm unlike any other tests the limits of human resilience and divine protection.',
+      description: 'The third installment of the Faith & Calamity series—a storm that shatters records and faith itself.',
       cover: IMAGES.BOOKS.HURRICANE_EVE,
       genre: 'faith',
-      status: 'coming-soon',
-      publishDate: '2025-09-01'
+      status: 'upcoming',
+      publishDate: '2026-09-15'
     },
     {
-      id: 'hunters-faith',
-      title: "Hunter's Faith Adventure",
-      description: 'An epic journey through mystical lands where faith becomes the ultimate weapon.',
-      cover: IMAGES.BOOKS.HUNTERS_FAITH,
-      genre: 'epic',
-      status: 'writing'
+      id: 'faith-of-the-hunter',
+      title: 'The Faith of the Hunter',
+      description: 'David Paczer, thrust into a brutal medieval world where faith and survival collide.',
+      cover: IMAGES.BOOKS.THE_FAITH_OF_THE_HUNTER,
+      genre: 'faith',
+      status: 'upcoming',
+      publishDate: '2026-09-01'
     }
   ];
 
   // Choose server data if present, otherwise fallbacks
-  const featuredBook = data.featured ?? fallbackFeatured;
+  const featuredBook = (data.featured ?? fallbackFeatured) as Book;
   const upcomingBooks: Book[] = (data.upcoming?.length ? data.upcoming : fallbackUpcoming) as Book[];
+
+  // Preload: eagerly for featured, quietly for upcoming
+  let heroReady = true;
+
+  onMount(async () => {
+    // Gate hero only if there’s a cover to preload
+    if (featuredBook?.cover) {
+      heroReady = false;
+      const ok = await preloadImage(featuredBook.cover);
+      heroReady = true; // show regardless; on:error fallback handles failures
+    }
+
+    // Background prefetch for upcoming covers
+    upcomingBooks.forEach((b) => {
+      if (b.cover) preloadImage(b.cover);
+    });
+  });
 
   // Safe image error handler
   function dimOnError(e: Event) {
@@ -93,14 +113,26 @@
 </svelte:head>
 
 <!-- Hero Section -->
-<Hero
-  title={featuredBook.title}
-  subtitle={featuredBook.description ?? "A Navy chaplain's faith tested by supernatural forces during a dangerous rescue mission."}
-  bookCover={featuredBook.cover ?? null}
-  genre={(featuredBook.genre as 'faith' | 'epic') ?? 'faith'}
-  ctaText="Get the Book"
-  ctaLink={`/books/${featuredBook.id}`}
-/>
+{#if heroReady}
+  <Hero
+    featuredBook={{
+      id: featuredBook.id,
+      title: featuredBook.title,
+      description: featuredBook.description ?? "A Navy chaplain's faith tested by supernatural forces during a dangerous rescue mission.",
+      cover: featuredBook.cover ?? null,
+      status: featuredBook.status ?? 'featured',
+      buyLinks: (featuredBook as any).buyLinks // optional, passed through if present
+    }}
+  />
+{:else}
+  <!-- Lightweight placeholder while cover preloads -->
+  <section class="relative bg-gradient-to-br from-slate-900 via-red-900 to-orange-900 text-white">
+    <div class="container mx-auto px-4 py-24">
+      <h1 class="text-4xl md:text-6xl font-bold mb-4">Loading…</h1>
+      <p class="text-lg text-white/80">Preparing the featured book.</p>
+    </div>
+  </section>
+{/if}
 
 <!-- About Preview -->
 <section class="section-padding bg-gray-50">
