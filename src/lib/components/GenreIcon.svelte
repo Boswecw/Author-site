@@ -1,6 +1,6 @@
 <!-- src/lib/components/GenreIcon.svelte -->
 <script lang="ts">
-  import { IMAGES } from '$lib/utils/images';
+    import { IMAGES } from '$lib/utils/image';
   
   export let genre: 'faith' | 'epic' = 'faith';
   export let size: 'small' | 'medium' | 'large' = 'medium';
@@ -63,7 +63,7 @@
 <!-- Updated Hero Component with Genre Support -->
 <!-- src/lib/components/Hero.svelte -->
 <script lang="ts">
-  import { IMAGES } from '$lib/utils/images';
+    import { IMAGES } from '$lib/utils/image';
   import GenreIcon from './GenreIcon.svelte';
 
   export let title = 'Epic Fantasy Born from Real Experience';
