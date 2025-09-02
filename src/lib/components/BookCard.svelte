@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Book } from '$lib/types';
-  import { createImageFallback } from '$lib/utils/images';
+  import { createImageFallback } from '$lib/utils/image';
 
   export let book: Book;
 
@@ -35,6 +35,8 @@
       alt="Cover of {book.title}"
       class="w-full h-80 object-cover"
       on:error={handleCoverError}
+      loading="lazy"
+      decoding="async"
     />
   </div>
   

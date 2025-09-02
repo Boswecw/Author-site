@@ -2,7 +2,7 @@
   import Hero from '$lib/components/Hero.svelte';
   import BookCard from '$lib/components/BookCard.svelte';
   import NewsletterSignup from '$lib/components/NewsletterSignup.svelte';
-  import { IMAGES } from '$lib/utils/images';
+    import { IMAGES } from '$lib/utils/image';
   import type { Book } from '$lib/types';
 
   // Sample data - replace with your actual data loading
@@ -77,6 +77,8 @@
           alt="Charles W. Boswell in firefighter gear"
           class="rounded-lg shadow-xl w-full h-96 object-cover"
           on:error={(e) => e.currentTarget.style.opacity = '0.7'}
+          loading="lazy"
+          decoding="async"
         />
       </div>
       <div>

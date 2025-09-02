@@ -3,7 +3,7 @@
 ```svelte
 <script lang="ts">
   import BookCard from '$lib/components/BookCard.svelte';
-  import { IMAGES } from '$lib/utils/images';
+    import { IMAGES } from '$lib/utils/image';
   import type { Book } from '$lib/types';
 
   const allBooks: Book[] = [
