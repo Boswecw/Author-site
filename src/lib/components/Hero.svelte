@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IMAGES } from '$lib/utils/images';
+    import { IMAGES } from '$lib/utils/image';
 
   export let title = 'Epic Fantasy Born from Real Experience';
   export let subtitle = 'From Navy decks to wildfire frontlines, now crafting tales of courage, brotherhood, and faith.';

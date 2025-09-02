@@ -2,7 +2,7 @@
   import Hero from '$lib/components/Hero.svelte';
   import BookCard from '$lib/components/BookCard.svelte';
   import NewsletterSignup from '$lib/components/NewsletterSignup.svelte';
-  import { IMAGES } from '$lib/utils/images';
+    import { IMAGES } from '$lib/utils/image';
   import type { Book } from '$lib/types';
 
   // Sample data - replace with your actual data loading

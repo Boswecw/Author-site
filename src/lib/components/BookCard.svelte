@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Book } from '$lib/types';
-  import { createImageFallback } from '$lib/utils/images';
+  import { createImageFallback } from '$lib/utils/image';
 
   export let book: Book;
 
