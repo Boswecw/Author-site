@@ -2,7 +2,9 @@
 import { marked } from 'marked';
 import createDOMPurify from 'isomorphic-dompurify';
 
+const DOMPurify = createDOMPurify();
+
 export function mdToHtml(md: string) {
   const dirty = marked.parse(md ?? '');
-  return createDOMPurify.sanitize(dirty as string);
+  return DOMPurify.sanitize(dirty as string);
 }
