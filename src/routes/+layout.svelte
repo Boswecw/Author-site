@@ -4,6 +4,10 @@
   import Footer from '$lib/components/Footer.svelte';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import type { LayoutData } from './$types';
+
+  // CRITICAL FIX: Export data prop to prevent hydration mismatch
+  export let data: LayoutData;
 
   // SEO and meta data (classic reactivity)
   $: pageTitle = getPageTitle($page.url.pathname);

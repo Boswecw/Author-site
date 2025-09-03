@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
 
+  // CRITICAL FIX: All script content in single script tag
   // SvelteKit form actions result
   export let form:
     | {
@@ -17,11 +18,10 @@
   let subject = form?.values?.subject ?? '';
   let message = form?.values?.message ?? '';
 
-  // optional: basic client validation feedback
+  // Optional: basic client validation feedback
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   $: emailHint = email && !emailRe.test(email) ? 'Enter a valid email address.' : '';
 </script>
-
 
 <svelte:head>
   <title>Contact — Charles W. Boswell</title>
@@ -40,7 +40,7 @@
     {#if form?.success}
       <div class="rounded-xl border border-green-200 bg-green-50 p-6 mb-10">
         <h2 class="text-xl font-semibold text-green-800 mb-1">Message sent</h2>
-        <p class="text-green-800/90">{form.message ?? 'Thanks for reaching out. I’ll get back to you soon.'}</p>
+        <p class="text-green-800/90">{form.message ?? 'Thanks for reaching out. I'll get back to you soon.'}</p>
       </div>
     {/if}
 
@@ -132,7 +132,7 @@
           Send message
         </button>
 
-        <a href="mailto:contact@yourdomain.com" class="text-sm font-semibold text-gray-600 hover:text-gray-800">
+        <a href="mailto:charlesboswell@boswellwebdevelopment.com" class="text-sm font-semibold text-gray-600 hover:text-gray-800">
           or email me directly
         </a>
       </div>
@@ -143,10 +143,3 @@
     </div>
   </div>
 </section>
-
-<!-- progressive enhancement for form actions -->
-<script>
-  // SvelteKit's enhance is available globally in +page.svelte
-  // If you don't want JS enhancement, remove `use:enhance` on <form>.
-  import { enhance } from '$app/forms';
-</script>

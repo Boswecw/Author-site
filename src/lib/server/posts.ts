@@ -1,86 +1,127 @@
 // src/lib/server/posts.ts
-import type { Document } from 'mongodb';
-import { getDb } from '$lib/server/db';
+import type { ObjectId } from 'mongodb';
 
-export type PostDoc = {
-  _id?: any;
+export interface PostDoc {
+  _id?: ObjectId;
   slug: string;
   title: string;
-  excerpt?: string;
-  contentMarkdown: string;
-  heroImage?: string;
-  status: 'draft' | 'published';
-  publishedAt?: string;
-  updatedAt?: string;
-  tags?: string[];
-  genre?: 'faith' | 'epic';
-  series?: string;
-  author?: { name: string };
-  seo?: { metaTitle?: string; metaDescription?: string; ogImage?: string };
-  featured?: boolean;
-  canonicalUrl?: string;
-  readTime?: string;
-};
-
-export type PublishedPost = Omit<PostDoc, '_id'> & {
-  id?: string;
-  publishDate: string | null;
-};
-
-export async function getPublishedPosts(
-  page = 1,
-  pageSize = 10,
-  tag?: string
-): Promise<{ items: PublishedPost[]; total: number; page: number; pageSize: number }> {
-  const db = await getDb();
-  const filter: Document = { status: 'published' };
-  if (tag && tag !== 'All') filter.tags = tag; // matches array membership
-
-  const coll = db.collection<PostDoc>('posts');
-
-  const cursor = coll
-    .find(filter)
-    .sort({ publishedAt: -1 })
-    .skip((page - 1) * pageSize)
-    .limit(pageSize);
-
-  const [itemsRaw, total] = await Promise.all([
-    cursor.toArray(),
-    coll.countDocuments(filter)
-  ]);
-
-  const items: PublishedPost[] = itemsRaw.map((p) => ({
-    ...p,
-    id: p._id ? String(p._id) : undefined,
-    publishDate: p.publishedAt ?? null
-  }));
-
-  return { items, total, page, pageSize };
+  excerpt?: string | null;
+  contentMarkdown?: string | null;
+  heroImage?: string | null;
+  publishDate?: Date | string | null;
+  publishedAt?: Date | string | null;
+  tags?: string[] | null;
+  status: 'published' | 'draft';
+  genre?: 'faith' | 'epic' | string | null;
 }
 
-export async function getPostBySlug(slug: string): Promise<PublishedPost | null> {
-  const db = await getDb();
-  const doc = await db.collection<PostDoc>('posts').findOne({ slug });
-  if (!doc) return null;
-  return {
-    ...doc,
-    id: doc._id ? String(doc._id) : undefined,
-    publishDate: doc.publishedAt ?? null
-  };
+/**
+ * CRITICAL FIX: Safe database imports with error handling
+ */
+async function getSafeDb() {
+  try {
+    const { getDb } = await import('./db');
+    return await getDb();
+  } catch (error) {
+    console.error('[getSafeDb] Failed to connect to MongoDB:', error);
+    throw new Error('Database connection failed');
+  }
 }
 
-export async function getAllTags(): Promise<string[]> {
-  const db = await getDb();
-  const agg = await db
-    .collection<PostDoc>('posts')
-    .aggregate<{ tags: string[] }>([
-      { $match: { status: 'published', tags: { $type: 'array', $ne: [] } } },
-      { $unwind: '$tags' },
-      { $group: { _id: null, tags: { $addToSet: '$tags' } } },
-      { $project: { _id: 0, tags: 1 } }
-    ])
-    .toArray();
+/**
+ * Get a single blog post by slug
+ */
+export async function getPostBySlug(slug: string): Promise<PostDoc | null> {
+  if (!slug || typeof slug !== 'string') {
+    console.warn('[getPostBySlug] Invalid slug:', slug);
+    return null;
+  }
 
-  const tags = agg[0]?.tags ?? [];
-  return tags.filter(Boolean).sort();
+  try {
+    const db = await getSafeDb();
+    
+    const post = await db
+      .collection<PostDoc>('posts')
+      .findOne(
+        { slug, status: 'published' },
+        {
+          projection: {
+            _id: 0,
+            slug: 1,
+            title: 1,
+            excerpt: 1,
+            contentMarkdown: 1,
+            heroImage: 1,
+            publishDate: 1,
+            publishedAt: 1,
+            tags: 1,
+            status: 1,
+            genre: 1
+          }
+        }
+      );
+
+    if (!post) {
+      console.warn('[getPostBySlug] Post not found:', slug);
+      return null;
+    }
+
+    return post;
+  } catch (error) {
+    console.error('[getPostBySlug] Database error:', error);
+    return null;
+  }
+}
+
+/**
+ * Get all published blog posts with pagination
+ */
+export async function getPosts(page = 1, pageSize = 10): Promise<{
+  posts: PostDoc[];
+  total: number;
+  hasMore: boolean;
+}> {
+  try {
+    const db = await getSafeDb();
+    const collection = db.collection<PostDoc>('posts');
+
+    // Query for published posts only
+    const query = { status: 'published' as const };
+
+    // Get total count
+    const total = await collection.countDocuments(query);
+
+    // Get paginated posts
+    const posts = await collection
+      .find(query, {
+        projection: {
+          _id: 0,
+          slug: 1,
+          title: 1,
+          excerpt: 1,
+          heroImage: 1,
+          publishDate: 1,
+          publishedAt: 1,
+          tags: 1,
+          genre: 1
+        }
+      })
+      .sort({ publishDate: -1, publishedAt: -1, _id: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .toArray();
+
+    return {
+      posts,
+      total,
+      hasMore: posts.length === pageSize && (page * pageSize) < total
+    };
+  } catch (error) {
+    console.error('[getPosts] Database error:', error);
+    return {
+      posts: [],
+      total: 0,
+      hasMore: false
+    };
+  }
 }

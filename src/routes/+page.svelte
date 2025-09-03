@@ -3,50 +3,29 @@
   import Hero from '$lib/components/Hero.svelte';
   import BookCard from '$lib/components/BookCard.svelte';
   import NewsletterSignup from '$lib/components/NewsletterSignup.svelte';
-
-  import { IMAGES, preloadImage } from '$lib/utils/image';
+  import type { PageData } from './$types';
   import type { Book } from '$lib/types';
   import { onMount } from 'svelte';
 
-  // Data from +page.server.ts
-  export let data: {
-    featured: {
-      id: string;
-      title: string;
-      description?: string | null;
-      cover?: string | null;
-      genre?: 'faith' | 'epic' | string | null;
-      status?: 'featured' | 'published' | 'upcoming' | string | null;
-      publishDate?: string | null;
-    } | null;
-    upcoming: Array<{
-      id: string;
-      title: string;
-      description?: string | null;
-      cover?: string | null;
-      genre?: string | null;
-      status?: 'featured' | 'published' | 'upcoming' | string | null;
-      publishDate?: string | null;
-    }>;
-  };
+  // CRITICAL FIX: Properly typed data export
+  export let data: PageData;
 
-  // ----- Local fallbacks (used only if server returns empty) -----
-  const fallbackFeatured: Book = {
+  // Fallback data constants (used if server returns empty)
+  const FALLBACK_FEATURED: Book = {
     id: 'faith-in-firestorm',
     title: 'Faith in a Firestorm',
-    description:
-      "A Navy chaplain's faith is tested when supernatural forces threaten his crew during a dangerous rescue mission.",
-    cover: IMAGES.BOOKS.FAITH_IN_A_FIRESTORM,
+    description: "A Navy chaplain's faith is tested when supernatural forces threaten his crew during a dangerous rescue mission.",
+    cover: 'https://endless-fire-467204-n2.appspot.com/books/Faith-in-a-FireStorm-Cover.png',
     genre: 'faith',
     status: 'featured'
   };
 
-  const fallbackUpcoming: Book[] = [
+  const FALLBACK_UPCOMING: Book[] = [
     {
       id: 'conviction-in-a-flood',
       title: 'Conviction in a Flood',
-      description: 'A companion novel exploring faith and resilience when rising waters test a community’s resolve.',
-      cover: IMAGES.BOOKS.CONVICTION_IN_A_FLOOD,
+      description: 'A companion novel exploring faith and resilience when rising waters test a community\'s resolve.',
+      cover: 'https://endless-fire-467204-n2.appspot.com/books/conviction-in-a-flood.jpg',
       genre: 'faith',
       status: 'upcoming',
       publishDate: '2026-03-15'
@@ -55,7 +34,7 @@
       id: 'hurricane-eve',
       title: 'Hurricane Eve',
       description: 'The third installment of the Faith & Calamity series—a storm that shatters records and faith itself.',
-      cover: IMAGES.BOOKS.HURRICANE_EVE,
+      cover: 'https://endless-fire-467204-n2.appspot.com/books/hurricane-eve.jpg',
       genre: 'faith',
       status: 'upcoming',
       publishDate: '2026-09-15'
@@ -64,38 +43,24 @@
       id: 'faith-of-the-hunter',
       title: 'The Faith of the Hunter',
       description: 'David Paczer, thrust into a brutal medieval world where faith and survival collide.',
-      cover: IMAGES.BOOKS.THE_FAITH_OF_THE_HUNTER,
+      cover: 'https://endless-fire-467204-n2.appspot.com/books/the-faith-of-the-hunter.jpg',
       genre: 'faith',
       status: 'upcoming',
       publishDate: '2026-09-01'
     }
   ];
 
-  // Choose server data if present, otherwise fallbacks
-  const featuredBook = (data.featured ?? fallbackFeatured) as Book;
-  const upcomingBooks: Book[] = (data.upcoming?.length ? data.upcoming : fallbackUpcoming) as Book[];
+  // CRITICAL FIX: Safe data access with proper fallbacks
+  $: featuredBook = (data?.featured || FALLBACK_FEATURED) as Book;
+  $: upcomingBooks = (data?.upcoming?.length ? data.upcoming : FALLBACK_UPCOMING) as Book[];
 
-  // Preload: eagerly for featured, quietly for upcoming
-  let heroReady = true;
+  // Loading state for progressive enhancement
+  let componentsReady = false;
 
-  onMount(async () => {
-    // Gate hero only if there’s a cover to preload
-    if (featuredBook?.cover) {
-      heroReady = false;
-      const ok = await preloadImage(featuredBook.cover);
-      heroReady = true; // show regardless; on:error fallback handles failures
-    }
-
-    // Background prefetch for upcoming covers
-    upcomingBooks.forEach((b) => {
-      if (b.cover) preloadImage(b.cover);
-    });
+  onMount(() => {
+    // Allow components to render after mount
+    componentsReady = true;
   });
-
-  // Safe image error handler
-  function dimOnError(e: Event) {
-    (e.currentTarget as HTMLImageElement).style.opacity = '0.7';
-  }
 </script>
 
 <svelte:head>
@@ -110,100 +75,144 @@
     content="Epic fantasy and Christian fiction born from real military and firefighting experience."
   />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://charlesboswell.com" />
+  {#if featuredBook?.cover}
+    <meta property="og:image" content={featuredBook.cover} />
+  {/if}
 </svelte:head>
 
 <!-- Hero Section -->
-{#if heroReady}
-  <Hero
-    featuredBook={{
-      id: featuredBook.id,
-      title: featuredBook.title,
-      description: featuredBook.description ?? "A U.S. Forest Service officer and a wounded family fight for survival in the heart of a wildfire. Their faith, love, and courage are tested by the flames that threaten to consume everything.",
-      cover: featuredBook.cover ?? null,
-      status: featuredBook.status ?? 'featured',
-      buyLinks: (featuredBook as any).buyLinks // optional, passed through if present
-    }}
-  />
-{:else}
-  <!-- Lightweight placeholder while cover preloads -->
-  <section class="relative bg-gradient-to-br from-slate-900 via-red-900 to-orange-900 text-white">
-    <div class="container mx-auto px-4 py-24">
-      <h1 class="text-4xl md:text-6xl font-bold mb-4">Loading…</h1>
-      <p class="text-lg text-white/80">Preparing the featured book.</p>
+<Hero
+  title="Epic Fantasy Born from Real Experience"
+  subtitle="From Navy decks to wildfire frontlines, now crafting tales of courage, brotherhood, and faith."
+  ctaText="Read Latest Book"
+  ctaLink="/books"
+  genre={featuredBook?.genre === 'epic' ? 'epic' : 'faith'}
+  bookCover={featuredBook?.cover || null}
+/>
+
+<!-- Featured Book Section -->
+{#if componentsReady && featuredBook}
+  <section class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Latest Release</h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+          Discover the newest addition to the collection—where faith meets adventure in the face of impossible odds.
+        </p>
+      </div>
+      
+      <div class="max-w-4xl mx-auto">
+        <BookCard 
+          book={featuredBook} 
+          featured={true}
+          class="transform hover:scale-[1.02] transition-transform duration-300"
+        />
+      </div>
     </div>
   </section>
 {/if}
 
-<!-- About Preview -->
-<section class="py-16 bg-gray-50">
-  <div class="container mx-auto px-4">
-    <div class="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
-      <div class="flex justify-center lg:justify-start">
-        <img
-          src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/CharlesBosewll_USFS.jpg?alt=media&token=46388a4c-27d2-4da6-9ad3-9d4c9b279e05"
-          alt="Charles W. Boswell in firefighter gear"
-          class="rounded-xl shadow-xl w-32 sm:w-40 md:w-48 lg:w-56 h-auto object-contain mx-auto lg:mx-0"
-          on:error={dimOnError}
-          loading="lazy"
-          decoding="async"
-          referrerpolicy="no-referrer"
-        />
-      </div>
-
-      <div>
-        <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Stories Forged in Fire</h2>
-        <p class="text-lg text-gray-600 mb-6">
-          From serving aboard Navy ships to battling wildfires across the American West,
-          my experiences have shaped every story I tell. Sixteen years of firefighting
-          and military service provide the authentic foundation for tales of courage,
-          brotherhood, and unwavering faith.
+<!-- Upcoming Books Section -->
+{#if componentsReady && upcomingBooks.length > 0}
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Coming Soon</h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+          Get ready for new adventures. These upcoming releases will expand the universe of faith-driven fantasy.
         </p>
+      </div>
+      
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {#each upcomingBooks as book (book.id)}
+          <BookCard 
+            {book} 
+            class="transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+          />
+        {/each}
+      </div>
+      
+      <div class="text-center mt-12">
+        <a 
+          href="/books" 
+          class="inline-flex items-center px-8 py-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+        >
+          View All Books
+          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+{/if}
 
-        <div class="flex flex-wrap gap-4 mb-8">
-          <div class="flex items-center text-sm font-medium text-gray-700">
-            <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            U.S. Navy Veteran
-          </div>
-          <div class="flex items-center text-sm font-medium text-gray-700">
-            <svg class="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-            </svg>
-            16 Years Wildland Firefighting
-          </div>
-          <div class="flex items-center text-sm font-medium text-gray-700">
-            <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            Fantasy Author
+<!-- Author Highlight Section -->
+<section class="py-20 bg-gray-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2 class="text-3xl md:text-4xl font-bold mb-6">From Service to Stories</h2>
+        <p class="text-xl text-gray-300 mb-6">
+          Sixteen years as a U.S. Navy veteran and wildland firefighter have shaped every page I write. 
+          My novels blend real-world experience with epic fantasy, creating stories where courage isn't just heroic—it's necessary for survival.
+        </p>
+        <p class="text-lg text-gray-300 mb-8">
+          Whether battling wildfires or supernatural forces, my characters face the same truth: 
+          faith and brotherhood are the only things that can carry you through the impossible.
+        </p>
+        <a 
+          href="/about" 
+          class="inline-flex items-center px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200"
+        >
+          Learn My Story
+        </a>
+      </div>
+      <div class="flex justify-center lg:justify-end">
+        <div class="bg-red-800/20 rounded-lg p-8 border border-red-700/30">
+          <div class="space-y-6">
+            <div class="flex items-center space-x-4">
+              <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7 12a5 5 0 1110 0 7 7 0 11-10 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">16 Years</h3>
+                <p class="text-gray-300">U.S. Navy Service</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-4">
+              <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">Wildland</h3>
+                <p class="text-gray-300">Firefighter Experience</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-4">
+              <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">Epic Fantasy</h3>
+                <p class="text-gray-300">Faith-Driven Novels</p>
+              </div>
+            </div>
           </div>
         </div>
-
-        <a href="/about" class="btn-primary">Read My Full Story</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Upcoming Books -->
-<section class="section-padding">
-  <div class="container-width">
-    <div class="text-center mb-12">
-      <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Upcoming Books</h2>
-      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-        New stories of faith, courage, and elemental magic are on their way.
-        Each book draws from real experiences to create authentic tales of heroism.
-      </p>
-    </div>
-
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {#each upcomingBooks as book (book.id)}
-        <BookCard {book} />
-      {/each}
-    </div>
-  </div>
-</section>
-
-<!-- Newsletter Signup -->
-<NewsletterSignup />
+<!-- Newsletter Signup Section -->
+{#if componentsReady}
+  <NewsletterSignup />
+{/if}
