@@ -4,7 +4,7 @@ import { normalizeFirebaseUrl } from '$lib/utils/urls';
 const isBrowser = typeof window !== 'undefined';
 
 /** Unicode-safe base64 for SVG, works in SSR and browser */
-function toBase64UnicodeSafe(svg: string): string {
+export function toBase64UnicodeSafe(svg: string): string {
   if (isBrowser && typeof btoa === 'function') {
     return btoa(unescape(encodeURIComponent(svg)));
   }
