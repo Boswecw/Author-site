@@ -1,5 +1,6 @@
-// src/lib/actions/progressiveImage.ts
+// src/lib/actions/progressiveImage.ts - COMPLETE FIX
 import { browser } from '$app/environment';
+import { createImageFallback } from '$lib/utils/image';
 import type { ActionReturn } from 'svelte/action';
 
 interface ProgressiveImageOptions {
@@ -17,7 +18,7 @@ interface ProgressiveImageAttributes {
 }
 
 /**
- * CRITICAL FIX: Progressive image loading action for your project structure
+ * ✅ FIXED: Progressive image loading action for Svelte 5
  */
 export function progressiveImage(
   node: HTMLImageElement,
@@ -29,90 +30,34 @@ export function progressiveImage(
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   /**
-   * Generate fallback SVG image
+   * Load image with fallback handling
    */
-  function generateFallback(type: 'book' | 'avatar' | 'logo', text: string): string {
-    if (!browser) {
-      return `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="100%" height="100%" fill="#f3f4f6"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial" font-size="24" fill="#6b7280">Loading...</text></svg>')}`;
-    }
-
-    try {
-      const colors = {
-        book: { bg: '#dc2626', text: '#ffffff' },
-        avatar: { bg: '#059669', text: '#ffffff' },
-        logo: { bg: '#7c3aed', text: '#ffffff' }
-      };
-
-      const { bg, text: textColor } = colors[type];
-      const dimensions = type === 'book' ? { w: 300, h: 400 } : { w: 200, h: 200 };
-
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.w}" height="${dimensions.h}" viewBox="0 0 ${dimensions.w} ${dimensions.h}">
-        <rect width="100%" height="100%" fill="${bg}"/>
-        <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="${textColor}">${text}</text>
-      </svg>`;
-
-      return `data:image/svg+xml;base64,${btoa(svg)}`;
-    } catch (error) {
-      console.warn('[progressiveImage] Error generating fallback:', error);
-      return '';
-    }
-  }
-
-  /**
-   * Load image progressively
-   */
-  async function loadImage(src: string, fallbackType: string, fallbackText: string): Promise<void> {
-    if (!browser || !src || isLoading) return;
-
-    // Prevent loading the same image again
-    if (currentSrc === src) return;
+  function loadImage(src: string, fallbackType: 'book' | 'avatar' | 'logo', fallbackText: string) {
+    if (!browser || !src || isLoading || currentSrc === src) return;
 
     isLoading = true;
     currentSrc = src;
 
-    // Set fallback immediately
-    const fallback = generateFallback(fallbackType as any, fallbackText);
-    node.src = fallback;
-    node.style.opacity = '0.75';
-
-    // Clear existing timeout
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    // Set up timeout
-    const timeout = options.timeout || 10000;
+    // Set timeout for loading
     timeoutId = setTimeout(() => {
-      isLoading = false;
-      const error = new Error(`Image load timeout: ${src}`);
-      node.dispatchEvent(new CustomEvent('error', { detail: { src, error } }));
-      options.onError?.();
-    }, timeout);
+      handleError(new Error('Image loading timeout'));
+    }, options.timeout || 10000);
 
     try {
-      // Preload the actual image
       const img = new Image();
       
       img.onload = () => {
         if (timeoutId) clearTimeout(timeoutId);
-        
-        // Update the actual image
-        node.src = src;
-        node.style.opacity = '1';
         isLoading = false;
         
-        // Dispatch success event
+        node.src = src;
         node.dispatchEvent(new CustomEvent('loaded', { detail: { src } }));
         options.onLoad?.();
       };
 
       img.onerror = () => {
         if (timeoutId) clearTimeout(timeoutId);
-        isLoading = false;
-        
-        const error = new Error(`Failed to load image: ${src}`);
-        node.dispatchEvent(new CustomEvent('error', { detail: { src, error } }));
-        options.onError?.();
+        handleError(new Error(`Failed to load image: ${src}`));
       };
 
       // Start loading
@@ -120,12 +65,27 @@ export function progressiveImage(
       
     } catch (error) {
       if (timeoutId) clearTimeout(timeoutId);
-      isLoading = false;
-      
-      console.warn('[progressiveImage] Load error:', error);
-      node.dispatchEvent(new CustomEvent('error', { detail: { src, error } }));
-      options.onError?.();
+      handleError(error instanceof Error ? error : new Error('Unknown error'));
     }
+  }
+
+  /**
+   * Handle loading errors
+   */
+  function handleError(error: Error) {
+    isLoading = false;
+    
+    console.warn('[progressiveImage] Load error:', error);
+    
+    // Set fallback image
+    const fallback = createImageFallback(
+      options.fallbackText || 'Loading',
+      options.fallbackType || 'book'
+    );
+    
+    node.src = fallback;
+    node.dispatchEvent(new CustomEvent('error', { detail: { src: currentSrc, error } }));
+    options.onError?.();
   }
 
   /**
@@ -166,7 +126,7 @@ export function progressiveImage(
 }
 
 /**
- * CRITICAL FIX: Image preloading utility for bulk operations
+ * ✅ FIXED: Image preloading utility for bulk operations
  */
 export class ImagePreloader {
   private cache = new Map<string, boolean>();
@@ -244,43 +204,36 @@ export class ImagePreloader {
     sources: (string | null | undefined)[],
     onProgress?: (loaded: number, total: number) => void
   ): Promise<{ loaded: string[]; failed: string[] }> {
-    const validSources = sources.filter((src): src is string => Boolean(src && typeof src === 'string'));
-    const loaded: string[] = [];
-    const failed: string[] = [];
+    const validSources = sources.filter((src): src is string => 
+      typeof src === 'string' && src.length > 0
+    );
+
+    if (validSources.length === 0) {
+      return { loaded: [], failed: [] };
+    }
+
+    const results: { src: string; success: boolean }[] = [];
     
-    const promises = validSources.map(async (src) => {
+    for (let i = 0; i < validSources.length; i++) {
+      const src = validSources[i];
       const success = await this.preload(src);
       
-      if (success) {
-        loaded.push(src);
-      } else {
-        failed.push(src);
-      }
-      
-      onProgress?.(loaded.length + failed.length, validSources.length);
-      return success;
-    });
+      results.push({ src, success });
+      onProgress?.(i + 1, validSources.length);
+    }
 
-    await Promise.allSettled(promises);
-    return { loaded, failed };
+    return {
+      loaded: results.filter(r => r.success).map(r => r.src),
+      failed: results.filter(r => !r.success).map(r => r.src)
+    };
   }
 
   /**
    * Clear cache
    */
-  clear(): void {
+  clear() {
     this.cache.clear();
     this.loading.clear();
-  }
-
-  /**
-   * Get cache stats
-   */
-  getStats(): { cached: number; loading: number } {
-    return {
-      cached: this.cache.size,
-      loading: this.loading.size
-    };
   }
 }
 

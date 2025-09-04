@@ -1,85 +1,74 @@
-// src/lib/utils/urls.ts - FIXED to handle both domains
-export function sanitizeFirebaseUrl(u?: string | null): string | null {
-	if (!u) return null;
-
-	let cleaned = u
-		.trim()
-		.replace(/^['"]+|['"]+$/g, '')
-		.replace(/%22$/, '');
-
-	try {
-		cleaned = decodeURIComponent(cleaned);
-	} catch {
-		// If decoding fails, use original
-	}
-
-	return cleaned;
-}
-
-export function normalizeFirebaseUrl(u?: string | null): string | null {
-	const url = toFirebaseDownloadIfNeeded(u);
-	if (!url) return null;
-
-	if (url.startsWith('http')) return url;
-
-	const encodedPath = url.split('/').map(encodeURIComponent).join('/');
-	return `https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/${encodedPath}?alt=media`;
-}
-
+// src/lib/utils/urls.ts - COMPLETE FIX
 /**
- * ✅ FIXED: Convert Firebase URLs to working format
+ * ✅ FIXED: Normalize Firebase Storage URLs
+ * Handles various Firebase URL formats and ensures consistent access
  */
-export function toFirebaseDownloadIfNeeded(u?: string | null): string | null {
-	const url = sanitizeFirebaseUrl(u);
-	if (!url) return null;
-
+export function normalizeFirebaseUrl(url?: string | null): string | null {
+	if (!url || typeof url !== 'string') return null;
+	
 	try {
-		const uo = new URL(url);
-
-		// ✅ FIX: Convert old appspot.com URLs to firebasestorage.app
-		if (uo.hostname === 'firebasestorage.googleapis.com' && uo.pathname.startsWith('/v0/b/')) {
-			// Extract bucket name from path
-			const pathParts = uo.pathname.split('/');
-			const bucketName = pathParts[3]; // /v0/b/{bucket}/o/...
-
-			// If it's the old appspot.com format, convert to firebasestorage.app
-			if (bucketName.endsWith('.appspot.com')) {
-				const newBucket = bucketName.replace('.appspot.com', '.firebasestorage.app');
-				uo.pathname = uo.pathname.replace(bucketName, newBucket);
-				return uo.toString();
-			}
-
-			return url; // Already correct format
+	  // Already normalized or not a Firebase URL
+	  if (!url.includes('firebase')) return url;
+	  
+	  // Convert firebasestorage.app to appspot.com (more reliable)
+	  let normalized = url.replace(
+		/https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/([^\/]+)\.firebasestorage\.app/,
+		'https://firebasestorage.googleapis.com/v0/b/$1.appspot.com'
+	  );
+	  
+	  // Ensure alt=media parameter is present for direct access
+	  if (normalized.includes('firebasestorage.googleapis.com')) {
+		const urlObj = new URL(normalized);
+		if (!urlObj.searchParams.has('alt')) {
+		  urlObj.searchParams.set('alt', 'media');
+		  normalized = urlObj.toString();
 		}
-
-		// Handle gs:// URLs
-		if (url.startsWith('gs://')) {
-			const without = url.slice(5);
-			const i = without.indexOf('/');
-			const bucket = i === -1 ? without : without.slice(0, i);
-			const objectPath = i === -1 ? '' : without.slice(i + 1);
-
-			// Use the correct firebasestorage.app domain
-			const correctBucket = bucket.endsWith('.appspot.com')
-				? bucket.replace('.appspot.com', '.firebasestorage.app')
-				: bucket;
-
-			const encoded = encodeURIComponent(objectPath);
-			return `https://firebasestorage.googleapis.com/v0/b/${correctBucket}/o/${encoded}?alt=media`;
-		}
-
-		// Handle .firebasestorage.app URLs (correct format)
-		if (uo.hostname.endsWith('.firebasestorage.app')) {
-			const bucket = uo.hostname;
-			const rawPath = uo.pathname.replace(/^\/o\//, '');
-			const encoded = encodeURIComponent(rawPath);
-			const params = new URLSearchParams(uo.search);
-			if (!params.has('alt')) params.set('alt', 'media');
-			return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encoded}?${params.toString()}`;
-		}
+	  }
+	  
+	  return normalized;
 	} catch (error) {
-		console.warn('URL parsing failed:', error);
+	  console.warn('[normalizeFirebaseUrl] Invalid URL:', url, error);
+	  return url; // Return original if parsing fails
 	}
-
-	return url;
-}
+  }
+  
+  /**
+   * ✅ Check if URL is a Firebase Storage URL
+   */
+  export function isFirebaseStorageUrl(url?: string | null): boolean {
+	if (!url || typeof url !== 'string') return false;
+	return url.includes('firebasestorage.googleapis.com') || 
+		   url.includes('firebase') && url.includes('storage');
+  }
+  
+  /**
+   * ✅ Get Firebase storage bucket from URL
+   */
+  export function getFirebaseBucket(url?: string | null): string | null {
+	if (!url || !isFirebaseStorageUrl(url)) return null;
+	
+	const match = url.match(/\/b\/([^\/]+)\./);
+	return match ? match[1] : null;
+  }
+  
+  /**
+   * ✅ Validate that URL is accessible (basic check)
+   */
+  export function isValidUrl(url?: string | null): boolean {
+	if (!url || typeof url !== 'string') return false;
+	
+	try {
+	  new URL(url);
+	  return true;
+	} catch {
+	  return false;
+	}
+  }
+  
+  /**
+   * ✅ FIXED: Legacy function name for backward compatibility
+   * This is the same as normalizeFirebaseUrl but with the old name
+   */
+  export function toFirebaseDownloadIfNeeded(url?: string | null): string | null {
+	return normalizeFirebaseUrl(url);
+  }

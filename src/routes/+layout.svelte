@@ -1,6 +1,8 @@
-<!-- src/routes/+layout.svelte -->
+<!-- src/routes/+layout.svelte - FIXED CSS IMPORT -->
 <script lang="ts">
+  // ✅ CRITICAL: Import CSS first
   import '../app.css';
+  
   import Header from '$lib/components/Navigation.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import { onMount } from 'svelte';
@@ -53,20 +55,54 @@
   <meta property="twitter:description" content={pageDescription} />
 </svelte:head>
 
-<div class="min-h-screen flex flex-col">
+<!-- ✅ FIXED: Add proper Tailwind classes -->
+<div class="min-h-screen flex flex-col bg-gray-50">
   <Header />
-  <main class="flex-1 pt-16">
-    <!-- ✅ keep this -->
+  <main class="flex-1">
     <slot />
   </main>
   <Footer />
 </div>
 
 <style>
-  :global(body){opacity:0;transform:translateY(20px);transition:all .6s ease-out}
-  :global(body.loaded){opacity:1;transform:translateY(0)}
-  :global(.fade-in){animation:fadeIn .6s ease-out forwards}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-  :global(.slide-in-right){animation:slideInRight .8s ease-out forwards}
-  @keyframes slideInRight{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
+  :global(body) {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease-out;
+  }
+  
+  :global(body.loaded) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  :global(.fade-in) {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  :global(.slide-in-right) {
+    animation: slideInRight 0.8s ease-out forwards;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
 </style>

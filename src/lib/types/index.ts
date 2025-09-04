@@ -1,5 +1,4 @@
-// place files you want to import through the `$lib` alias in this folder.
-// src/lib/types/index.ts
+// src/lib/types/index.ts - UPDATED TO FIX EXPORTS
 import type { ObjectId } from 'mongodb';
 
 /**
@@ -23,6 +22,12 @@ export interface BookDoc {
     other?: string | null;
   } | null;
   featured?: boolean;
+  // ADD MISSING LINKS PROPERTY
+  links?: {
+    amazon?: string | null;
+    barnes?: string | null;
+    other?: string | null;
+  } | null;
 }
 
 /**
@@ -44,10 +49,16 @@ export interface Book {
     barnes?: string | null;
     other?: string | null;
   } | null;
+  // ADD MISSING LINKS PROPERTY  
+  links?: {
+    amazon?: string | null;
+    barnes?: string | null;
+    other?: string | null;
+  } | null;
 }
 
 /**
- * Blog post types
+ * Blog post types - ENSURE PostDoc IS EXPORTED
  */
 export interface PostDoc {
   _id?: ObjectId;
@@ -74,3 +85,20 @@ export interface Post {
   tags: string[];
   genre?: string;
 }
+
+// ADD MISSING NewsletterSignupData EXPORT
+export interface NewsletterSignupData {
+  email: string;
+  firstName?: string;
+  interests?: string[];
+}
+
+// ADD MISSING ContactFormData EXPORT  
+export interface ContactFormData {
+  name: string;
+  email: string;
+  message: string;
+  subject?: string;
+}
+
+export type BookStatus = 'published' | 'writing' | 'coming-soon' | 'draft';

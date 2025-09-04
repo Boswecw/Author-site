@@ -1,3 +1,4 @@
+<!-- src/lib/components/Hero.svelte - FIXED VERSION -->
 <script lang="ts">
   import { createImageFallback } from '$lib/utils/image';
   import { normalizeFirebaseUrl } from '$lib/utils/urls';
@@ -6,8 +7,8 @@
   export let subtitle: string;
   export let ctaLink: string;
   export let ctaText: string;
-  export let genre?: string | null;
-  export let bookCover?: string | null;
+  export let genre: 'faith' | 'epic' | 'sci-fi' | null | undefined = null;
+  export let bookCover: string | null | undefined = null;
 
   // Normalize genre so we always have a safe value
   $: safeGenre =
@@ -65,11 +66,10 @@
       <p class="text-xl mb-8">{subtitle}</p>
       <a
         href={ctaLink}
-        class={`inline-block px-8 py-4 rounded-lg font-semibold ${ctaStyle}`}
+        class={`inline-block px-8 py-4 rounded-lg font-semibold transition-colors duration-300 ${ctaStyle}`}
       >
         {ctaText}
       </a>
     </div>
   </div>
 </section>
-
