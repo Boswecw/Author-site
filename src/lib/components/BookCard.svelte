@@ -1,115 +1,114 @@
-<!-- src/lib/components/BookCard.svelte -->
+<!-- src/lib/components/BookCard.svelte - FIXED VERSION -->
 <script lang="ts">
   import type { Book } from '$lib/types';
-  import { createImageFallback } from '$lib/utils/image';
+  import { createImageFallback, imageLoader } from '$lib/utils/image';
   import { normalizeFirebaseUrl } from '$lib/utils/urls';
+  import { onMount } from 'svelte';
 
-  // Required
   export let book: Book;
+  
+  let imageElement: HTMLImageElement;
+  let imageLoaded = false;
+  let imageError = false;
+  let isLoading = true;
 
-  // Optional
-  export let featured: boolean = false;
+  // ✅ FIXED: Better URL handling
+  $: coverUrl = normalizeFirebaseUrl(book.cover) ?? book.cover;
+  $: fallbackSrc = createImageFallback(book.title, 'book');
+  
+  onMount(() => {
+    if (coverUrl) {
+      // Preload the image
+      imageLoader.load(coverUrl).then((result) => {
+        if (result && imageElement) {
+          imageElement.src = result;
+          imageLoaded = true;
+          imageError = false;
+        } else {
+          imageError = true;
+          if (imageElement) {
+            imageElement.src = fallbackSrc;
+          }
+        }
+        isLoading = false;
+      }).catch(() => {
+        imageError = true;
+        if (imageElement) {
+          imageElement.src = fallbackSrc;
+        }
+        isLoading = false;
+      });
+    } else {
+      // No cover URL, use fallback immediately
+      isLoading = false;
+      imageError = true;
+    }
+  });
 
-  // Normalize the cover URL; fall back to generated placeholder
-  $: coverSrc =
-    book?.cover
-      ? normalizeFirebaseUrl(book.cover) ?? createImageFallback(book.title)
-      : createImageFallback(book.title);
+  function handleImageLoad() {
+    imageLoaded = true;
+    imageError = false;
+    isLoading = false;
+  }
 
-  // Status (feature flag takes precedence)
-  $: computedStatus = (featured ? 'featured' : (book.status ?? 'upcoming')) as string;
-
-  $: statusColor =
-    {
-      featured: 'bg-yellow-100 text-yellow-800',
-      published: 'bg-green-100 text-green-800',
-      upcoming: 'bg-blue-100 text-blue-800',
-      writing: 'bg-purple-100 text-purple-800'
-    }[computedStatus] ?? 'bg-gray-100 text-gray-800';
-
-  $: statusText =
-    {
-      featured: 'Featured',
-      published: 'Available Now',
-      upcoming: 'Coming Soon',
-      writing: 'In Writing'
-    }[computedStatus] ?? 'In Progress';
-
-  // Genre badge
-  $: genreBadge =
-    book.genre === 'epic'
-      ? 'bg-red-100 text-red-800'
-      : book.genre === 'sci-fi'
-      ? 'bg-indigo-100 text-indigo-800'
-      : 'bg-blue-100 text-blue-800';
-
-  $: genreText =
-    book.genre === 'epic' ? 'Epic Fantasy' :
-    book.genre === 'sci-fi' ? 'Science Fiction' :
-    'Christian Fiction';
-
-  function handleCoverError(e: Event) {
-    (e.currentTarget as HTMLImageElement).src = createImageFallback(book.title);
+  function handleImageError() {
+    imageError = true;
+    imageLoaded = false;
+    isLoading = false;
+    if (imageElement) {
+      imageElement.src = fallbackSrc;
+    }
   }
 </script>
 
-<div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-  <div class="bg-gray-100">
+<div class="relative group">
+  <!-- Loading State -->
+  {#if isLoading}
+    <div class="w-full h-80 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
+      <div class="text-gray-400 text-sm">Loading...</div>
+    </div>
+  {:else}
+    <!-- Image -->
     <img
-      src={coverSrc}
-      alt={"Cover of " + book.title}
-      class="w-full h-80 object-cover"
+      bind:this={imageElement}
+      src={coverUrl || fallbackSrc}
+      alt={`Cover of ${book.title}`}
+      class="w-full h-80 object-cover rounded-lg shadow-lg transition-all duration-300 group-hover:shadow-xl"
+      class:opacity-75={imageError}
       loading="lazy"
       decoding="async"
-      on:error={handleCoverError}
+      on:load={handleImageLoad}
+      on:error={handleImageError}
     />
-  </div>
-
-  <div class="p-6">
-    <div class="flex items-center gap-2 mb-3">
-      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {genreBadge}">
-        {genreText}
-      </span>
-      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusColor}">
-        {statusText}
-      </span>
-    </div>
-
-    <h3 class="text-xl font-bold text-gray-900 mb-2">{book.title}</h3>
-
-    {#if book.description}
-      <p class="text-gray-600 mb-4 line-clamp-3">{book.description}</p>
-    {/if}
-
-    {#if book.publishDate}
-      <p class="text-sm text-gray-500 mb-4">
-        {computedStatus === 'upcoming' ? 'Expected: ' : ''}
-        {new Date(book.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
-      </p>
-    {/if}
-
-    {#if book.buyLinks && computedStatus === 'published'}
-      <div class="flex gap-3">
-        {#if book.buyLinks.amazon}
-          <a href={book.buyLinks.amazon} target="_blank" rel="noopener noreferrer" class="btn-primary text-sm py-2 px-4">Amazon</a>
-        {/if}
-        {#if book.buyLinks.barnes}
-          <a href={book.buyLinks.barnes} target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm py-2 px-4">Barnes & Noble</a>
-        {/if}
-        {#if book.buyLinks.other}
-          <a href={book.buyLinks.other} target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm py-2 px-4">Other</a>
-        {/if}
+    
+    <!-- Error indicator -->
+    {#if imageError}
+      <div class="absolute inset-0 bg-red-900 bg-opacity-20 rounded-lg flex items-center justify-center">
+        <div class="text-white text-xs bg-red-800 px-2 py-1 rounded">
+          Cover Unavailable
+        </div>
       </div>
-    {:else}
-      <button class="btn-secondary text-sm py-2 px-4 opacity-50 cursor-not-allowed" disabled>{statusText}</button>
+    {/if}
+  {/if}
+  
+  <!-- Book Info Overlay -->
+  <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+    <h3 class="text-white font-bold text-lg mb-1">{book.title}</h3>
+    {#if book.description}
+      <p class="text-gray-200 text-sm line-clamp-2">{book.description}</p>
+    {/if}
+    {#if book.status === 'coming-soon' && book.publishDate}
+      <p class="text-orange-300 text-xs mt-2">
+        Coming {new Date(book.publishDate).toLocaleDateString()}
+      </p>
     {/if}
   </div>
 </div>
 
 <style>
-  .line-clamp-3 {
+  .line-clamp-2 {
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

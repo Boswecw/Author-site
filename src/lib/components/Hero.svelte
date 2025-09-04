@@ -1,15 +1,22 @@
+<<<<<<< Updated upstream
 <script lang="ts">
   import { createImageFallback } from '$lib/utils/image';
   import { normalizeFirebaseUrl } from '$lib/utils/urls'; // ✅ make sure this exists
+=======
+<!-- src/lib/components/Hero.svelte -->
+<script lang="ts">
+  import { toFirebaseDownloadIfNeeded } from '$lib/utils/urls';
+>>>>>>> Stashed changes
 
-  export let title = 'Epic Fantasy Born from Real Experience';
-  export let subtitle =
-    'From Navy decks to wildfire frontlines, now crafting tales of courage, brotherhood, and Faith.';
-  export let ctaText = 'Read Latest Book';
-  export let ctaLink = '/books';
-  export let genre: 'faith' | 'epic' | 'sci-fi' = 'faith';
-  export let bookCover: string | null = null;
+  export let book: {
+    id: string;
+    title: string;
+    description?: string | null;
+    cover?: string | null;
+    genre?: string | null;
+  };
 
+<<<<<<< Updated upstream
   // Normalize genre so we always have a safe value
   $: safeGenre =
     genre === 'epic' ? 'epic' :
@@ -71,3 +78,24 @@
     </div>
   </div>
 </section>
+=======
+  $: cover = toFirebaseDownloadIfNeeded(book?.cover ?? null);
+</script>
+
+<section class="relative pt-28 pb-20 bg-gray-50 overflow-hidden">
+  {#if cover}
+    <div
+      class="absolute inset-0 bg-center bg-cover opacity-20"
+      style={`background-image:url('${cover}')`}
+      aria-hidden="true"
+    />
+  {/if}
+  <div class="relative max-w-5xl mx-auto px-4">
+    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">{book.title}</h1>
+    {#if book.description}
+      <p class="mt-4 text-lg opacity-90 max-w-3xl">{book.description}</p>
+    {/if}
+    <!-- Optional CTA buttons could go here -->
+  </div>
+</section>
+>>>>>>> Stashed changes

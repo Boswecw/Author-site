@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { progressiveImage } from '$lib/actions/progressiveImage';
-  import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
+  import { createImageFallback } from '$lib/utils/image';
+  import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
   type Post = {
     slug: string;
@@ -12,7 +12,18 @@
     genre?: 'faith' | 'epic';
     contentHtml: string;
   };
+  
   export let data: { post: Post };
+
+  // ✅ SIMPLIFIED: Use direct image handling without complex progressive loading
+  $: normalizedHeroImage = normalizeFirebaseUrl(data.post.heroImage) ?? data.post.heroImage;
+  $: fallbackImage = createImageFallback(data.post.title, 'book');
+
+  function handleImageError(e: Event) {
+    const img = e.currentTarget as HTMLImageElement;
+    console.warn('Blog hero image failed:', img.src);
+    img.src = fallbackImage;
+  }
 </script>
 
 <svelte:head>
@@ -33,14 +44,14 @@
     </p>
   {/if}
 
-  {#if data.post.heroImage}
+  {#if normalizedHeroImage}
     <img
-      src={data.post.heroImage}
+      src={normalizedHeroImage}
       alt={data.post.title}
-      class="rounded-lg my-4"
+      class="rounded-lg my-4 w-full h-auto"
       loading="lazy"
       decoding="async"
-      use:progressiveImage={{ fallback: FALLBACK_IMAGES.BOOK_COVER }}
+      on:error={handleImageError}
     />
   {/if}
 

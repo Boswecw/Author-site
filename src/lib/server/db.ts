@@ -1,48 +1,95 @@
 // src/lib/server/db.ts
-// Use one of these imports — not both:
-
-// ✅ Static (best for production builds/adapters like Vercel/Netlify)
+import { MongoClient, type Db } from 'mongodb';
 import { MONGODB_URI, MONGODB_DB } from '$env/static/private';
-
-// OR
-// ✅ Dynamic (reads process.env at runtime; useful if envs change after build)
-// import { env } from '$env/dynamic/private';
-// const MONGODB_URI = env.MONGODB_URI;
-// const MONGODB_DB = env.MONGODB_DB;
-
-import { MongoClient } from 'mongodb';
+import { dev } from '$app/environment';
 
 let client: MongoClient | null = null;
-let connecting: Promise<MongoClient> | null = null;
+let db: Db | null = null;
+let isConnecting = false;
 
-async function getClient(): Promise<MongoClient> {
-  if (client) return client;
-
-  if (!connecting) {
-    connecting = (async () => {
-      if (!MONGODB_URI) throw new Error('MONGODB_URI is missing');
-      if (!MONGODB_DB) throw new Error('MONGODB_DB is missing');
-
-      const c = new MongoClient(MONGODB_URI);
-      await c.connect();
-
-      // Optional: quick ping to confirm connectivity
-      await c.db(MONGODB_DB).command({ ping: 1 });
-      console.log('[Mongo] Connected successfully');
-
-      client = c;
-      return c;
-    })().catch((e) => {
-      // Reset so future calls retry
-      connecting = null;
-      throw e;
-    });
+/**
+ * CRITICAL FIX: Safe MongoDB connection with build-time handling
+ */
+export async function getDb(): Promise<Db> {
+  // CRITICAL FIX: Handle missing env vars during build
+  if (!MONGODB_URI || !MONGODB_DB) {
+    if (dev) {
+      console.warn('[getDb] Missing MongoDB environment variables in development');
+      throw new Error('MongoDB connection string not configured');
+    }
+    
+    // During build, create a mock db that won't be used
+    throw new Error('MongoDB not available during build');
   }
 
-  return connecting;
+  // Return existing connection
+  if (db) return db;
+
+  // Prevent multiple connection attempts
+  if (isConnecting) {
+    // Wait for existing connection attempt
+    let attempts = 0;
+    while (isConnecting && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    if (db) return db;
+  }
+
+  isConnecting = true;
+
+  try {
+    // CRITICAL FIX: Robust connection with timeout
+    client = new MongoClient(MONGODB_URI, {
+      serverSelectionTimeoutMS: dev ? 10000 : 5000,
+      connectTimeoutMS: dev ? 10000 : 5000,
+      maxPoolSize: dev ? 5 : 10,
+      minPoolSize: 1,
+    });
+
+    await client.connect();
+    db = client.db(MONGODB_DB);
+
+    console.log(`[getDb] Connected to MongoDB: ${MONGODB_DB}`);
+    
+    // Test connection
+    await db.admin().ping();
+    
+    return db;
+  } catch (error) {
+    console.error('[getDb] MongoDB connection failed:', error);
+    
+    // Clean up failed connection
+    if (client) {
+      try { await client.close(); } catch {}
+      client = null;
+    }
+    
+    throw new Error(`Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    isConnecting = false;
+  }
 }
 
-export async function getDb() {
-  const c = await getClient();
-  return c.db(MONGODB_DB);
+/**
+ * CRITICAL FIX: Graceful connection cleanup
+ */
+export async function closeDb(): Promise<void> {
+  if (client) {
+    try {
+      await client.close();
+      console.log('[closeDb] MongoDB connection closed');
+    } catch (error) {
+      console.error('[closeDb] Error closing MongoDB:', error);
+    } finally {
+      client = null;
+      db = null;
+    }
+  }
+}
+
+// CRITICAL FIX: Handle process cleanup
+if (typeof process !== 'undefined') {
+  process.on('SIGINT', closeDb);
+  process.on('SIGTERM', closeDb);
 }

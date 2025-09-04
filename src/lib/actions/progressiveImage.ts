@@ -1,120 +1,288 @@
 // src/lib/actions/progressiveImage.ts
-import { imageService } from '$lib/services/imageLoading';
-import { normalizeFirebaseUrl, createPlaceholderImage } from '$lib/utils/urls';
+import { browser } from '$app/environment';
+import type { ActionReturn } from 'svelte/action';
 
 interface ProgressiveImageOptions {
-  fallback?: string;
+  src: string;
+  fallbackType?: 'book' | 'avatar' | 'logo';
+  fallbackText?: string;
   onLoad?: () => void;
-  onError?: (error: any) => void;
-  placeholder?: boolean;
+  onError?: () => void;
+  timeout?: number;
+}
+
+interface ProgressiveImageAttributes {
+  'on:loaded'?: (e: CustomEvent<{ src: string }>) => void;
+  'on:error'?: (e: CustomEvent<{ src: string; error: Error }>) => void;
 }
 
 /**
- * Progressive image loading action for your standardized Firebase URLs
- * Usage: <img src={url} use:progressiveImage />
+ * CRITICAL FIX: Progressive image loading action for your project structure
  */
 export function progressiveImage(
-  img: HTMLImageElement,
-  options: ProgressiveImageOptions = {}
-) {
-  const { fallback, onLoad, onError, placeholder = true } = options;
+  node: HTMLImageElement,
+  options: ProgressiveImageOptions
+): ActionReturn<ProgressiveImageOptions, ProgressiveImageAttributes> {
   
-  let originalSrc = img.src;
-  let isDestroyed = false;
+  let currentSrc = '';
+  let isLoading = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  async function loadImage() {
-    if (isDestroyed || !originalSrc) return;
-
-    const normalizedSrc = normalizeFirebaseUrl(originalSrc);
-    if (!normalizedSrc) {
-      handleError(new Error('Invalid URL'));
-      return;
-    }
-
-    // Show placeholder while loading
-    if (placeholder) {
-      img.src = createPlaceholderImage('Loading...', img.width || 300, img.height || 400);
-      img.classList.add('img-loading');
+  /**
+   * Generate fallback SVG image
+   */
+  function generateFallback(type: 'book' | 'avatar' | 'logo', text: string): string {
+    if (!browser) {
+      return `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="100%" height="100%" fill="#f3f4f6"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial" font-size="24" fill="#6b7280">Loading...</text></svg>')}`;
     }
 
     try {
-      // Preload the image
-      const success = await imageService.preloadImage(normalizedSrc);
-      
-      if (isDestroyed) return;
+      const colors = {
+        book: { bg: '#dc2626', text: '#ffffff' },
+        avatar: { bg: '#059669', text: '#ffffff' },
+        logo: { bg: '#7c3aed', text: '#ffffff' }
+      };
 
-      if (success) {
-        // Image loaded successfully
-        img.src = normalizedSrc;
-        img.classList.remove('img-loading');
-        img.classList.add('img-loaded');
-        onLoad?.();
-      } else {
-        handleError(new Error('Failed to load image'));
-      }
+      const { bg, text: textColor } = colors[type];
+      const dimensions = type === 'book' ? { w: 300, h: 400 } : { w: 200, h: 200 };
+
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.w}" height="${dimensions.h}" viewBox="0 0 ${dimensions.w} ${dimensions.h}">
+        <rect width="100%" height="100%" fill="${bg}"/>
+        <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="${textColor}">${text}</text>
+      </svg>`;
+
+      return `data:image/svg+xml;base64,${btoa(svg)}`;
     } catch (error) {
-      if (!isDestroyed) {
-        handleError(error);
-      }
+      console.warn('[progressiveImage] Error generating fallback:', error);
+      return '';
     }
   }
 
-  function handleError(error: any) {
-    if (isDestroyed) return;
-    
-    console.warn('[progressiveImage] Error loading:', originalSrc, error);
-    
-    // Try fallback if provided
-    if (fallback) {
-      img.src = fallback;
-    } else {
-      // Use placeholder with error message
-      img.src = createPlaceholderImage('Image Error', img.width || 300, img.height || 400);
+  /**
+   * Load image progressively
+   */
+  async function loadImage(src: string, fallbackType: string, fallbackText: string): Promise<void> {
+    if (!browser || !src || isLoading) return;
+
+    // Prevent loading the same image again
+    if (currentSrc === src) return;
+
+    isLoading = true;
+    currentSrc = src;
+
+    // Set fallback immediately
+    const fallback = generateFallback(fallbackType as any, fallbackText);
+    node.src = fallback;
+    node.style.opacity = '0.75';
+
+    // Clear existing timeout
+    if (timeoutId) {
+      clearTimeout(timeoutId);
     }
-    
-    img.classList.remove('img-loading');
-    img.classList.add('img-error');
-    onError?.(error);
+
+    // Set up timeout
+    const timeout = options.timeout || 10000;
+    timeoutId = setTimeout(() => {
+      isLoading = false;
+      const error = new Error(`Image load timeout: ${src}`);
+      node.dispatchEvent(new CustomEvent('error', { detail: { src, error } }));
+      options.onError?.();
+    }, timeout);
+
+    try {
+      // Preload the actual image
+      const img = new Image();
+      
+      img.onload = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        // Update the actual image
+        node.src = src;
+        node.style.opacity = '1';
+        isLoading = false;
+        
+        // Dispatch success event
+        node.dispatchEvent(new CustomEvent('loaded', { detail: { src } }));
+        options.onLoad?.();
+      };
+
+      img.onerror = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        isLoading = false;
+        
+        const error = new Error(`Failed to load image: ${src}`);
+        node.dispatchEvent(new CustomEvent('error', { detail: { src, error } }));
+        options.onError?.();
+      };
+
+      // Start loading
+      img.src = src;
+      
+    } catch (error) {
+      if (timeoutId) clearTimeout(timeoutId);
+      isLoading = false;
+      
+      console.warn('[progressiveImage] Load error:', error);
+      node.dispatchEvent(new CustomEvent('error', { detail: { src, error } }));
+      options.onError?.();
+    }
   }
 
-  // Start loading
-  loadImage();
+  /**
+   * Initialize the action
+   */
+  function init(opts: ProgressiveImageOptions) {
+    if (!opts.src) return;
+    
+    loadImage(
+      opts.src,
+      opts.fallbackType || 'book',
+      opts.fallbackText || 'Loading'
+    );
+  }
+
+  // Initialize with current options
+  init(options);
 
   return {
     update(newOptions: ProgressiveImageOptions) {
-      Object.assign(options, newOptions);
-      
-      // If src changed, reload
-      if (img.src !== originalSrc) {
-        originalSrc = img.src;
-        loadImage();
+      // Only reload if src changed
+      if (newOptions.src !== options.src) {
+        options = newOptions;
+        init(newOptions);
+      } else {
+        options = newOptions;
       }
     },
-    
+
     destroy() {
-      isDestroyed = true;
-      img.classList.remove('img-loading', 'img-loaded', 'img-error');
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      isLoading = false;
+      currentSrc = '';
     }
   };
 }
 
 /**
- * Simple image preloader function
+ * CRITICAL FIX: Image preloading utility for bulk operations
  */
-export async function preloadBookCovers(books: Array<{ cover?: string | null }>) {
-  const covers = books
-    .map(book => book.cover)
-    .filter((cover): cover is string => Boolean(cover));
+export class ImagePreloader {
+  private cache = new Map<string, boolean>();
+  private loading = new Set<string>();
+
+  /**
+   * Preload a single image
+   */
+  async preload(src: string): Promise<boolean> {
+    if (!browser || !src) return false;
+
+    // Check cache
+    if (this.cache.has(src)) {
+      return this.cache.get(src) ?? false;
+    }
+
+    // Prevent duplicate loading
+    if (this.loading.has(src)) {
+      return new Promise(resolve => {
+        const checkInterval = setInterval(() => {
+          if (!this.loading.has(src)) {
+            clearInterval(checkInterval);
+            resolve(this.cache.get(src) ?? false);
+          }
+        }, 100);
+      });
+    }
+
+    this.loading.add(src);
+
+    try {
+      const success = await this.loadSingleImage(src);
+      this.cache.set(src, success);
+      return success;
+    } catch (error) {
+      console.warn('[ImagePreloader] Failed to preload:', src, error);
+      this.cache.set(src, false);
+      return false;
+    } finally {
+      this.loading.delete(src);
+    }
+  }
+
+  /**
+   * Load single image element
+   */
+  private loadSingleImage(src: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      
+      const timeout = setTimeout(() => {
+        img.onload = null;
+        img.onerror = null;
+        resolve(false);
+      }, 10000);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve(true);
+      };
+
+      img.onerror = () => {
+        clearTimeout(timeout);
+        resolve(false);
+      };
+
+      img.src = src;
+    });
+  }
+
+  /**
+   * Preload multiple images with progress callback
+   */
+  async preloadBatch(
+    sources: (string | null | undefined)[],
+    onProgress?: (loaded: number, total: number) => void
+  ): Promise<{ loaded: string[]; failed: string[] }> {
+    const validSources = sources.filter((src): src is string => Boolean(src && typeof src === 'string'));
+    const loaded: string[] = [];
+    const failed: string[] = [];
     
-  if (covers.length === 0) return;
-  
-  console.log('[preloadBookCovers] Preloading', covers.length, 'covers...');
-  
-  const { loaded, failed } = await imageService.preloadImages(covers);
-  
-  console.log('[preloadBookCovers] Loaded:', loaded.length, 'Failed:', failed.length);
-  
-  if (failed.length > 0) {
-    console.warn('[preloadBookCovers] Failed to load:', failed);
+    const promises = validSources.map(async (src) => {
+      const success = await this.preload(src);
+      
+      if (success) {
+        loaded.push(src);
+      } else {
+        failed.push(src);
+      }
+      
+      onProgress?.(loaded.length + failed.length, validSources.length);
+      return success;
+    });
+
+    await Promise.allSettled(promises);
+    return { loaded, failed };
+  }
+
+  /**
+   * Clear cache
+   */
+  clear(): void {
+    this.cache.clear();
+    this.loading.clear();
+  }
+
+  /**
+   * Get cache stats
+   */
+  getStats(): { cached: number; loading: number } {
+    return {
+      cached: this.cache.size,
+      loading: this.loading.size
+    };
   }
 }
+
+// Export singleton instance
+export const imagePreloader = new ImagePreloader();

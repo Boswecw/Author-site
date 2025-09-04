@@ -1,60 +1,76 @@
-// src/lib/utils/urls.ts
-/**
- * Simple URL normalizer for your standardized Firebase Storage URLs
- * All URLs are now clean and consistent - no complex fixes needed
- */
-export function normalizeFirebaseUrl(url: string | null | undefined): string | null {
-  if (!url || typeof url !== 'string') return null;
+// src/lib/utils/urls.ts - FIXED to handle both domains
+export function sanitizeFirebaseUrl(u?: string | null): string | null {
+  if (!u) return null;
   
-  const cleanUrl = url.trim();
+  let cleaned = u.trim().replace(/^['"]+|['"]+$/g, '').replace(/%22$/, '');
   
-  // Your URLs are already perfect - just ensure HTTPS
-  if (cleanUrl.startsWith('http://')) {
-    return cleanUrl.replace('http://', 'https://');
-  }
-  
-  if (cleanUrl.startsWith('//')) {
-    return `https:${cleanUrl}`;
-  }
-  
-  // Return as-is for valid Firebase Storage URLs
-  if (cleanUrl.startsWith('https://firebasestorage.googleapis.com') || 
-      cleanUrl.startsWith('data:')) {
-    return cleanUrl;
-  }
-  
-  return cleanUrl;
-}
-
-/**
- * Test if a Firebase Storage URL is accessible
- */
-export async function testImageUrl(url: string): Promise<boolean> {
   try {
-    const response = await fetch(url, { 
-      method: 'HEAD',
-      cache: 'no-cache',
-      mode: 'cors'
-    });
-    return response.ok;
+    cleaned = decodeURIComponent(cleaned);
   } catch {
-    return false;
+    // If decoding fails, use original
   }
+  
+  return cleaned;
+}
+
+export function normalizeFirebaseUrl(u?: string | null): string | null {
+  return sanitizeFirebaseUrl(u);
 }
 
 /**
- * Create a simple placeholder SVG for failed images
+ * ✅ FIXED: Convert Firebase URLs to working format
  */
-export function createPlaceholderImage(text: string, width = 300, height = 400): string {
-  const svg = `
-    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="2"/>
-      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
-            font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#6b7280">
-        ${text}
-      </text>
-    </svg>
-  `.trim();
-  
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+export function toFirebaseDownloadIfNeeded(u?: string | null): string | null {
+  const url = sanitizeFirebaseUrl(u);
+  if (!url) return null;
+
+  try {
+    const uo = new URL(url);
+    
+    // ✅ FIX: Convert old appspot.com URLs to firebasestorage.app
+    if (uo.hostname === 'firebasestorage.googleapis.com' && uo.pathname.startsWith('/v0/b/')) {
+      // Extract bucket name from path
+      const pathParts = uo.pathname.split('/');
+      const bucketName = pathParts[3]; // /v0/b/{bucket}/o/...
+      
+      // If it's the old appspot.com format, convert to firebasestorage.app
+      if (bucketName.endsWith('.appspot.com')) {
+        const newBucket = bucketName.replace('.appspot.com', '.firebasestorage.app');
+        uo.pathname = uo.pathname.replace(bucketName, newBucket);
+        return uo.toString();
+      }
+      
+      return url; // Already correct format
+    }
+    
+    // Handle gs:// URLs
+    if (url.startsWith('gs://')) {
+      const without = url.slice(5);
+      const i = without.indexOf('/');
+      const bucket = i === -1 ? without : without.slice(0, i);
+      const objectPath = i === -1 ? '' : without.slice(i + 1);
+      
+      // Use the correct firebasestorage.app domain
+      const correctBucket = bucket.endsWith('.appspot.com') 
+        ? bucket.replace('.appspot.com', '.firebasestorage.app')
+        : bucket;
+      
+      const encoded = encodeURIComponent(objectPath);
+      return `https://firebasestorage.googleapis.com/v0/b/${correctBucket}/o/${encoded}?alt=media`;
+    }
+    
+    // Handle .firebasestorage.app URLs (correct format)
+    if (uo.hostname.endsWith('.firebasestorage.app')) {
+      const bucket = uo.hostname;
+      const rawPath = uo.pathname.replace(/^\/o\//, '');
+      const encoded = encodeURIComponent(rawPath);
+      const params = new URLSearchParams(uo.search);
+      if (!params.has('alt')) params.set('alt', 'media');
+      return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encoded}?${params.toString()}`;
+    }
+  } catch (error) {
+    console.warn('URL parsing failed:', error);
+  }
+
+  return url;
 }

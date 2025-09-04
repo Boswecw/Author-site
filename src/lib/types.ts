@@ -1,66 +1,30 @@
-// src/lib/types.ts - Add missing BookDoc type
+// src/lib/types.ts
+
+export type BookStatus =
+  | 'writing'
+  | 'coming-soon'
+  | 'draft'        // ← include 'draft'
+  | 'featured'
+  | 'published'
+  | 'upcoming';
+
+export type BookGenre = 'faith' | 'epic' | 'sci-fi' | string;
 
 export interface Book {
   id: string;
   title: string;
-  description: string | null;
-  cover: string | null;
-  genre: 'faith' | 'epic' | 'sci-fi';
-  status: 'published' | 'featured' | 'upcoming' | 'writing' | 'coming-soon';
-  publishDate?: string | null;
-  isbn?: string | null;
-  format?: 'EPUB' | 'paperback' | 'hardcover' | null;
-  pages?: number | null;
-  buyLinks?: {
-    amazon?: string | null;
-    barnes?: string | null;
-    other?: string | null;
-  };
-}
-
-// Add the missing BookDoc type for MongoDB documents
-export interface BookDoc {
-  _id?: any; // MongoDB ObjectId
-  id: string;
-  title: string;
   description?: string | null;
   cover?: string | null;
-  genre: 'faith' | 'epic' | 'sci-fi';
-  status: 'published' | 'featured' | 'upcoming' | 'writing' | 'coming-soon';
-  publishDate?: string | null;
+  genre?: BookGenre | null;
+  status?: BookStatus | null;
+  publishDate?: string | null;       // ISO string for client/UI
   isbn?: string | null;
-  format?: 'EPUB' | 'paperback' | 'hardcover' | null;
+  format?: string | null;
   pages?: number | null;
-  buyLinks?: {
-    amazon?: string | null;
-    barnes?: string | null;
-    other?: string | null;
-  };
-  featured?: boolean;
+  buyLinks?: Record<string, string> | null;
 }
 
-export interface Post {
-  slug: string;
-  title: string;
-  excerpt?: string;
-  contentHtml?: string;
-  heroImage?: string;
-  publishDate?: string;
-  tags?: string[];
-  genre?: string;
-}
-
-// Add PostDoc type for MongoDB documents
-export interface PostDoc {
-  _id?: any; // MongoDB ObjectId
-  slug: string;
-  title: string;
-  excerpt?: string | null;
-  contentMarkdown?: string | null;
-  heroImage?: string | null;
+// Mongo document shape (publishDate can be Date or string in DB)
+export interface BookDoc extends Omit<Book, 'publishDate'> {
   publishDate?: Date | string | null;
-  publishedAt?: Date | string | null;
-  tags?: string[] | null;
-  status: 'published' | 'draft';
-  genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
 }

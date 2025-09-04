@@ -1,4 +1,5 @@
 // src/routes/blog/+page.server.ts
+export const prerender = false;
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { normalizeFirebaseUrl } from '$lib/utils/urls';

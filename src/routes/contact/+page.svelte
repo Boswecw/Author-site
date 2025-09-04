@@ -1,7 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
 
-  // CRITICAL FIX: All script content in single script tag
   // SvelteKit form actions result
   export let form:
     | {
@@ -40,7 +39,9 @@
     {#if form?.success}
       <div class="rounded-xl border border-green-200 bg-green-50 p-6 mb-10">
         <h2 class="text-xl font-semibold text-green-800 mb-1">Message sent</h2>
-        <p class="text-green-800/90">{form.message ?? 'Thanks for reaching out. I\'ll get back to you soon.'}</p>
+        <p class="text-green-800/90">
+          {form.message ?? "Thanks for reaching out. I'll get back to you soon."}
+        </p>
       </div>
     {/if}
 
@@ -118,7 +119,7 @@
           bind:value={message}
           aria-invalid={form?.errors?.message ? 'true' : 'false'}
           aria-describedby={form?.errors?.message ? 'message-error' : undefined}
-        />
+        ></textarea>
         {#if form?.errors?.message}
           <p id="message-error" class="mt-1 text-sm text-red-600">{form.errors.message}</p>
         {/if}
