@@ -2,7 +2,6 @@
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import type { BookDoc } from '$lib/types'; // Import from types instead of books
-import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 export const load: PageServerLoad = async () => {
   const db = await getDb();
@@ -35,7 +34,7 @@ export const load: PageServerLoad = async () => {
     id: book.id,
     title: book.title,
     description: book.description ?? '',
-    cover: normalizeFirebaseUrl(book.cover) ?? null,
+    cover: book.cover ?? null,
     genre: book.genre ?? 'faith',
     status: book.status ?? 'writing',
     publishDate: book.publishDate

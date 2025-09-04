@@ -36,5 +36,15 @@ describe('normalizeFirebaseUrl', () => {
     expect(url.searchParams.get('alt')).toBe('media');
     expect(result).toContain('test-bucket.appspot.com');
   });
-});
 
+  it('preserves existing query parameters', () => {
+    const input =
+      'https://firebasestorage.googleapis.com/v0/b/test-bucket.appspot.com/o/file.txt?alt=media&foo=bar';
+    const result = normalizeFirebaseUrl(input);
+
+    expect(result).toBeTruthy();
+    const url = new URL(result!);
+    expect(url.searchParams.get('alt')).toBe('media');
+    expect(url.searchParams.get('foo')).toBe('bar');
+  });
+});

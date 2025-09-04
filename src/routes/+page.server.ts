@@ -1,14 +1,13 @@
 // src/routes/+page.server.ts - FIXED
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
-import { normalizeFirebaseUrl } from '$lib/utils/urls';
-import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
+// Covers now store Firebase Storage paths
 
 type BookDoc = {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null;
+  cover?: string | null; // Firebase Storage path
   genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
   status?: string | null;
   publishDate?: string | null;
@@ -80,7 +79,7 @@ export const load: PageServerLoad = async () => {
         title: 'Faith in a Firestorm',
         description:
           'A faith-forward wildfire drama inspired by 16 years on the line—courage, family, and grace when everything burns.',
-        cover: normalizeFirebaseUrl(FIREBASE_IMAGES.BOOKS.FAITH_IN_A_FIRESTORM),
+        cover: 'books/Faith_in_a_FireStorm.png',
         genre: 'faith',
         status: 'upcoming'
       } as const;
@@ -89,14 +88,14 @@ export const load: PageServerLoad = async () => {
         {
           id: 'conviction-in-a-flood',
           title: 'Conviction in a Flood',
-          cover: normalizeFirebaseUrl(FIREBASE_IMAGES.BOOKS.CONVICTION_IN_A_FLOOD),
+          cover: 'books/Conviction_in_a_Flood Cover.png',
           genre: 'faith',
           status: 'upcoming'
         },
         {
           id: 'hurricane-eve',
           title: 'Hurricane Eve',
-          cover: normalizeFirebaseUrl(FIREBASE_IMAGES.BOOKS.HURRICANE_EVE),
+          cover: 'books/Hurricane_Eve Cover.png',
           genre: 'epic',
           status: 'upcoming'
         }
@@ -108,25 +107,14 @@ export const load: PageServerLoad = async () => {
     // 3) If no featured is set, fall back to the most recent from upcoming
     const effectiveFeatured = featuredDoc ?? upcoming[0] ?? null;
 
-    // Normalize covers to canonical download URLs
-    const featured = effectiveFeatured
-      ? { 
-          ...effectiveFeatured, 
-          cover: normalizeFirebaseUrl(effectiveFeatured.cover) 
-        }
-      : null;
-
-    const upcomingNorm = upcoming.map(b => ({
-      ...b,
-      cover: normalizeFirebaseUrl(b.cover)
-    }));
+    const featured = effectiveFeatured ?? null;
 
     console.log('[+page.server] Featured book:', featured?.title, 'cover:', featured?.cover);
-    console.log('[+page.server] Upcoming books:', upcomingNorm.length);
+    console.log('[+page.server] Upcoming books:', upcoming.length);
 
-    return { 
-      featured, 
-      upcoming: upcomingNorm 
+    return {
+      featured,
+      upcoming
     };
 
   } catch (error) {
