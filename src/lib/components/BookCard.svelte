@@ -6,20 +6,27 @@
 
   export let book: Book;
   export let featured: boolean = false;
-  
+
   let imageElement: HTMLImageElement;
   let imageLoaded = false;
   let imageError = false;
   let isLoading = true;
+
+  // Final URL we render (resolved from filename or normalized URL)
   let coverUrl: string | null = null;
+
+  // Always have a visual fallback
   $: fallbackSrc = createImageFallback(book.title, 'book');
 
   onMount(async () => {
-    coverUrl = await resolveCover(book.cover);
-    if (!coverUrl) {
+    try {
+      coverUrl = await resolveCover(book.cover);
+      if (!coverUrl) imageError = true;
+    } catch {
       imageError = true;
+    } finally {
+      isLoading = false;
     }
-    isLoading = false;
   });
 
   function handleImageLoad() {
@@ -44,13 +51,14 @@
       Featured
     </span>
   {/if}
-  <!-- Loading State -->
+
   {#if isLoading}
+    <!-- Loading skeleton -->
     <div class="w-full h-80 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
       <div class="text-gray-400 text-sm">Loading...</div>
     </div>
   {:else}
-    <!-- Image -->
+    <!-- Cover image (with graceful fallback) -->
     <img
       bind:this={imageElement}
       src={coverUrl || fallbackSrc}
@@ -62,18 +70,15 @@
       on:load={handleImageLoad}
       on:error={handleImageError}
     />
-    
-    <!-- Error indicator -->
+
     {#if imageError}
-      <div class="absolute inset-0 bg-red-900 bg-opacity-20 rounded-lg flex items-center justify-center">
-        <div class="text-white text-xs bg-red-800 px-2 py-1 rounded">
-          Cover Unavailable
-        </div>
+      <div class="absolute inset-0 bg-red-900/20 rounded-lg flex items-center justify-center">
+        <div class="text-white text-xs bg-red-800 px-2 py-1 rounded">Cover Unavailable</div>
       </div>
     {/if}
   {/if}
-  
-  <!-- Book Info Overlay -->
+
+  <!-- Info overlay -->
   <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
     <h3 class="text-white font-bold text-lg mb-1">{book.title}</h3>
     {#if book.description}

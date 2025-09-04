@@ -3,10 +3,10 @@
   import { onMount } from 'svelte';
   import { createImageFallback, resolveCover } from '$lib/utils/image';
 
-  export let title: string;
-  export let subtitle: string;
-  export let ctaLink: string;
-  export let ctaText: string;
+  export let title: string = 'Epic Fantasy Born from Real Experience';
+  export let subtitle: string = 'From Navy decks to wildfire frontlines—stories forged in grit.';
+  export let ctaLink: string = '/books';
+  export let ctaText: string = 'Browse Books';
   export let genre: 'faith' | 'epic' | 'sci-fi' | null | undefined = null;
   export let bookCover: string | null | undefined = null;
 
@@ -46,20 +46,22 @@
       console.warn('[Hero cover] failed to load:', img.src);
       img.dataset._logged = '1';
     }
-    img.src = createImageFallback('Cover Unavailable');
+    img.src = createImageFallback('Cover Unavailable', 'book');
     img.style.opacity = '1';
   }
 </script>
 
 <section class={`relative text-white py-20 overflow-hidden ${gradientClass}`}>
   <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-    {#if bookCover}
+    {#if coverUrl}
       <div class="w-48 h-72 flex-shrink-0">
         <img
-          src={coverUrl ?? createImageFallback('Cover Unavailable')}
+          src={coverUrl}
           alt={`${title} cover`}
           class="w-full h-full object-cover rounded shadow-lg transition-opacity duration-300"
           on:error={dimOrFallback}
+          loading="lazy"
+          decoding="async"
         />
       </div>
     {/if}
@@ -73,6 +75,6 @@
       >
         {ctaText}
       </a>
-  </div>
+    </div>
   </div>
 </section>

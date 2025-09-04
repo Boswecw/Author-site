@@ -9,7 +9,7 @@ export interface BookDoc {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null;
+  cover?: string | null; // Firebase Storage path
   genre?: 'faith' | 'epic' | 'sci-fi' | null;
   status?: 'published' | 'writing' | 'coming-soon' | 'draft' | null;
   publishDate?: string | Date | null;
@@ -37,7 +37,7 @@ export interface Book {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null;
+  cover?: string | null; // Firebase Storage path
   genre?: 'faith' | 'epic' | 'sci-fi' | null;
   status?: 'published' | 'writing' | 'coming-soon' | 'draft' | null;
   publishDate?: string | null;
