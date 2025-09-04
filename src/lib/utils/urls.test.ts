@@ -48,4 +48,3 @@ describe('normalizeFirebaseUrl', () => {
     expect(url.searchParams.get('foo')).toBe('bar');
   });
 });
-
