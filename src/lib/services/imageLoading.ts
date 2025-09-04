@@ -61,6 +61,8 @@ class ImageLoadingService {
       const result = await loadPromise;
       if (result) {
         this.loadedImages.add(normalizedUrl);
+      } else {
+        console.warn('[ImageLoadingService] Failed to load', normalizedUrl);
       }
       return result;
     } catch (error) {
@@ -81,6 +83,7 @@ class ImageLoadingService {
       // Timeout to prevent hanging
       const timeout = setTimeout(() => {
         img.onload = img.onerror = null;
+        console.warn('[ImageLoadingService] Failed to load', src);
         resolve(null);
       }, 10000);
 
@@ -91,6 +94,7 @@ class ImageLoadingService {
 
       img.onerror = () => {
         clearTimeout(timeout);
+        console.warn('[ImageLoadingService] Failed to load', src);
         resolve(null);
       };
 

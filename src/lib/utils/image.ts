@@ -82,7 +82,11 @@ class ProgressiveImageLoader {
     const p = (async () => {
       try {
         const result = await preloadImage(key);
-        if (result) this.loadedImages.add(key);
+        if (result) {
+          this.loadedImages.add(key);
+        } else {
+          console.warn('[imageLoader] Failed to load', key);
+        }
         return result;
       } catch (error) {
         console.warn(`Image loading failed for: ${key}`, error);

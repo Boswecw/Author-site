@@ -82,13 +82,12 @@
 
     img.src = url;
   }
-  
+
   function handleError() {
+    console.warn('[ReliableImage] Failed to load', currentSrc);
     isLoading = false;
     hasError = true;
-    if (imgElement) {
-      imgElement.src = fallbackSrc;
-    }
+    if (imgElement) imgElement.src = fallbackSrc;
   }
 
   function handleImgError() {
