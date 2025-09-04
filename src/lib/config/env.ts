@@ -16,7 +16,7 @@ function getEnvVar(key: string, defaultValue?: string): string | undefined {
   export const ENV = {
     MONGODB_URI: getEnvVar('MONGODB_URI'),
     MONGODB_DB: getEnvVar('MONGODB_DB', 'author_site'),
-    FIREBASE_BUCKET: getEnvVar('FIREBASE_BUCKET', 'endless-fire-467204-n2.appspot.com'),
+    FIREBASE_BUCKET: getEnvVar('FIREBASE_BUCKET', 'endless-fire-467204-n2.firebasestorage.app'),
     PUBLIC_SITE_URL: getEnvVar('PUBLIC_SITE_URL', 'http://localhost:3000'),
   } as const;
   
