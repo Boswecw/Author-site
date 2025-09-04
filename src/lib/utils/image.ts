@@ -112,6 +112,14 @@ class ProgressiveImageLoader {
 export const imageLoader = new ProgressiveImageLoader();
 
 /**
+ * Resolve a book cover URL ensuring it is loaded successfully.
+ * Returns the URL if it loads, otherwise null.
+ */
+export function resolveCover(url?: string | null): Promise<string | null> {
+  return imageLoader.load(url);
+}
+
+/**
  * Batch preload with better error handling
  */
 export async function preloadImages(urls: (string | null | undefined)[]): Promise<{
