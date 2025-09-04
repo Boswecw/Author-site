@@ -19,12 +19,12 @@ function getEnvVar(key: string, defaultValue?: string): string | undefined {
     FIREBASE_BUCKET: getEnvVar('FIREBASE_BUCKET', 'endless-fire-467204-n2.firebasestorage.app'),
     PUBLIC_SITE_URL: getEnvVar('PUBLIC_SITE_URL', 'http://localhost:3000'),
   } as const;
-  
+
   // Validate required environment variables
   export function validateEnv(): void {
     const required = ['MONGODB_URI'] as const;
     const missing = required.filter(key => !ENV[key]);
-    
+
     if (missing.length > 0) {
       throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
     }
