@@ -3,32 +3,28 @@
  * Normalize Firebase Storage URLs for consistent access
  */
 export function normalizeFirebaseUrl(url?: string | null): string | null {
-	if (!url || typeof url !== 'string') return null;
-	
-	try {
-	  // Already normalized or not a Firebase URL
-	  if (!url.includes('firebase')) return url;
-	  
-	  // Convert firebasestorage.app to appspot.com (more reliable)
-	  let normalized = url.replace(
-		/https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/([^\/]+)\.firebasestorage\.app/,
-		'https://firebasestorage.googleapis.com/v0/b/$1.appspot.com'
-	  );
-	  
-	  // Ensure alt=media parameter is present for direct access
-	  if (normalized.includes('firebasestorage.googleapis.com')) {
-		const urlObj = new URL(normalized);
-		if (!urlObj.searchParams.has('alt')) {
-		  urlObj.searchParams.set('alt', 'media');
-		  normalized = urlObj.toString();
-		}
-	  }
-	  
-	  return normalized;
-	} catch (error) {
-	  console.warn('[normalizeFirebaseUrl] Invalid URL:', url, error);
-	  return url; // Return original if parsing fails
-	}
+        if (!url || typeof url !== 'string') return null;
+
+        try {
+          // Already normalized or not a Firebase URL
+          if (!url.includes('firebase')) return url;
+
+          let normalized = url;
+
+          // Ensure alt=media parameter is present for direct access
+          if (normalized.includes('firebasestorage.googleapis.com')) {
+                const urlObj = new URL(normalized);
+                if (!urlObj.searchParams.has('alt')) {
+                  urlObj.searchParams.set('alt', 'media');
+                  normalized = urlObj.toString();
+                }
+          }
+
+          return normalized;
+        } catch (error) {
+          console.warn('[normalizeFirebaseUrl] Invalid URL:', url, error);
+          return url; // Return original if parsing fails
+        }
 }
 
 /**
