@@ -34,7 +34,7 @@
       ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'
       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700';
 
-  // Normalize Firebase covers (handles firebasestorage.app → appspot.com, etc.)
+  // Normalize Firebase cover URLs (adds alt=media and returns the original domain)
   $: coverSrc = bookCover ? normalizeFirebaseUrl(bookCover) : null;
 
   function dimOrFallback(e: Event) {
