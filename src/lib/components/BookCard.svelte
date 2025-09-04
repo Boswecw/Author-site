@@ -1,8 +1,7 @@
 <!-- src/lib/components/BookCard.svelte - FIXED VERSION -->
 <script lang="ts">
   import type { Book } from '$lib/types';
-  import { createImageFallback, imageLoader } from '$lib/utils/image';
-  import { normalizeFirebaseUrl } from '$lib/utils/urls';
+  import { createImageFallback, resolveCover } from '$lib/utils/image';
   import { onMount } from 'svelte';
 
   export let book: Book;
@@ -12,38 +11,15 @@
   let imageLoaded = false;
   let imageError = false;
   let isLoading = true;
-
-  // ✅ FIXED: Better URL handling
-  $: coverUrl = normalizeFirebaseUrl(book.cover) ?? book.cover;
+  let coverUrl: string | null = null;
   $: fallbackSrc = createImageFallback(book.title, 'book');
-  
-  onMount(() => {
-    if (coverUrl) {
-      // Preload the image
-      imageLoader.load(coverUrl).then((result) => {
-        if (result && imageElement) {
-          imageElement.src = result;
-          imageLoaded = true;
-          imageError = false;
-        } else {
-          imageError = true;
-          if (imageElement) {
-            imageElement.src = fallbackSrc;
-          }
-        }
-        isLoading = false;
-      }).catch(() => {
-        imageError = true;
-        if (imageElement) {
-          imageElement.src = fallbackSrc;
-        }
-        isLoading = false;
-      });
-    } else {
-      // No cover URL, use fallback immediately
-      isLoading = false;
+
+  onMount(async () => {
+    coverUrl = await resolveCover(book.cover);
+    if (!coverUrl) {
       imageError = true;
     }
+    isLoading = false;
   });
 
   function handleImageLoad() {
