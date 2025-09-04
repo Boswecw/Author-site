@@ -1,17 +1,12 @@
+<!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import '../app.css';
   import Header from '$lib/components/Navigation.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import type { LayoutData } from './$types';
 
-  // CRITICAL FIX: Export data prop to prevent hydration mismatch
-  export let data: LayoutData;
-
-  // SEO and meta data (classic reactivity)
-  $: pageTitle = getPageTitle($page.url.pathname);
-  $: pageDescription = getPageDescription($page.url.pathname);
+  $: pathname = $page.url.pathname;
 
   function getPageTitle(pathname: string): string {
     switch (pathname) {
@@ -41,6 +36,9 @@
     }
   }
 
+  $: pageTitle = getPageTitle(pathname);
+  $: pageDescription = getPageDescription(pathname);
+
   onMount(() => {
     document.body.classList.add('loaded');
   });
@@ -58,6 +56,7 @@
 <div class="min-h-screen flex flex-col">
   <Header />
   <main class="flex-1 pt-16">
+    <!-- ✅ keep this -->
     <slot />
   </main>
   <Footer />

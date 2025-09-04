@@ -1,19 +1,17 @@
-export interface Book {
+export type Book = {
   id: string;
   title: string;
-  description: string;
-  cover: string;
-  genre: 'faith' | 'epic';
-  status: 'published' | 'coming-soon' | 'writing';
-  publishDate?: string;
-  isbn?: string;
-  pages?: number;
-  buyLinks?: {
-    amazon?: string;
-    barnes?: string;
-    other?: string;
-  };
-}
+  description?: string | null;
+  cover?: string | null;
+  genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
+  status?: string | null;
+  publishDate?: string | null;
+  isbn?: string | null;
+  format?: string | null;
+  pages?: number | null;
+  buyLinks?: Record<string, string | null>;
+  featured?: boolean;
+};
 
 export interface BlogPost {
   title: string;

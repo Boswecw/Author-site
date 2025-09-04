@@ -1,15 +1,8 @@
+// src/routes/books/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import type { BookDoc } from '$lib/server/books';
-
-// normalize older firebase domain variants to the standard appspot host
-function normalizeFirebaseUrl(url?: string | null): string | null {
-  if (!url) return null;
-  return url.replace(
-    'endless-fire-467204-n2.firebasestorage.app',
-    'endless-fire-467204-n2.appspot.com'
-  );
-}
+import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 export const load: PageServerLoad = async () => {
   const db = await getDb();
@@ -40,10 +33,10 @@ export const load: PageServerLoad = async () => {
   const books = docs.map((b) => ({
     id: b.id,
     title: b.title,
-    description: b.description ?? null,
-    cover: normalizeFirebaseUrl((b as any).cover),
-    genre: b.genre ?? null,
-    status: b.status ?? null,
+    description: b.description ?? '',
+    cover: normalizeFirebaseUrl((b as any).cover) ?? null,
+    genre: b.genre ?? 'faith',
+    status: b.status ?? 'upcoming',
     publishDate: b.publishDate
       ? b.publishDate instanceof Date
         ? b.publishDate.toISOString()
@@ -57,4 +50,3 @@ export const load: PageServerLoad = async () => {
 
   return { books };
 };
-

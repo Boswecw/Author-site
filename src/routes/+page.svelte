@@ -7,15 +7,17 @@
   import type { Book } from '$lib/types';
   import { onMount } from 'svelte';
 
-  // CRITICAL FIX: Properly typed data export
+  // Properly typed data export
   export let data: PageData;
 
   // Fallback data constants (used if server returns empty)
   const FALLBACK_FEATURED: Book = {
-    id: 'faith-in-firestorm',
+    id: 'faith-in-a-firestorm',
     title: 'Faith in a Firestorm',
-    description: "A Navy chaplain's faith is tested when supernatural forces threaten his crew during a dangerous rescue mission.",
-    cover: 'https://endless-fire-467204-n2.appspot.com/books/Faith-in-a-FireStorm-Cover.png',
+    description:
+      "A faith-forward wildfire drama inspired by 16 years on the line—courage, family, and grace when everything burns.",
+    cover:
+      'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Faith_in_a_FireStorm.png?alt=media&token=33d6bfa5-d3ff-4a4c-8d9b-a185282cacc3',
     genre: 'faith',
     status: 'featured'
   };
@@ -24,8 +26,10 @@
     {
       id: 'conviction-in-a-flood',
       title: 'Conviction in a Flood',
-      description: 'A companion novel exploring faith and resilience when rising waters test a community\'s resolve.',
-      cover: 'https://endless-fire-467204-n2.appspot.com/books/conviction-in-a-flood.jpg',
+      description:
+        "A companion novel exploring faith and resilience when rising waters test a community's resolve.",
+      cover:
+        'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/Conviction_in_a_Flood%20Cover.png?alt=media&token=0e9ea64f-f71c-427e-a63e-dfdc301a60c1',
       genre: 'faith',
       status: 'upcoming',
       publishDate: '2026-03-15'
@@ -33,8 +37,10 @@
     {
       id: 'hurricane-eve',
       title: 'Hurricane Eve',
-      description: 'The third installment of the Faith & Calamity series—a storm that shatters records and faith itself.',
-      cover: 'https://endless-fire-467204-n2.appspot.com/books/hurricane-eve.jpg',
+      description:
+        'The third installment of the Faith & Calamity series—a storm that shatters records and faith itself.',
+      cover:
+        'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/Hurricane_Eve%20Cover.png?alt=media&token=547854ac-b00e-411a-b5e5-e15995b01334',
       genre: 'faith',
       status: 'upcoming',
       publishDate: '2026-09-15'
@@ -42,23 +48,23 @@
     {
       id: 'faith-of-the-hunter',
       title: 'The Faith of the Hunter',
-      description: 'David Paczer, thrust into a brutal medieval world where faith and survival collide.',
-      cover: 'https://endless-fire-467204-n2.appspot.com/books/the-faith-of-the-hunter.jpg',
+      description:
+        'David Paczer, thrust into a brutal medieval world where faith and survival collide.',
+      cover:
+        'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/TheFaithoftheHuntercover.png?alt=media&token=ac09e3b1-7cee-4df3-bc9e-dcbcf14a482f',
       genre: 'faith',
       status: 'upcoming',
       publishDate: '2026-09-01'
     }
   ];
 
-  // CRITICAL FIX: Safe data access with proper fallbacks
+  // Safe data access with proper fallbacks
   $: featuredBook = (data?.featured || FALLBACK_FEATURED) as Book;
   $: upcomingBooks = (data?.upcoming?.length ? data.upcoming : FALLBACK_UPCOMING) as Book[];
 
   // Loading state for progressive enhancement
   let componentsReady = false;
-
   onMount(() => {
-    // Allow components to render after mount
     componentsReady = true;
   });
 </script>
@@ -101,13 +107,9 @@
           Discover the newest addition to the collection—where faith meets adventure in the face of impossible odds.
         </p>
       </div>
-      
-      <div class="max-w-4xl mx-auto">
-        <BookCard 
-          book={featuredBook} 
-          featured={true}
-          class="transform hover:scale-[1.02] transition-transform duration-300"
-        />
+
+      <div class="max-w-4xl mx-auto transform hover:scale-[1.02] transition-transform duration-300">
+        <BookCard book={featuredBook} featured />
       </div>
     </div>
   </section>
@@ -123,19 +125,18 @@
           Get ready for new adventures. These upcoming releases will expand the universe of faith-driven fantasy.
         </p>
       </div>
-      
+
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each upcomingBooks as book (book.id)}
-          <BookCard 
-            {book} 
-            class="transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
-          />
+          <div class="transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            <BookCard {book} />
+          </div>
         {/each}
       </div>
-      
+
       <div class="text-center mt-12">
-        <a 
-          href="/books" 
+        <a
+          href="/books"
           class="inline-flex items-center px-8 py-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
         >
           View All Books
@@ -155,15 +156,15 @@
       <div>
         <h2 class="text-3xl md:text-4xl font-bold mb-6">From Service to Stories</h2>
         <p class="text-xl text-gray-300 mb-6">
-          Sixteen years as a U.S. Navy veteran and wildland firefighter have shaped every page I write. 
+          Sixteen years as a U.S. Navy veteran and wildland firefighter have shaped every page I write.
           My novels blend real-world experience with epic fantasy, creating stories where courage isn't just heroic—it's necessary for survival.
         </p>
         <p class="text-lg text-gray-300 mb-8">
-          Whether battling wildfires or supernatural forces, my characters face the same truth: 
+          Whether battling wildfires or supernatural forces, my characters face the same truth:
           faith and brotherhood are the only things that can carry you through the impossible.
         </p>
-        <a 
-          href="/about" 
+        <a
+          href="/about"
           class="inline-flex items-center px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200"
         >
           Learn My Story

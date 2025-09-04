@@ -22,26 +22,38 @@ export default {
           950: '#411710'
         },
 
-        // NEW — shared brand metals & neutrals
+        // --- Shared brand metals & neutrals ---
         brand: {
-          gold:   '#C9A86A',
-          bronze: '#8C7853',
-          charcoal: '#2B2B2B',
-          cream:  '#F5F2E7'
+          gold:     '#C9A227', // signature muted gold
+          bronze:   '#8C7853',
+          charcoal: '#1A1A1A',
+          cream:    '#F8F4E9'
         },
 
-        // NEW — genre accents
+        // --- Genre accents ---
         faith: {
-          blue: '#2C3E7F',
-          tint: '#E7EDF8'
+          ember:  '#E4572E', // firestorm glow
+          forest: '#355E3B', // steady natural tone
         },
         fantasy: {
-          crimson: '#7A1C1C',
-          emerald: '#0F5132',
-          shadow:  '#3C2F2F'
+          storm:   '#1C3A55', // stormy blue
+          light:   '#FFD65A', // glowing orb gold
+          earth:   '#6E4B2B'  // medieval grounding
+        },
+        scifi: {
+          neon:    '#39FF14', // biotech green
+          orange:  '#FF6F3C', // subtitle accent
+          shadow:  '#0F2A1E'  // swamp/alien dark
         }
       },
-      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        // optional per-genre heading fonts (if you install them via Google Fonts)
+        serif: ['Cormorant Garamond', 'serif'], // for Christian Fiction
+        fantasy: ['Cinzel', 'serif'],           // for Fantasy
+        scifi: ['Orbitron', 'sans-serif']      // for Sci-Fi
+      }
     }
   },
   plugins: [typography]

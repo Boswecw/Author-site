@@ -1,10 +1,11 @@
 @charset "UTF-8";
 
-/* must be before ANYTHING else (besides @charset)
-   Load Inter for UI + Cormorant Garamond 400 Italic for the brand name */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@1,400&display=swap');
+/* === Web fonts (UI + per-genre headings) ===
+   Inter for UI, Cormorant Garamond (brand sig),
+   Cinzel (Fantasy), Orbitron (Sci-Fi) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@1,400&family=Cinzel:wght@600;700&family=Orbitron:wght@600;700&display=swap');
 
-/* Tailwind directives come after @import */
+/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,21 +19,41 @@
   --fire-600: #dc3b21;
   --fire-700: #b72c16;
 
-  /* neutrals */
+  /* neutrals / brand core */
   --stone-900: #0b0b0c;
-  --brand-charcoal: #2B2B2B;
-  --brand-cream:    #F5F2E7;
+  --brand-charcoal: #1A1A1A; /* sync w/ tailwind brand.charcoal */
+  --brand-cream:    #F8F4E9;
 
   /* metals / shared accents */
-  --brand-gold:   #C9A86A;
+  --brand-gold:   #C9A227;  /* signature */
   --brand-bronze: #8C7853;
 
-  /* genre accents */
-  --faith-blue:      #2C3E7F;
-  --faith-tint:      #E7EDF8;
-  --fantasy-crimson: #7A1C1C;
-  --fantasy-emerald: #0F5132;
-  --fantasy-shadow:  #3C2F2F;
+  /* Christian Fiction */
+  --faith-ember:  #E4572E;
+  --faith-forest: #355E3B;
+
+  /* Fantasy */
+  --fantasy-storm: #1C3A55;
+  --fantasy-light: #FFD65A;
+  --fantasy-earth: #6E4B2B;
+  --fantasy-crimson: #7A1C1C; /* legacy use */
+
+  /* Sci-Fi */
+  --scifi-neon:   #39FF14;
+  --scifi-orange: #FF6F3C;
+  --scifi-shadow: #0F2A1E;
+}
+
+/* ---------- DARK MODE OVERRIDES ---------- */
+.dark {
+  --brand-cream:   #0f1115;
+  --stone-900:     #e7e5e4;
+  --brand-charcoal:#0B0D10;
+
+  /* subtle lifts in dark for visibility */
+  --fantasy-storm: color-mix(in oklab, #1C3A55 85%, white 15%);
+  --faith-forest:  color-mix(in oklab, #355E3B 85%, white 15%);
+  --scifi-shadow:  color-mix(in oklab, #0F2A1E 85%, white 15%);
 }
 
 /* ---------- BASE ---------- */
@@ -44,64 +65,67 @@
     scroll-behavior: smooth;
   }
 
+  .dark html, .dark body { background-color: var(--brand-cream); }
+
   body { line-height: 1.6; }
 
   *:focus {
-    outline: 2px solid var(--faith-blue);
+    outline: 2px solid var(--fantasy-storm);
     outline-offset: 2px;
   }
 
   img { max-width: 100%; height: auto; }
 
-  /* Custom scrollbar (put in base, not components) */
+  /* Custom scrollbar */
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: #f1f5f9; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
   /* Optional page theme helpers */
-  .theme-faith {
-    --link: var(--faith-blue);
-    --card-bg: var(--faith-tint);
-  }
-  .theme-fantasy {
-    --link: var(--fantasy-crimson);
-    --card-bg: color-mix(in oklab, var(--fantasy-shadow) 6%, white);
-  }
-} /* <-- closes @layer base */
+  .theme-faith   { --link: var(--faith-ember);  --card-bg: color-mix(in oklab, var(--faith-forest) 7%, white); }
+  .theme-fantasy { --link: var(--fantasy-storm); --card-bg: color-mix(in oklab, var(--fantasy-earth) 6%, white); }
+  .theme-scifi   { --link: var(--scifi-orange);  --card-bg: color-mix(in oklab, var(--scifi-shadow) 8%, white); }
+}
 
 /* ---------- COMPONENTS ---------- */
 @layer components {
-  /* === Brand name utility (Cormorant Garamond 400 Italic) === */
+  /* === Brand signature (Cormorant Garamond 400 Italic) === */
   .brand-name {
     font-family: 'Cormorant Garamond', serif;
-    font-style: italic;   /* 400 Italic */
+    font-style: italic;
     font-weight: 400;
     letter-spacing: 0.02em;
   }
 
-  /* Primary CTA: gold→bronze, hover to crimson/fire */
+  /* Optional per-genre heading classes */
+  .heading-fantasy { font-family: 'Cinzel', serif; letter-spacing: 0.01em; }
+  .heading-scifi   { font-family: 'Orbitron', sans-serif; letter-spacing: 0.03em; }
+
+  /* Primary CTA: gold→bronze; genre-aware hover via helper classes below */
   .btn-primary {
     @apply text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 focus:ring-4;
     background: linear-gradient(90deg, var(--brand-gold), var(--brand-bronze));
-  }
-  .btn-primary:hover {
-    background: linear-gradient(90deg, var(--fantasy-crimson), var(--fire-600));
   }
   .btn-primary:focus {
     box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand-gold), white 70%);
   }
 
-  /* Secondary CTA: faith tint w/ blue text */
+  /* Genre hover modifiers */
+  .btn-faith:hover   { background: linear-gradient(90deg, var(--faith-ember), var(--fire-600)); }
+  .btn-fantasy:hover { background: linear-gradient(90deg, var(--fantasy-light), var(--fantasy-earth)); }
+  .btn-scifi:hover   { background: linear-gradient(90deg, var(--scifi-neon), var(--scifi-orange)); filter: drop-shadow(0 0 8px color-mix(in oklab, var(--scifi-neon), white 40%)); }
+
+  /* Secondary CTA (calm) */
   .btn-secondary {
     @apply font-semibold py-3 px-6 rounded-lg transition-colors duration-200;
-    background-color: var(--faith-tint);
-    color: var(--faith-blue);
+    background-color: color-mix(in oklab, var(--brand-gold), white 88%);
+    color: var(--brand-charcoal);
   }
   .btn-secondary:hover { filter: brightness(0.95); }
-  .btn-secondary:focus { @apply focus:ring-4; box-shadow: 0 0 0 4px color-mix(in oklab, var(--faith-blue), white 80%); }
+  .btn-secondary:focus { @apply focus:ring-4; box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand-gold), white 80%); }
 
-  /* Legacy fire gradient (kept for “heat” use cases) */
+  /* Legacy fire gradient (for heat moments) */
   .fire-gradient {
     @apply bg-gradient-to-br;
     background-image: linear-gradient(to bottom right, #7a1c1c, #bc4525, #f0734a);
@@ -121,7 +145,7 @@
     @apply rounded-xl;
   }
 
-  /* Blog-ish prose tweaks */
+  /* Prose */
   .prose { @apply leading-relaxed; color: var(--brand-charcoal); }
   .prose h2 { @apply text-2xl font-bold mt-8 mb-4; color: var(--stone-900); }
   .prose h3 { @apply text-xl font-semibold mt-6 mb-3; color: var(--stone-900); }
@@ -132,21 +156,17 @@
     border-left: 4px solid var(--brand-gold);
     padding-left: 1.5rem;
     font-style: italic;
-    color: #4b5563; /* gray-600 */
+    color: #4b5563;
     @apply my-6;
   }
   .prose code {
     background: color-mix(in oklab, var(--brand-gold), white 85%);
-    color: var(--fantasy-shadow);
+    color: var(--brand-charcoal);
     @apply px-2 py-1 rounded text-sm;
   }
   .prose pre { @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-6; }
   .prose pre code { @apply bg-transparent text-gray-100 p-0; }
-  .prose a {
-    color: var(--faith-blue);
-    text-decoration: underline;
-  }
-  .theme-fantasy .prose a { color: var(--fantasy-crimson); }
+  .prose a { color: var(--link, var(--fantasy-storm)); text-decoration: underline; }
 
   /* Animations */
   .animate-fade-in { animation: fadeIn 0.6s ease-in-out; }
@@ -173,25 +193,28 @@
   /* Forms */
   .form-input {
     @apply w-full px-4 py-3 border rounded-lg transition-colors duration-200;
-    border-color: #e5e7eb; /* gray-300 */
+    border-color: #e5e7eb;
+    background-color: white;
   }
+  .dark .form-input { background-color: #0f172a; border-color: #334155; color: #e5e7eb; }
   .form-input:focus {
     outline: none;
-    border-color: var(--faith-blue);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--faith-blue), white 75%);
+    border-color: var(--fantasy-storm);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--fantasy-storm), white 75%);
   }
   .form-textarea { @apply min-h-[120px] resize-y; }
   .form-label { @apply block text-sm font-medium text-gray-700 mb-2; }
+  .dark .form-label { @apply text-gray-300; }
 
   /* Badges */
   .badge-success { @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium; }
   .badge-warning { @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium; }
-  .badge-info    { background: var(--faith-tint); color: var(--faith-blue); @apply px-2 py-1 rounded-full text-xs font-medium; }
-} /* <-- closes @layer components */
+  .badge-info    { background: color-mix(in oklab, var(--fantasy-storm), white 85%); color: var(--fantasy-storm); @apply px-2 py-1 rounded-full text-xs font-medium; }
+}
 
 /* ---------- UTILITIES ---------- */
 @layer utilities {
-  /* Prevent weird absolute/transform from external styles; scope to BookCard */
+  /* Scope fixes */
   .bookcard form input,
   .bookcard form button {
     position: static !important;
@@ -203,6 +226,10 @@
   .text-gold    { color: var(--brand-gold); }
   .bg-cream     { background-color: var(--brand-cream); }
   .border-gold  { border-color: var(--brand-gold); }
-  .link-faith   { color: var(--faith-blue); }
-  .link-fantasy { color: var(--fantasy-crimson); }
-} /* <-- closes @layer utilities */
+
+  .link-faith   { color: var(--faith-ember); }
+  .link-fantasy { color: var(--fantasy-storm); }
+  .link-scifi   { color: var(--scifi-orange); text-shadow: 0 0 6px color-mix(in oklab, var(--scifi-neon), white 30%); }
+
+  .glow-scifi   { box-shadow: 0 0 12px color-mix(in oklab, var(--scifi-neon), white 35%); }
+}
