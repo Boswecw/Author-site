@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
 
   export let book: Book;
+  export let featured: boolean = false;
   
   let imageElement: HTMLImageElement;
   let imageLoaded = false;
@@ -61,7 +62,12 @@
   }
 </script>
 
-<div class="relative group">
+<div class="relative group" class:ring-2={featured} class:ring-yellow-400={featured}>
+  {#if featured}
+    <span class="absolute top-2 left-2 z-10 bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded shadow">
+      Featured
+    </span>
+  {/if}
   <!-- Loading State -->
   {#if isLoading}
     <div class="w-full h-80 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
