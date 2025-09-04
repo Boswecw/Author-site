@@ -2,15 +2,20 @@
 <script lang="ts">
   import ReliableImage from '$lib/components/ReliableImage.svelte';
   import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
-  
+
   export let data;
   
+  let featured;
+  let upcoming = [];
+
   // Test data if none from server
   $: featured = data?.featured || null;
   $: upcoming = data?.upcoming || [];
-  
-  console.log('[Homepage] Featured:', featured);
-  console.log('[Homepage] Upcoming:', upcoming.length);
+
+  $: {
+    console.log('[Homepage] Featured:', featured);
+    console.log('[Homepage] Upcoming:', upcoming.length);
+  }
 </script>
 
 <svelte:head>
