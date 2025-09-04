@@ -2,7 +2,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { getPublishedPosts } from '$lib/server/posts';
 
 export const GET: RequestHandler = async () => {
-  const { items } = await getPublishedPosts(1, 20);
+  const items = await getPublishedPosts(20);
   const site = 'https://your-domain.com';
 
   const itemsXml = items
