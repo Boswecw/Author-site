@@ -91,7 +91,24 @@ MONGODB_DB="author_site"
 
 # Optional: Firebase bucket (for images)
 FIREBASE_BUCKET="endless-fire-467204-n2.firebasestorage.app"
+
+# Firebase download tokens (one per file)
+VITE_FB_TOKEN_BOOKS_FAITH_IN_A_FIRESTORM="<token>"
+VITE_FB_TOKEN_BOOKS_CONVICTION_IN_A_FLOOD="<token>"
+VITE_FB_TOKEN_BOOKS_HURRICANE_EVE="<token>"
+VITE_FB_TOKEN_BOOKS_THE_FAITH_OF_THE_HUNTER="<token>"
+VITE_FB_TOKEN_BOOKS_HEART_OF_THE_STORM="<token>"
+VITE_FB_TOKEN_BOOKS_SYMBIOGENESIS="<token>"
+VITE_FB_TOKEN_AUTHOR_PORTRAIT="<token>"
+VITE_FB_TOKEN_AUTHOR_FIREFIGHTER="<token>"
+VITE_FB_TOKEN_AUTHOR_NAVY="<token>"
+VITE_FB_TOKEN_AUTHOR_AUGUST_25="<token>"
+VITE_FB_TOKEN_ICONS_SIGNATURE_LOGO="<token>"
+VITE_FB_TOKEN_ICONS_CHRISTIAN_FICTION="<token>"
+VITE_FB_TOKEN_ICONS_EPIC_FANTASY="<token>"
 ```
+
+Copy `.env.example` to `.env` and fill in the download tokens from Firebase Storage. Updating the `.env` file is all that is needed when tokens rotate; the source code remains untouched.
 
 ---
 
