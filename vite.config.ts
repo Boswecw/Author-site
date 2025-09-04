@@ -63,9 +63,7 @@ export default defineConfig({
 
   // ✅ FIXED: CSS processing
   css: {
-    postcss: {
-      plugins: []
-    }
+    postcss: true
   },
 
   // ✅ FIXED: Asset handling for images
