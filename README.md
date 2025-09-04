@@ -141,6 +141,7 @@ export interface PostDoc {
 
   * Collections: `books`, `posts`
   * Documents follow the interfaces above for type safety and consistency.
+  * If no featured or upcoming books exist, the homepage loader returns a default featured book and sample upcoming titles from `FIREBASE_IMAGES` so the page still renders.
 
 * **Image Handling**:
 
