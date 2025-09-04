@@ -1,7 +1,6 @@
 <!-- src/routes/+page.svelte - SIMPLE TEST VERSION -->
 <script lang="ts">
   import ReliableImage from '$lib/components/ReliableImage.svelte';
-  import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
 
   export let data;
   
@@ -92,7 +91,7 @@
             <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-6 shadow-2xl">
               <div class="mb-4">
                 <ReliableImage
-                  src={FIREBASE_IMAGES.BOOKS.FAITH_IN_A_FIRESTORM}
+                  src="books/Faith_in_a_FireStorm.png"
                   alt="Faith in a Firestorm"
                   className="w-full h-auto rounded-lg shadow-lg max-w-xs mx-auto"
                   fallbackType="book"

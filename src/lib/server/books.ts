@@ -1,13 +1,12 @@
 // src/lib/server/books.ts
 import { getDb } from '$lib/server/db';
 import type { Book, BookDoc, BookStatus } from '$lib/types';
-import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 // Re-export for convenience
 export type { BookDoc } from '$lib/types';
 
 function ensureCover(url?: string | null): string | null {
-  return normalizeFirebaseUrl(url) ?? null;
+  return url ?? null;
 }
 
 function toIsoOrNull(d: unknown): string | null {
