@@ -1,8 +1,8 @@
-<!-- src/lib/components/ReliableImage.svelte - COMPLETE IMAGE FIX -->
+<!-- src/lib/components/ReliableImage.svelte - COMPLETE FIX -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { normalizeFirebaseUrl } from '$lib/utils/urls';
-  import { createImageFallback } from '$lib/utils/image';
+  import { browser } from '$app/environment';
   
   // Props
   export let src: string | null | undefined = null;
@@ -11,30 +11,39 @@
   export let width: number | string | undefined = undefined;
   export let height: number | string | undefined = undefined;
   export let loading: 'eager' | 'lazy' = 'lazy';
-  export let fallbackText: string = 'Image Unavailable';
-  export let fallbackType: 'book' | 'avatar' | 'logo' = 'book';
+  export let fallbackType: 'book' | 'author' | 'logo' = 'book';
   
   // State
   let imgElement: HTMLImageElement;
-  let currentSrc = '';
   let isLoading = true;
   let hasError = false;
-  let isVisible = false;
+  let currentSrc = '';
+  
+  // Create simple fallback SVG
+  function createFallback(type: 'book' | 'author' | 'logo'): string {
+    const dimensions = type === 'book' ? '300 400' : '300 300';
+    const text = type === 'book' ? 'BOOK' : type === 'author' ? 'AUTHOR' : 'CB';
+    
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.split(' ')[0]}" height="${dimensions.split(' ')[1]}" viewBox="0 0 ${dimensions}">
+      <rect width="100%" height="100%" fill="#f3f4f6"/>
+      <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" 
+            font-family="Arial, sans-serif" font-size="24" fill="#6b7280">${text}</text>
+    </svg>`;
+    
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  }
   
   // Reactive statements
   $: cleanSrc = normalizeFirebaseUrl(src) ?? src ?? null;
-  $: fallbackSrc = createImageFallback(fallbackText, fallbackType);
+  $: fallbackSrc = createFallback(fallbackType);
   
-  // Handle src changes
+  // Load image when src changes
   $: if (cleanSrc && cleanSrc !== currentSrc) {
     loadImage(cleanSrc);
   }
   
-  /**
-   * Load image with proper error handling
-   */
   function loadImage(url: string) {
-    if (!url) {
+    if (!browser || !url) {
       handleError();
       return;
     }
@@ -43,7 +52,6 @@
     hasError = false;
     currentSrc = url;
 
-    // Create image element for preloading
     const img = new Image();
     
     // Set CORS for Firebase images
@@ -51,7 +59,7 @@
       img.crossOrigin = 'anonymous';
     }
 
-    // Timeout handling
+    // Timeout to prevent hanging
     const timeout = setTimeout(() => {
       img.onload = img.onerror = null;
       handleError();
@@ -59,7 +67,11 @@
 
     img.onload = () => {
       clearTimeout(timeout);
-      handleSuccess(url);
+      isLoading = false;
+      hasError = false;
+      if (imgElement) {
+        imgElement.src = url;
+      }
     };
 
     img.onerror = () => {
@@ -69,46 +81,19 @@
 
     img.src = url;
   }
-
-  /**
-   * Handle successful image load
-   */
-  function handleSuccess(url: string) {
-    isLoading = false;
-    hasError = false;
-    
-    if (imgElement) {
-      imgElement.src = url;
-    }
-  }
-
-  /**
-   * Handle image load error
-   */
+  
   function handleError() {
     isLoading = false;
     hasError = true;
-    
     if (imgElement) {
       imgElement.src = fallbackSrc;
     }
   }
 
-  /**
-   * Handle img element events
-   */
-  function handleImgLoad() {
-    isLoading = false;
-    isVisible = true;
-  }
-
   function handleImgError() {
-    if (!hasError) { // Only if not already handled
-      handleError();
-    }
+    handleError();
   }
 
-  // Initialize on mount
   onMount(() => {
     if (cleanSrc) {
       loadImage(cleanSrc);
@@ -122,32 +107,29 @@
 {#if isLoading && !hasError}
   <div 
     class={`bg-gray-200 animate-pulse flex items-center justify-center ${className}`}
-    style={`${width ? `width: ${typeof width === 'number' ? width + 'px' : width};` : ''}${height ? `height: ${typeof height === 'number' ? height + 'px' : height};` : ''}`}
+    style={`${width ? `width: ${typeof width === 'number' ? width + 'px' : width};` : ''}${height ? ` height: ${typeof height === 'number' ? height + 'px' : height};` : ''}`}
   >
-    <div class="text-gray-400 text-sm">Loading...</div>
+    <span class="text-gray-400 text-sm">Loading...</span>
   </div>
 {:else}
   <!-- Actual image -->
   <img
     bind:this={imgElement}
     src={hasError ? fallbackSrc : (cleanSrc || fallbackSrc)}
-    alt={alt}
+    {alt}
     class={className}
     class:opacity-75={hasError}
-    width={width}
-    height={height}
-    loading={loading}
+    {width}
+    {height}
+    {loading}
     decoding="async"
-    on:load={handleImgLoad}
     on:error={handleImgError}
   />
 {/if}
 
-<!-- Error indicator overlay for fallback images -->
-{#if hasError && isVisible}
-  <div class="absolute inset-0 flex items-end justify-end p-2 pointer-events-none">
-    <div class="bg-red-500 text-white text-xs px-2 py-1 rounded shadow">
-      Fallback
-    </div>
+<!-- Error indicator for debugging -->
+{#if hasError && process.env.NODE_ENV === 'development'}
+  <div class="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 py-0.5 rounded">
+    Fallback
   </div>
 {/if}

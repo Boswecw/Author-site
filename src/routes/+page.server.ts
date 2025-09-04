@@ -1,7 +1,7 @@
-// src/routes/+page.server.ts
+// src/routes/+page.server.ts - FIXED
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
-import { toFirebaseDownloadIfNeeded } from '$lib/utils/urls';
+import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 type BookDoc = {
   id: string;
@@ -22,32 +22,10 @@ export const load: PageServerLoad = async () => {
   const db = await getDb();
   const coll = db.collection<BookDoc>('books');
 
-  // 1) Try to get the explicit featured book
-  const featuredDoc = await coll.findOne(
-    { featured: true },
-    {
-      projection: {
-        _id: 0,
-        id: 1,
-        title: 1,
-        description: 1,
-        cover: 1,
-        genre: 1,
-        status: 1,
-        publishDate: 1,
-        isbn: 1,
-        format: 1,
-        pages: 1,
-        buyLinks: 1,
-        featured: 1
-      }
-    }
-  );
-
-  // 2) Also fetch a list of non-featured books (e.g., for cards)
-  const upcoming = await coll
-    .find(
-      { featured: { $ne: true } },
+  try {
+    // 1) Try to get the explicit featured book
+    const featuredDoc = await coll.findOne(
+      { featured: true },
       {
         projection: {
           _id: 0,
@@ -65,23 +43,63 @@ export const load: PageServerLoad = async () => {
           featured: 1
         }
       }
-    )
-    .sort({ publishDate: -1 }) // newest first if present
-    .limit(12)
-    .toArray();
+    );
 
-  // 3) If no featured is set, fall back to the most recent from upcoming
-  const effectiveFeatured = featuredDoc ?? upcoming[0] ?? null;
+    // 2) Also fetch a list of non-featured books (e.g., for cards)
+    const upcoming = await coll
+      .find(
+        { featured: { $ne: true } },
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            title: 1,
+            description: 1,
+            cover: 1,
+            genre: 1,
+            status: 1,
+            publishDate: 1,
+            isbn: 1,
+            format: 1,
+            pages: 1,
+            buyLinks: 1,
+            featured: 1
+          }
+        }
+      )
+      .sort({ publishDate: -1 }) // newest first if present
+      .limit(12)
+      .toArray();
 
-  // Normalize covers to canonical download URLs
-  const featured = effectiveFeatured
-    ? { ...effectiveFeatured, cover: toFirebaseDownloadIfNeeded(effectiveFeatured.cover) }
-    : null;
+    // 3) If no featured is set, fall back to the most recent from upcoming
+    const effectiveFeatured = featuredDoc ?? upcoming[0] ?? null;
 
-  const upcomingNorm = upcoming.map(b => ({
-    ...b,
-    cover: toFirebaseDownloadIfNeeded(b.cover)
-  }));
+    // Normalize covers to canonical download URLs
+    const featured = effectiveFeatured
+      ? { 
+          ...effectiveFeatured, 
+          cover: normalizeFirebaseUrl(effectiveFeatured.cover) 
+        }
+      : null;
 
-  return { featured, upcoming: upcomingNorm };
+    const upcomingNorm = upcoming.map(b => ({
+      ...b,
+      cover: normalizeFirebaseUrl(b.cover)
+    }));
+
+    console.log('[+page.server] Featured book:', featured?.title, 'cover:', featured?.cover);
+    console.log('[+page.server] Upcoming books:', upcomingNorm.length);
+
+    return { 
+      featured, 
+      upcoming: upcomingNorm 
+    };
+
+  } catch (error) {
+    console.error('[+page.server] Database error:', error);
+    return { 
+      featured: null, 
+      upcoming: [] 
+    };
+  }
 };

@@ -1,7 +1,6 @@
 // src/lib/utils/urls.ts - COMPLETE FIX
 /**
- * ✅ FIXED: Normalize Firebase Storage URLs
- * Handles various Firebase URL formats and ensures consistent access
+ * Normalize Firebase Storage URLs for consistent access
  */
 export function normalizeFirebaseUrl(url?: string | null): string | null {
 	if (!url || typeof url !== 'string') return null;
@@ -30,31 +29,38 @@ export function normalizeFirebaseUrl(url?: string | null): string | null {
 	  console.warn('[normalizeFirebaseUrl] Invalid URL:', url, error);
 	  return url; // Return original if parsing fails
 	}
-  }
-  
-  /**
-   * ✅ Check if URL is a Firebase Storage URL
-   */
-  export function isFirebaseStorageUrl(url?: string | null): boolean {
+}
+
+/**
+ * Legacy function name for backward compatibility - maps to normalizeFirebaseUrl
+ */
+export function toFirebaseDownloadIfNeeded(url?: string | null): string | null {
+	return normalizeFirebaseUrl(url);
+}
+
+/**
+ * Check if URL is a Firebase Storage URL
+ */
+export function isFirebaseStorageUrl(url?: string | null): boolean {
 	if (!url || typeof url !== 'string') return false;
 	return url.includes('firebasestorage.googleapis.com') || 
-		   url.includes('firebase') && url.includes('storage');
-  }
-  
-  /**
-   * ✅ Get Firebase storage bucket from URL
-   */
-  export function getFirebaseBucket(url?: string | null): string | null {
+		   (url.includes('firebase') && url.includes('storage'));
+}
+
+/**
+ * Get Firebase storage bucket from URL
+ */
+export function getFirebaseBucket(url?: string | null): string | null {
 	if (!url || !isFirebaseStorageUrl(url)) return null;
 	
 	const match = url.match(/\/b\/([^\/]+)\./);
 	return match ? match[1] : null;
-  }
-  
-  /**
-   * ✅ Validate that URL is accessible (basic check)
-   */
-  export function isValidUrl(url?: string | null): boolean {
+}
+
+/**
+ * Validate that URL is accessible (basic check)
+ */
+export function isValidUrl(url?: string | null): boolean {
 	if (!url || typeof url !== 'string') return false;
 	
 	try {
@@ -63,12 +69,4 @@ export function normalizeFirebaseUrl(url?: string | null): string | null {
 	} catch {
 	  return false;
 	}
-  }
-  
-  /**
-   * ✅ FIXED: Legacy function name for backward compatibility
-   * This is the same as normalizeFirebaseUrl but with the old name
-   */
-  export function toFirebaseDownloadIfNeeded(url?: string | null): string | null {
-	return normalizeFirebaseUrl(url);
-  }
+}
