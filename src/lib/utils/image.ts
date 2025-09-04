@@ -112,6 +112,20 @@ class ProgressiveImageLoader {
 export const imageLoader = new ProgressiveImageLoader();
 
 /**
+ * Resolve a book cover URL by normalizing and preloading it
+ */
+export async function resolveCover(url?: string | null): Promise<string | null> {
+  const normalized = normalizeFirebaseUrl(url) ?? url ?? null;
+  if (!normalized) return null;
+  try {
+    return await imageLoader.load(normalized);
+  } catch (err) {
+    console.warn('[resolveCover] Failed to load', normalized, err);
+    return null;
+  }
+}
+
+/**
  * Batch preload with better error handling
  */
 export async function preloadImages(urls: (string | null | undefined)[]): Promise<{
