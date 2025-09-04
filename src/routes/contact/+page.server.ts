@@ -55,8 +55,8 @@ export const actions: Actions = {
     try {
       // CRITICAL FIX: Import nodemailer inside the action to prevent build issues
       const nodemailer = await import('nodemailer');
-      
-      const transporter = nodemailer.createTransporter({
+
+      const transporter = nodemailer.default.createTransport({
         service: 'gmail',
         auth: {
           user: gmailUser,
