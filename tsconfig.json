@@ -2,6 +2,11 @@
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": { "types": ["svelte"] },
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "postcss.config.cjs", "tailwind.config.*"]
+        "exclude": [
+                "node_modules",
+                "postcss.config.cjs",
+                "tailwind.config.*",
+                "**/*.spec.*"
+        ]
   }
   
