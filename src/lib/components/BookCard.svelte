@@ -2,7 +2,6 @@
 <script lang="ts">
   import type { Book } from '$lib/types';
   import { createImageFallback, imageLoader } from '$lib/utils/image';
-  import { normalizeFirebaseUrl } from '$lib/utils/urls';
   import { onMount } from 'svelte';
 
   export let book: Book;
@@ -13,8 +12,8 @@
   let imageError = false;
   let isLoading = true;
 
-  // ✅ FIXED: Better URL handling
-  $: coverUrl = normalizeFirebaseUrl(book.cover) ?? book.cover;
+  // Cover now stores a Firebase Storage path
+  $: coverUrl = book.cover;
   $: fallbackSrc = createImageFallback(book.title, 'book');
   
   onMount(() => {

@@ -1,7 +1,6 @@
 <!-- src/lib/components/Hero.svelte - FIXED VERSION -->
 <script lang="ts">
   import { createImageFallback } from '$lib/utils/image';
-  import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
   export let title: string;
   export let subtitle: string;
@@ -34,8 +33,8 @@
       ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'
       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700';
 
-  // Normalize Firebase cover URLs (adds alt=media and returns the original domain)
-  $: coverSrc = bookCover ? normalizeFirebaseUrl(bookCover) : null;
+  // bookCover is now a Firebase Storage path
+  $: coverSrc = bookCover;
 
   function dimOrFallback(e: Event) {
     const img = e.currentTarget as HTMLImageElement;

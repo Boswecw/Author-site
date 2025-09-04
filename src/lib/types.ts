@@ -14,7 +14,7 @@ export interface Book {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null;
+  cover?: string | null;         // Firebase Storage path
   genre?: BookGenre | null;
   status?: BookStatus | null;
   publishDate?: string | null;       // ISO string for client/UI
