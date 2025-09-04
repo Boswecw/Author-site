@@ -24,7 +24,7 @@ It provides sections for:
 - **Database**: [MongoDB Atlas](https://www.mongodb.com/atlas)  
 - **Driver**: Official [mongodb](https://www.npmjs.com/package/mongodb) Node.js driver
 - **Hosting**: Netlify (adapter-netlify) or Vercel
-- **Assets**: Firebase Storage for book covers, genre icons, and media
+- **Assets**: Firebase Storage for book covers, genre icons, and media. Covers are resolved client-side.
 
 ---
 
@@ -89,26 +89,38 @@ Create a `.env` file in the project root:
 MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority"
 MONGODB_DB="author_site"
 
-# Optional: Firebase bucket (for images)
-FIREBASE_BUCKET="endless-fire-467204-n2.firebasestorage.app"
-
-# Firebase download tokens (one per file)
-VITE_FB_TOKEN_BOOKS_FAITH_IN_A_FIRESTORM="<token>"
-VITE_FB_TOKEN_BOOKS_CONVICTION_IN_A_FLOOD="<token>"
-VITE_FB_TOKEN_BOOKS_HURRICANE_EVE="<token>"
-VITE_FB_TOKEN_BOOKS_THE_FAITH_OF_THE_HUNTER="<token>"
-VITE_FB_TOKEN_BOOKS_HEART_OF_THE_STORM="<token>"
-VITE_FB_TOKEN_BOOKS_SYMBIOGENESIS="<token>"
-VITE_FB_TOKEN_AUTHOR_PORTRAIT="<token>"
-VITE_FB_TOKEN_AUTHOR_FIREFIGHTER="<token>"
-VITE_FB_TOKEN_AUTHOR_NAVY="<token>"
-VITE_FB_TOKEN_AUTHOR_AUGUST_25="<token>"
-VITE_FB_TOKEN_ICONS_SIGNATURE_LOGO="<token>"
-VITE_FB_TOKEN_ICONS_CHRISTIAN_FICTION="<token>"
-VITE_FB_TOKEN_ICONS_EPIC_FANTASY="<token>"
+# Firebase client config
+PUBLIC_FIREBASE_API_KEY="..."
+PUBLIC_FIREBASE_AUTH_DOMAIN="..."
+PUBLIC_FIREBASE_PROJECT_ID="..."
+PUBLIC_FIREBASE_STORAGE_BUCKET="..."
 ```
 
-Copy `.env.example` to `.env` and fill in the download tokens from Firebase Storage. Updating the `.env` file is all that is needed when tokens rotate; the source code remains untouched.
+Copy `.env.example` to `.env` and fill in the values for your environment.
+
+### Resolving Covers
+
+Book covers live in Firebase Storage and are resolved on the client with `resolveCover`:
+
+```svelte
+<!-- BookCard.svelte -->
+<script lang="ts">
+  import { resolveCover } from '$lib/utils/covers';
+  $: cover = resolveCover(book.cover);
+</script>
+<img src={cover} alt={book.title} />
+```
+
+```svelte
+<!-- Hero.svelte -->
+<script lang="ts">
+  import { resolveCover } from '$lib/utils/covers';
+  $: cover = resolveCover(bookCover);
+</script>
+{#if cover}
+  <img src={cover} alt="Book cover" />
+{/if}
+```
 
 ---
 
@@ -162,8 +174,8 @@ export interface PostDoc {
 
 * **Image Handling**:
 
-  * Progressive loading & Firebase storage normalization helpers.
-  * Book covers must be uploaded to Firebase Storage before referenced in MongoDB.
+  * Covers are uploaded to Firebase Storage and resolved on the client with `resolveCover`—no manual tokens needed.
+  * Progressive loading helpers.
 
 * **Styling**:
 
@@ -212,10 +224,3 @@ export interface PostDoc {
 ## 📜 License
 
 MIT License © 2025 Charles W. Boswell
-
-```
-
----
-
-Would you like me to also include **sample seed data** (JSON) for books and posts in the README so you can quickly populate your MongoDB Atlas collections for local testing?
-```
