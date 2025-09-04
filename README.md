@@ -90,7 +90,7 @@ MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/?retryWrit
 MONGODB_DB="author_site"
 
 # Optional: Firebase bucket (for images)
-FIREBASE_BUCKET="endless-fire-467204-n2.appspot.com"
+FIREBASE_BUCKET="endless-fire-467204-n2.firebasestorage.app"
 ```
 
 ---
