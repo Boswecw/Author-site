@@ -15,7 +15,7 @@
     id: 'faith-in-a-firestorm',
     title: 'Faith in a Firestorm',
     description: "A faith-forward wildfire drama inspired by 16 years on the line—courage, family, and grace when everything burns.",
-    cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/Faith_in_a_FireStorm.png?alt=media&token=33d6bfa5-d3ff-4a4c-8d9b-a185282cacc3',
+    cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Faith_in_a_FireStorm.png?alt=media&token=33d6bfa5-d3ff-4a4c-8d9b-a185282cacc3',
     genre: 'faith',  // Explicit typing
     status: 'published'
   };
@@ -25,7 +25,7 @@
       id: 'conviction-in-a-flood',
       title: 'Conviction in a Flood',
       description: 'A companion novel exploring faith and resilience when rising waters test a community\'s resolve.',
-      cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/Conviction_in_a_Flood%20Cover.png?alt=media&token=0e9ea64f-f71c-427e-a63e-dfdc301a60c1',
+      cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Conviction_in_a_Flood%20Cover.png?alt=media&token=0e9ea64f-f71c-427e-a63e-dfdc301a60c1',
       genre: 'faith',
       status: 'coming-soon',
       publishDate: '2026-03-15'
@@ -34,7 +34,7 @@
       id: 'hurricane-eve',
       title: 'Hurricane Eve',
       description: 'The third installment of the Faith & Calamity series—a storm that shatters records and faith itself.',
-      cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/Hurricane_Eve%20Cover.png?alt=media&token=547854ac-b00e-411a-b5e5-e15995b01334',
+      cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Hurricane_Eve%20Cover.png?alt=media&token=547854ac-b00e-411a-b5e5-e15995b01334',
       genre: 'faith',
       status: 'coming-soon',
       publishDate: '2026-09-15'
@@ -43,7 +43,7 @@
       id: 'faith-of-the-hunter',
       title: 'The Faith of the Hunter',
       description: 'David Paczer, thrust into a brutal medieval world where faith and survival collide.',
-      cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/TheFaithoftheHuntercover.png?alt=media&token=ac09e3b1-7cee-4df3-bc9e-dcbcf14a482f',
+      cover: 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/TheFaithoftheHuntercover.png?alt=media&token=ac09e3b1-7cee-4df3-bc9e-dcbcf14a482f',
       genre: 'epic',
       status: 'coming-soon',
       publishDate: '2026-09-01'
