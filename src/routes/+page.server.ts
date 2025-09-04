@@ -2,6 +2,7 @@
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
+import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
 
 type BookDoc = {
   id: string;
@@ -70,6 +71,39 @@ export const load: PageServerLoad = async () => {
       .sort({ publishDate: -1 }) // newest first if present
       .limit(12)
       .toArray();
+
+    if (!featuredDoc && upcoming.length === 0) {
+      console.warn('[+page.server] No books found, returning placeholder data');
+
+      const featured = {
+        id: 'faith-in-a-firestorm',
+        title: 'Faith in a Firestorm',
+        description:
+          'A faith-forward wildfire drama inspired by 16 years on the line—courage, family, and grace when everything burns.',
+        cover: normalizeFirebaseUrl(FIREBASE_IMAGES.BOOKS.FAITH_IN_A_FIRESTORM),
+        genre: 'faith',
+        status: 'upcoming'
+      } as const;
+
+      const upcomingSample = [
+        {
+          id: 'conviction-in-a-flood',
+          title: 'Conviction in a Flood',
+          cover: normalizeFirebaseUrl(FIREBASE_IMAGES.BOOKS.CONVICTION_IN_A_FLOOD),
+          genre: 'faith',
+          status: 'upcoming'
+        },
+        {
+          id: 'hurricane-eve',
+          title: 'Hurricane Eve',
+          cover: normalizeFirebaseUrl(FIREBASE_IMAGES.BOOKS.HURRICANE_EVE),
+          genre: 'epic',
+          status: 'upcoming'
+        }
+      ];
+
+      return { featured, upcoming: upcomingSample };
+    }
 
     // 3) If no featured is set, fall back to the most recent from upcoming
     const effectiveFeatured = featuredDoc ?? upcoming[0] ?? null;
