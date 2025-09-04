@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IMAGES } from '$lib/services/imageLoading';
+  import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
   import { normalizeFirebaseUrl } from '$lib/utils/urls';
 </script>
 
@@ -18,7 +18,7 @@
       <!-- Top-center oval portrait -->
       <figure class="flex justify-center mb-6">
         <img
-          src={normalizeFirebaseUrl(IMAGES.AUTHOR.AUGUST_25)}
+          src={normalizeFirebaseUrl(FIREBASE_IMAGES.AUTHOR.AUGUST_25)}
           alt="Portrait of Charles W. Boswell"
           width="320"
           height="384"
@@ -44,7 +44,7 @@
       <!-- Author Photo -->
       <div class="lg:col-span-1">
         <img
-          src={normalizeFirebaseUrl(IMAGES.AUTHOR.NAVY)}
+          src={normalizeFirebaseUrl(FIREBASE_IMAGES.AUTHOR.NAVY)}
           alt="Charles W. Boswell, author portrait"
           class="rounded-lg shadow-xl w-full h-auto sticky top-8"
         />

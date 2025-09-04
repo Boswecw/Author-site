@@ -42,21 +42,21 @@ export const FIREBASE_IMAGES = {
   BOOKS: {
     FAITH_IN_A_FIRESTORM: browser ? await resolveCover('Faith_in_a_FireStorm.png').catch(() => null) : null,
     CONVICTION_IN_A_FLOOD: browser ? await resolveCover('Conviction_in_a_Flood.png').catch(() => null) : null,
-    HURRICANE_EVE: browser ? await resolveCover('Hurrican_Eve.png').catch(() => null) : null,
+    HURRICANE_EVE:        browser ? await resolveCover('Hurrican_Eve.png').catch(() => null) : null,
     THE_FAITH_OF_THE_HUNTER: browser ? await resolveCover('The_Faith_of_the_Hunter.png').catch(() => null) : null,
-    HEART_OF_THE_STORM: browser ? await resolveCover('Heart_of_the_Storm.png').catch(() => null) : null,
-    SYMBIOGENESIS: browser ? await resolveCover('Symbiogenesis.png').catch(() => null) : null
+    HEART_OF_THE_STORM:   browser ? await resolveCover('Heart_of_the_Storm.png').catch(() => null) : null,
+    SYMBIOGENESIS:        browser ? await resolveCover('Symbiogenesis.png').catch(() => null) : null
   },
   AUTHOR: {
-    PORTRAIT: browser ? await resolveCover('CharlesBoswell.jpg').catch(() => null) : null,
-    FIREFIGHTER: browser ? await resolveCover('CharlesBosewll_USFS.jpg').catch(() => null) : null,
-    NAVY: browser ? await resolveCover('Navy1993.JPG').catch(() => null) : null,
-    AUGUST_25: browser ? await resolveCover('August25.png').catch(() => null) : null
+    PORTRAIT:   browser ? await resolveCover('CharlesBoswell.jpg').catch(() => null) : null,
+    FIREFIGHTER:browser ? await resolveCover('CharlesBosewll_USFS.jpg').catch(() => null) : null,
+    NAVY:       browser ? await resolveCover('Navy1993.JPG').catch(() => null) : null,
+    AUGUST_25:  browser ? await resolveCover('August25.png').catch(() => null) : null
   },
   ICONS: {
-    SIGNATURE_LOGO: browser ? await resolveCover('Signaturelogo.png').catch(() => null) : null,
-    CHRISTIAN_FICTION: browser ? await resolveCover('ChristianFiction.png').catch(() => null) : null,
-    EPIC_FANTASY: browser ? await resolveCover('EpicFantasy.png').catch(() => null) : null
+    SIGNATURE_LOGO:     browser ? await resolveCover('Signaturelogo.png').catch(() => null) : null,
+    CHRISTIAN_FICTION:  browser ? await resolveCover('ChristianFiction.png').catch(() => null) : null,
+    EPIC_FANTASY:       browser ? await resolveCover('EpicFantasy.png').catch(() => null) : null
   }
 } as const;
 
@@ -174,7 +174,9 @@ export async function preloadImages(urls: (string | null | undefined)[]): Promis
     .map((url) => normalizeFirebaseUrl(url) ?? url)
     .filter((url): url is string => !!url);
 
-  const results = await Promise.allSettled(validUrls.map((url) => imageLoadingService.loadImage(url)));
+  const results = await Promise.allSettled(
+    validUrls.map((url) => imageLoadingService.loadImage(url))
+  );
 
   const loaded: string[] = [];
   const failed: string[] = [];
