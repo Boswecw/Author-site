@@ -1,7 +1,6 @@
 <script lang="ts">
   import { IMAGES } from '$lib/services/imageLoading';
-  import { progressiveImage } from '$lib/actions/progressiveImage';
-  import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
+  import { normalizeFirebaseUrl } from '$lib/utils/urls';
 </script>
 
 <svelte:head>
@@ -19,7 +18,7 @@
       <!-- Top-center oval portrait -->
       <figure class="flex justify-center mb-6">
         <img
-          src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/August25.png?alt=media&token=ae2aa914-5e2e-4519-9749-077037b54e58"
+          src={normalizeFirebaseUrl(IMAGES.AUTHOR.AUGUST_25)}
           alt="Portrait of Charles W. Boswell"
           width="320"
           height="384"
@@ -27,7 +26,6 @@
           loading="eager"
           decoding="async"
           fetchpriority="high"
-         
         />
       </figure>
 
@@ -46,10 +44,9 @@
       <!-- Author Photo -->
       <div class="lg:col-span-1">
         <img
-          src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Navy1993.JPG?alt=media&token=c1be8697-f87e-404b-b6df-8d3d856f2140"
+          src={normalizeFirebaseUrl(IMAGES.AUTHOR.NAVY)}
           alt="Charles W. Boswell, author portrait"
           class="rounded-lg shadow-xl w-full h-auto sticky top-8"
-       
         />
       </div>
 
