@@ -1,27 +1,21 @@
-<<<<<<< Updated upstream
 <script lang="ts">
   import { createImageFallback } from '$lib/utils/image';
-  import { normalizeFirebaseUrl } from '$lib/utils/urls'; // ✅ make sure this exists
-=======
-<!-- src/lib/components/Hero.svelte -->
-<script lang="ts">
-  import { toFirebaseDownloadIfNeeded } from '$lib/utils/urls';
->>>>>>> Stashed changes
+  import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
-  export let book: {
-    id: string;
-    title: string;
-    description?: string | null;
-    cover?: string | null;
-    genre?: string | null;
-  };
+  export let title: string;
+  export let subtitle: string;
+  export let ctaLink: string;
+  export let ctaText: string;
+  export let genre?: string | null;
+  export let bookCover?: string | null;
 
-<<<<<<< Updated upstream
   // Normalize genre so we always have a safe value
   $: safeGenre =
-    genre === 'epic' ? 'epic' :
-    genre === 'sci-fi' ? 'sci-fi' :
-    'faith';
+    genre === 'epic'
+      ? 'epic'
+      : genre === 'sci-fi'
+      ? 'sci-fi'
+      : 'faith';
 
   // Background gradients by genre
   $: gradientClass =
@@ -78,24 +72,4 @@
     </div>
   </div>
 </section>
-=======
-  $: cover = toFirebaseDownloadIfNeeded(book?.cover ?? null);
-</script>
 
-<section class="relative pt-28 pb-20 bg-gray-50 overflow-hidden">
-  {#if cover}
-    <div
-      class="absolute inset-0 bg-center bg-cover opacity-20"
-      style={`background-image:url('${cover}')`}
-      aria-hidden="true"
-    />
-  {/if}
-  <div class="relative max-w-5xl mx-auto px-4">
-    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">{book.title}</h1>
-    {#if book.description}
-      <p class="mt-4 text-lg opacity-90 max-w-3xl">{book.description}</p>
-    {/if}
-    <!-- Optional CTA buttons could go here -->
-  </div>
-</section>
->>>>>>> Stashed changes
