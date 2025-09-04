@@ -122,7 +122,7 @@ export interface BookDoc {
   id: string;                   // Short unique string identifier (e.g., "faith-in-a-firestorm")
   title: string;                // Full book title
   description: string;          // Short summary or back-cover copy
-  cover: string | null;         // Firebase Storage URL for cover image
+  cover: string | null;         // Firebase Storage path for cover image
   genre: "faith" | "epic";      // Genre key used for filtering/icons
   status: "published" | "upcoming" | "featured";
   publishDate?: string;         // ISO date string ("2025-09-01")
@@ -142,7 +142,7 @@ export interface PostDoc {
   title: string;                // Blog post title
   content: string;              // Markdown/HTML content
   excerpt?: string;             // Short preview for blog listing
-  cover?: string | null;        // Optional cover image URL
+  cover?: string | null;        // Optional cover image path
   tags?: string[];              // e.g., ["writing", "faith", "inspiration"]
   published: boolean;           // Controls visibility on site
   createdAt: Date;              // Auto-set on insertion
@@ -158,7 +158,7 @@ export interface PostDoc {
 
   * Collections: `books`, `posts`
   * Documents follow the interfaces above for type safety and consistency.
-  * If no featured or upcoming books exist, the homepage loader returns a default featured book and sample upcoming titles from `FIREBASE_IMAGES` so the page still renders.
+  * If no featured or upcoming books exist, the homepage loader returns a default featured book and sample upcoming titles using storage paths so the page still renders.
 
 * **Image Handling**:
 
