@@ -1,34 +1,32 @@
 // src/lib/services/imageLoading.ts - SIMPLIFIED WORKING VERSION
 import { browser } from '$app/environment';
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
-import { createImageFallback } from '$lib/utils/image';
-import { FIREBASE_TOKENS } from '$lib/config/firebaseTokens';
 
 const BASE_URL = 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/';
 
-function withToken(path: string, token: string): string {
-  return `${BASE_URL}${path}?alt=media&token=${token}`;
+function buildUrl(path: string): string {
+  return `${BASE_URL}${path}?alt=media`;
 }
 
 export const FIREBASE_IMAGES = {
   BOOKS: {
-    FAITH_IN_A_FIRESTORM: withToken('Faith_in_a_FireStorm.png', FIREBASE_TOKENS.BOOKS.FAITH_IN_A_FIRESTORM),
-    CONVICTION_IN_A_FLOOD: withToken('Conviction_in_a_Flood%20Cover.png', FIREBASE_TOKENS.BOOKS.CONVICTION_IN_A_FLOOD),
-    HURRICANE_EVE: withToken('Hurricane_Eve%20Cover.png', FIREBASE_TOKENS.BOOKS.HURRICANE_EVE),
-    THE_FAITH_OF_THE_HUNTER: withToken('TheFaithoftheHuntercover.png', FIREBASE_TOKENS.BOOKS.THE_FAITH_OF_THE_HUNTER),
-    HEART_OF_THE_STORM: withToken('Heart_of_the_Storm_Elf_and_Wolf.png', FIREBASE_TOKENS.BOOKS.HEART_OF_THE_STORM),
-    SYMBIOGENESIS: withToken('Symbiogenesis.png', FIREBASE_TOKENS.BOOKS.SYMBIOGENESIS)
+    FAITH_IN_A_FIRESTORM: buildUrl('Faith_in_a_FireStorm.png'),
+    CONVICTION_IN_A_FLOOD: buildUrl('Conviction_in_a_Flood%20Cover.png'),
+    HURRICANE_EVE: buildUrl('Hurricane_Eve%20Cover.png'),
+    THE_FAITH_OF_THE_HUNTER: buildUrl('TheFaithoftheHuntercover.png'),
+    HEART_OF_THE_STORM: buildUrl('Heart_of_the_Storm_Elf_and_Wolf.png'),
+    SYMBIOGENESIS: buildUrl('Symbiogenesis.png')
   },
   AUTHOR: {
-    PORTRAIT: withToken('CharlesBoswell.jpg', FIREBASE_TOKENS.AUTHOR.PORTRAIT),
-    FIREFIGHTER: withToken('CharlesBosewll_USFS.jpg', FIREBASE_TOKENS.AUTHOR.FIREFIGHTER),
-    NAVY: withToken('Navy1993.JPG', FIREBASE_TOKENS.AUTHOR.NAVY),
-    AUGUST_25: withToken('August25.png', FIREBASE_TOKENS.AUTHOR.AUGUST_25)
+    PORTRAIT: buildUrl('CharlesBoswell.jpg'),
+    FIREFIGHTER: buildUrl('CharlesBosewll_USFS.jpg'),
+    NAVY: buildUrl('Navy1993.JPG'),
+    AUGUST_25: buildUrl('August25.png')
   },
   ICONS: {
-    SIGNATURE_LOGO: withToken('Signaturelogo.png', FIREBASE_TOKENS.ICONS.SIGNATURE_LOGO),
-    CHRISTIAN_FICTION: withToken('ChristianFiction.png', FIREBASE_TOKENS.ICONS.CHRISTIAN_FICTION),
-    EPIC_FANTASY: withToken('EpicFantasy.png', FIREBASE_TOKENS.ICONS.EPIC_FANTASY)
+    SIGNATURE_LOGO: buildUrl('Signaturelogo.png'),
+    CHRISTIAN_FICTION: buildUrl('ChristianFiction.png'),
+    EPIC_FANTASY: buildUrl('EpicFantasy.png')
   }
 } as const;
 
@@ -164,14 +162,3 @@ export async function preloadImages(urls: (string | null | undefined)[]): Promis
   return { loaded, failed };
 }
 
-// Export commonly used fallbacks
-export const IMAGES = {
-  BOOKS: FIREBASE_IMAGES.BOOKS,
-  AUTHOR: FIREBASE_IMAGES.AUTHOR,
-  ICONS: FIREBASE_IMAGES.ICONS,
-  FALLBACKS: {
-    BOOK: createImageFallback('BOOK', 'book'),
-    AUTHOR: createImageFallback('AUTHOR', 'avatar'),
-    LOGO: createImageFallback('CB', 'logo')
-  }
-} as const;
