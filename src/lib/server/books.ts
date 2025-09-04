@@ -1,64 +1,82 @@
-// server-only helpers
+// src/lib/server/books.ts
 import { getDb } from './db';
-import type { Book } from '$lib/types';
+import type { Book, BookDoc } from '$lib/types';
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
-function ensureCover(u?: string | null, title?: string): string | null {
-  // normalizeFirebaseUrl already cleans quotes/encoding and keeps valid firebase download links
-  const n = normalizeFirebaseUrl(u ?? null);
-  return n ?? null;
+// Export the type so it can be imported elsewhere
+export type { BookDoc } from '$lib/types';
+
+function ensureCover(url?: string | null): string | null {
+  return normalizeFirebaseUrl(url) ?? null;
 }
 
-function sanitize(book: any): Book {
-  // Ensure the shape + a cleaned cover
+function sanitizeBook(book: any): Book {
   return {
     id: book.id,
     title: book.title,
     description: book.description ?? null,
-    cover: ensureCover(book.cover, book.title),
+    cover: ensureCover(book.cover),
     genre: book.genre ?? 'faith',
-    status: book.status ?? 'upcoming',
-    publishDate: book.publishDate ?? null,
+    status: book.status ?? 'writing',
+    publishDate: book.publishDate instanceof Date 
+      ? book.publishDate.toISOString() 
+      : (book.publishDate ?? null),
     isbn: book.isbn ?? null,
     format: book.format ?? 'EPUB',
     pages: typeof book.pages === 'number' ? book.pages : null,
-    buyLinks: book.buyLinks ?? {}
-  } as Book;
+    buyLinks: book.buyLinks ?? null
+  };
 }
 
 export async function getFeaturedBook(): Promise<Book | null> {
   const db = await getDb();
   const doc = await db
-    .collection('books')
+    .collection<BookDoc>('books')
     .findOne(
       { $or: [{ featured: true }, { status: 'featured' }] },
-      { projection: { _id: 0, id: 1, title: 1, description: 1, cover: 1, genre: 1, status: 1, publishDate: 1, isbn: 1, format: 1, pages: 1, buyLinks: 1 } }
+      { 
+        projection: { 
+          _id: 0, id: 1, title: 1, description: 1, cover: 1, 
+          genre: 1, status: 1, publishDate: 1, isbn: 1, format: 1, 
+          pages: 1, buyLinks: 1 
+        } 
+      }
     );
-  return doc ? sanitize(doc) : null;
+  return doc ? sanitizeBook(doc) : null;
 }
 
 export async function getUpcomingBooks(limit = 6): Promise<Book[]> {
   const db = await getDb();
-  const cur = db
-    .collection('books')
+  const docs = await db
+    .collection<BookDoc>('books')
     .find(
-      { status: { $in: ['upcoming', 'writing', 'coming-soon'] } },
-      { projection: { _id: 0, id: 1, title: 1, description: 1, cover: 1, genre: 1, status: 1, publishDate: 1 } }
+      { status: { $in: ['writing', 'coming-soon', 'draft'] } },
+      { 
+        projection: { 
+          _id: 0, id: 1, title: 1, description: 1, cover: 1, 
+          genre: 1, status: 1, publishDate: 1 
+        } 
+      }
     )
-    .sort({ publishDate: 1, title: 1 }) // soonest first
-    .limit(limit);
+    .sort({ publishDate: 1, title: 1 })
+    .limit(limit)
+    .toArray();
 
-  const items = await cur.toArray();
-  return items.map(sanitize).filter((b) => !!b.cover); // ensure cover present
+  return docs.map(sanitizeBook).filter(book => book.cover);
 }
 
 export async function getAllBooks(): Promise<Book[]> {
   const db = await getDb();
-  const cur = db
-    .collection('books')
-    .find({}, { projection: { _id: 0, id: 1, title: 1, description: 1, cover: 1, genre: 1, status: 1, publishDate: 1, buyLinks: 1 } })
-    .sort({ status: 1, publishDate: 1, title: 1 });
+  const docs = await db
+    .collection<BookDoc>('books')
+    .find({}, { 
+      projection: { 
+        _id: 0, id: 1, title: 1, description: 1, cover: 1, 
+        genre: 1, status: 1, publishDate: 1, buyLinks: 1 
+      } 
+    })
+    .sort({ status: 1, publishDate: 1, title: 1 })
+    .toArray();
 
-  const items = await cur.toArray();
-  return items.map(sanitize);
+  return docs.map(sanitizeBook);
 }

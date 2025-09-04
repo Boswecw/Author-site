@@ -1,9 +1,8 @@
 // src/lib/services/imageLoading.ts
-import { writable } from 'svelte/store';
-import { normalizeFirebaseUrl as normalizeUrl } from '$lib/utils/urls';
+import { normalizeFirebaseUrl, createPlaceholderImage } from '$lib/utils/urls';
 
 /**
- * Firebase Storage URL normalization and fallback management
+ * Simple image loading service for your standardized Firebase URLs
  */
 export class ImageLoadingService {
   private static instance: ImageLoadingService;
@@ -18,17 +17,11 @@ export class ImageLoadingService {
   }
 
   /**
-   * Normalize Firebase Storage URLs using the shared utility
-   */
-  normalizeFirebaseUrl(url?: string | null): string | undefined {
-    return normalizeUrl(url) ?? undefined;
-  }
-
-  /**
    * Preload an image and cache the result
    */
   async preloadImage(src: string): Promise<boolean> {
-    const normalizedSrc = this.normalizeFirebaseUrl(src) || src;
+    const normalizedSrc = normalizeFirebaseUrl(src);
+    if (!normalizedSrc) return false;
     
     if (this.imageCache.has(normalizedSrc)) {
       return this.imageCache.get(normalizedSrc)!;
@@ -42,16 +35,14 @@ export class ImageLoadingService {
         resolve(true);
       };
       
-      img.onerror = () => {
+      img.onerror = (error) => {
+        console.warn('[ImageLoading] Failed to load:', normalizedSrc, error);
         this.loadingStates.set(normalizedSrc, false);
         resolve(false);
       };
       
       // Set crossOrigin for Firebase Storage
-      if (normalizedSrc.includes('firebasestorage.googleapis.com')) {
-        img.crossOrigin = 'anonymous';
-      }
-      
+      img.crossOrigin = 'anonymous';
       img.src = normalizedSrc;
     });
 
@@ -60,109 +51,52 @@ export class ImageLoadingService {
   }
 
   /**
-   * Check if an image is already loaded
+   * Check if an image is loaded successfully
    */
   isImageLoaded(src: string): boolean {
-    const normalizedSrc = this.normalizeFirebaseUrl(src) || src;
+    const normalizedSrc = normalizeFirebaseUrl(src);
+    if (!normalizedSrc) return false;
     return this.loadingStates.get(normalizedSrc) === true;
   }
 
   /**
-   * Generate fallback data URLs for common image types
+   * Generate fallback placeholder images
    */
-  generateFallback(type: 'avatar' | 'book' | 'logo' | 'hero', text?: string): string {
-    const svg = this.createSVGFallback(type, text);
-    const base64 =
-      typeof window === 'undefined'
-        ? Buffer.from(svg).toString('base64')
-        : btoa(svg);
-    return `data:image/svg+xml;base64,${base64}`;
-  }
-
-  private createSVGFallback(type: string, text?: string): string {
-    const configs = {
-      avatar: { width: 200, height: 200, bg: '#2C3E7F', text: text || 'AUTHOR' },
-      book: { width: 300, height: 450, bg: '#7A1C1C', text: text || 'BOOK' },
-      logo: { width: 56, height: 56, bg: '#F5F2E7', text: text || 'CB', textColor: '#2B2B2B', stroke: '#2B2B2B' },
-      hero: { width: 1200, height: 600, bg: '#C9A86A', text: text || 'HERO' }
+  generateFallback(type: 'book' | 'avatar' | 'logo', text?: string): string {
+    const colors = {
+      book: { bg: '#f3f4f6', border: '#e5e7eb', text: '#6b7280' },
+      avatar: { bg: '#fef3c7', border: '#fbbf24', text: '#92400e' },
+      logo: { bg: '#ecfccb', border: '#65a30d', text: '#365314' }
     };
 
-    const config = configs[type as keyof typeof configs] || configs.avatar;
-    
-    return `
-      <svg width="${config.width}" height="${config.height}" viewBox="0 0 ${config.width} ${config.height}" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="${config.width}" height="${config.height}" fill="${config.bg}" ${config.stroke ? `stroke="${config.stroke}" stroke-width="2"` : ''}/>
-        <text x="${config.width/2}" y="${config.height/2 + 6}" font-family="serif" font-size="${Math.min(config.width, config.height) * 0.1}" font-weight="600" fill="${config.textColor || 'white'}" text-anchor="middle">${config.text}</text>
+    const { bg, border, text: textColor } = colors[type];
+    const displayText = text || type.toUpperCase();
+
+    const svg = `
+      <svg width="300" height="400" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100%" height="100%" fill="${bg}" stroke="${border}" stroke-width="2"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
+              font-family="system-ui, sans-serif" font-size="16" font-weight="500" fill="${textColor}">
+          ${displayText}
+        </text>
       </svg>
     `.trim();
+    
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
   }
 
   /**
-   * Create a reactive store for image loading state
-   */
-  createImageStore(src: string) {
-    const normalizedSrc = this.normalizeFirebaseUrl(src) || src;
-    const { subscribe, set, update } = writable<{
-      loading: boolean;
-      loaded: boolean;
-      error: boolean;
-      src: string;
-    }>({
-      loading: false,
-      loaded: this.isImageLoaded(normalizedSrc),
-      error: false,
-      src: normalizedSrc
-    });
-
-    const load = async () => {
-      update(state => ({ ...state, loading: true, error: false }));
-      
-      try {
-        const success = await this.preloadImage(normalizedSrc);
-        update(state => ({ 
-          ...state, 
-          loading: false, 
-          loaded: success, 
-          error: !success 
-        }));
-      } catch {
-        update(state => ({ 
-          ...state, 
-          loading: false, 
-          loaded: false, 
-          error: true 
-        }));
-      }
-    };
-
-    // Auto-load if not already loaded
-    if (!this.isImageLoaded(normalizedSrc)) {
-      load();
-    }
-
-    return {
-      subscribe,
-      load,
-      reset: () => set({
-        loading: false,
-        loaded: false,
-        error: false,
-        src: normalizedSrc
-      })
-    };
-  }
-
-  /**
-   * Preload multiple images with progress tracking
+   * Batch preload multiple images
    */
   async preloadImages(
-    sources: string[], 
+    sources: (string | null | undefined)[],
     onProgress?: (loaded: number, total: number) => void
   ): Promise<{ loaded: string[]; failed: string[] }> {
+    const validSources = sources.filter((src): src is string => Boolean(src));
     const loaded: string[] = [];
     const failed: string[] = [];
     
-    const promises = sources.map(async (src, index) => {
+    const promises = validSources.map(async (src) => {
       const success = await this.preloadImage(src);
       
       if (success) {
@@ -171,18 +105,16 @@ export class ImageLoadingService {
         failed.push(src);
       }
       
-      onProgress?.(loaded.length + failed.length, sources.length);
-      
+      onProgress?.(loaded.length + failed.length, validSources.length);
       return success;
     });
 
     await Promise.allSettled(promises);
-    
     return { loaded, failed };
   }
 
   /**
-   * Clear the image cache
+   * Clear the cache
    */
   clearCache(): void {
     this.imageCache.clear();
@@ -192,10 +124,10 @@ export class ImageLoadingService {
   /**
    * Get cache stats for debugging
    */
-  getCacheStats(): { size: number; loadedCount: number } {
+  getCacheStats(): { cached: number; loaded: number } {
     return {
-      size: this.imageCache.size,
-      loadedCount: Array.from(this.loadingStates.values()).filter(Boolean).length
+      cached: this.imageCache.size,
+      loaded: Array.from(this.loadingStates.values()).filter(Boolean).length
     };
   }
 }
@@ -203,11 +135,9 @@ export class ImageLoadingService {
 // Export singleton instance
 export const imageService = ImageLoadingService.getInstance();
 
-// Fallback data URIs for instant loading
+// Fallback images for instant loading
 export const FALLBACK_IMAGES = {
-  SIGNATURE_LOGO: imageService.generateFallback('logo', 'CB'),
-  AUTHOR_PHOTO: imageService.generateFallback('avatar', 'CWB'),
-  FAITH_ICON: imageService.generateFallback('avatar', 'FAITH'),
-  EPIC_ICON: imageService.generateFallback('avatar', 'EPIC'),
-  BOOK_COVER: imageService.generateFallback('book', 'BOOK')
+  BOOK_COVER: imageService.generateFallback('book', 'BOOK'),
+  AUTHOR_PHOTO: imageService.generateFallback('avatar', 'AUTHOR'),
+  LOGO: imageService.generateFallback('logo', 'CB')
 } as const;

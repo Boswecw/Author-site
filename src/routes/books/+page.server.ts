@@ -1,7 +1,7 @@
 // src/routes/books/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
-import type { BookDoc } from '$lib/server/books';
+import type { BookDoc } from '$lib/types'; // Import from types instead of books
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 export const load: PageServerLoad = async () => {
@@ -28,24 +28,25 @@ export const load: PageServerLoad = async () => {
         }
       }
     )
+    .sort({ status: 1, publishDate: 1, title: 1 })
     .toArray();
 
-  const books = docs.map((b) => ({
-    id: b.id,
-    title: b.title,
-    description: b.description ?? '',
-    cover: normalizeFirebaseUrl((b as any).cover) ?? null,
-    genre: b.genre ?? 'faith',
-    status: b.status ?? 'upcoming',
-    publishDate: b.publishDate
-      ? b.publishDate instanceof Date
-        ? b.publishDate.toISOString()
-        : String(b.publishDate)
+  const books = docs.map((book) => ({
+    id: book.id,
+    title: book.title,
+    description: book.description ?? '',
+    cover: normalizeFirebaseUrl(book.cover) ?? null,
+    genre: book.genre ?? 'faith',
+    status: book.status ?? 'writing',
+    publishDate: book.publishDate
+      ? book.publishDate instanceof Date
+        ? book.publishDate.toISOString()
+        : String(book.publishDate)
       : null,
-    isbn: b.isbn ?? null,
-    format: (b as any).format ?? null,
-    pages: (b as any).pages ?? null,
-    buyLinks: (b as any).buyLinks ?? null
+    isbn: book.isbn ?? null,
+    format: book.format ?? 'EPUB',
+    pages: book.pages ?? null,
+    buyLinks: book.buyLinks ?? null
   }));
 
   return { books };

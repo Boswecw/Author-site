@@ -1,48 +1,33 @@
 // src/lib/utils/urls.ts
-
 /**
- * CRITICAL FIX: Enhanced Firebase Storage URL normalization for YOUR domain
- * Now handles both .firebasestorage.app and .appspot.com domains
+ * Simple URL normalizer for your standardized Firebase Storage URLs
+ * All URLs are now clean and consistent - no complex fixes needed
  */
 export function normalizeFirebaseUrl(url: string | null | undefined): string | null {
   if (!url || typeof url !== 'string') return null;
   
-  try {
-    let normalizedUrl = url;
-    
-    // Handle YOUR specific Firebase Storage domain patterns
-    // Your URLs use: endless-fire-467204-n2.firebasestorage.app
-    // But some code expects: endless-fire-467204-n2.appspot.com
-    
-    // KEEP your .firebasestorage.app URLs as-is - they work fine!
-    // Just ensure HTTPS and proper formatting
-    
-    // Ensure HTTPS
-    if (normalizedUrl.startsWith('http://')) {
-      normalizedUrl = normalizedUrl.replace('http://', 'https://');
-    }
-    
-    // Add protocol if missing
-    if (normalizedUrl.startsWith('//')) {
-      normalizedUrl = `https:${normalizedUrl}`;
-    }
-    
-    // Return as-is if already valid (your URLs are already perfect)
-    if (normalizedUrl.startsWith('https://firebasestorage.googleapis.com') || 
-        normalizedUrl.startsWith('data:')) {
-      return normalizedUrl;
-    }
-    
-    return normalizedUrl;
-  } catch (error) {
-    console.warn('[normalizeFirebaseUrl] Failed to normalize URL:', url, error);
-    return url;
+  const cleanUrl = url.trim();
+  
+  // Your URLs are already perfect - just ensure HTTPS
+  if (cleanUrl.startsWith('http://')) {
+    return cleanUrl.replace('http://', 'https://');
   }
+  
+  if (cleanUrl.startsWith('//')) {
+    return `https:${cleanUrl}`;
+  }
+  
+  // Return as-is for valid Firebase Storage URLs
+  if (cleanUrl.startsWith('https://firebasestorage.googleapis.com') || 
+      cleanUrl.startsWith('data:')) {
+    return cleanUrl;
+  }
+  
+  return cleanUrl;
 }
 
 /**
- * Test if a URL is accessible via HEAD request
- * Used to prevent 404 crashes during hydration
+ * Test if a Firebase Storage URL is accessible
  */
 export async function testImageUrl(url: string): Promise<boolean> {
   try {
@@ -58,29 +43,7 @@ export async function testImageUrl(url: string): Promise<boolean> {
 }
 
 /**
- * Get a safe image URL with fallback testing
- */
-export async function getSafeImageUrl(url: string | null, fallback?: string): Promise<string> {
-  if (!url) return fallback || createPlaceholderImage('No Image');
-  
-  const normalizedUrl = normalizeFirebaseUrl(url);
-  if (!normalizedUrl) return fallback || createPlaceholderImage('Invalid URL');
-  
-  const isAccessible = await testImageUrl(normalizedUrl);
-  if (isAccessible) return normalizedUrl;
-  
-  // Try fallback if provided
-  if (fallback) {
-    const fallbackWorks = await testImageUrl(fallback);
-    if (fallbackWorks) return fallback;
-  }
-  
-  // Generate placeholder as last resort
-  return createPlaceholderImage('Image Not Available');
-}
-
-/**
- * Create a placeholder image SVG
+ * Create a simple placeholder SVG for failed images
  */
 export function createPlaceholderImage(text: string, width = 300, height = 400): string {
   const svg = `
