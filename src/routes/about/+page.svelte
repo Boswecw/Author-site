@@ -1,7 +1,5 @@
 <script lang="ts">
-  // FIX: your util file is singular: src/lib/utils/image.ts
-  // and should export IMAGES (or adjust as needed)
-  import { IMAGES } from '$lib/utils/image';
+  import { IMAGES } from '$lib/services/imageLoading';
   import { progressiveImage } from '$lib/actions/progressiveImage';
   import { FALLBACK_IMAGES } from '$lib/services/imageLoading';
 </script>

@@ -1,6 +1,6 @@
 // src/lib/data/books.ts
 import type { Book } from '../types.js';
-import { IMAGES } from '$lib/utils/image';
+import { IMAGES } from '$lib/services/imageLoading';
 
 export const books: Book[] = [
   {
