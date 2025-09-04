@@ -2,33 +2,34 @@
 import { browser } from '$app/environment';
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
 import { createImageFallback } from '$lib/utils/image';
-import { FIREBASE_TOKENS } from '$lib/config/firebaseTokens';
+import { storage } from '$lib/services/firebaseClient';
+import { ref, getDownloadURL } from 'firebase/storage';
 
-const BASE_URL = 'https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.appspot.com/o/';
-
-function withToken(path: string, token: string): string {
-  return `${BASE_URL}${path}?alt=media&token=${token}`;
+export async function resolveCover(filename?: string | null) {
+  if (!filename) return null;
+  if (/^https?:\/\//.test(filename)) return filename;
+  return await getDownloadURL(ref(storage, filename));
 }
 
 export const FIREBASE_IMAGES = {
   BOOKS: {
-    FAITH_IN_A_FIRESTORM: withToken('Faith_in_a_FireStorm.png', FIREBASE_TOKENS.BOOKS.FAITH_IN_A_FIRESTORM),
-    CONVICTION_IN_A_FLOOD: withToken('Conviction_in_a_Flood%20Cover.png', FIREBASE_TOKENS.BOOKS.CONVICTION_IN_A_FLOOD),
-    HURRICANE_EVE: withToken('Hurricane_Eve%20Cover.png', FIREBASE_TOKENS.BOOKS.HURRICANE_EVE),
-    THE_FAITH_OF_THE_HUNTER: withToken('TheFaithoftheHuntercover.png', FIREBASE_TOKENS.BOOKS.THE_FAITH_OF_THE_HUNTER),
-    HEART_OF_THE_STORM: withToken('Heart_of_the_Storm_Elf_and_Wolf.png', FIREBASE_TOKENS.BOOKS.HEART_OF_THE_STORM),
-    SYMBIOGENESIS: withToken('Symbiogenesis.png', FIREBASE_TOKENS.BOOKS.SYMBIOGENESIS)
+    FAITH_IN_A_FIRESTORM: await resolveCover('Faith_in_a_FireStorm.png').catch(() => null),
+    CONVICTION_IN_A_FLOOD: await resolveCover('Conviction_in_a_Flood Cover.png').catch(() => null),
+    HURRICANE_EVE: await resolveCover('Hurricane_Eve Cover.png').catch(() => null),
+    THE_FAITH_OF_THE_HUNTER: await resolveCover('TheFaithoftheHuntercover.png').catch(() => null),
+    HEART_OF_THE_STORM: await resolveCover('Heart_of_the_Storm_Elf_and_Wolf.png').catch(() => null),
+    SYMBIOGENESIS: await resolveCover('Symbiogenesis.png').catch(() => null)
   },
   AUTHOR: {
-    PORTRAIT: withToken('CharlesBoswell.jpg', FIREBASE_TOKENS.AUTHOR.PORTRAIT),
-    FIREFIGHTER: withToken('CharlesBosewll_USFS.jpg', FIREBASE_TOKENS.AUTHOR.FIREFIGHTER),
-    NAVY: withToken('Navy1993.JPG', FIREBASE_TOKENS.AUTHOR.NAVY),
-    AUGUST_25: withToken('August25.png', FIREBASE_TOKENS.AUTHOR.AUGUST_25)
+    PORTRAIT: await resolveCover('CharlesBoswell.jpg').catch(() => null),
+    FIREFIGHTER: await resolveCover('CharlesBosewll_USFS.jpg').catch(() => null),
+    NAVY: await resolveCover('Navy1993.JPG').catch(() => null),
+    AUGUST_25: await resolveCover('August25.png').catch(() => null)
   },
   ICONS: {
-    SIGNATURE_LOGO: withToken('Signaturelogo.png', FIREBASE_TOKENS.ICONS.SIGNATURE_LOGO),
-    CHRISTIAN_FICTION: withToken('ChristianFiction.png', FIREBASE_TOKENS.ICONS.CHRISTIAN_FICTION),
-    EPIC_FANTASY: withToken('EpicFantasy.png', FIREBASE_TOKENS.ICONS.EPIC_FANTASY)
+    SIGNATURE_LOGO: await resolveCover('Signaturelogo.png').catch(() => null),
+    CHRISTIAN_FICTION: await resolveCover('ChristianFiction.png').catch(() => null),
+    EPIC_FANTASY: await resolveCover('EpicFantasy.png').catch(() => null)
   }
 } as const;
 
@@ -175,3 +176,5 @@ export const IMAGES = {
     LOGO: createImageFallback('CB', 'logo')
   }
 } as const;
+
+export { createImageFallback };
