@@ -1,47 +1,31 @@
 <!-- src/lib/components/BookCard.svelte - FIXED VERSION -->
 <script lang="ts">
   import type { Book } from '$lib/types';
-  import { createImageFallback, imageLoader } from '$lib/utils/image';
+  import { createImageFallback, resolveCover } from '$lib/utils/image';
   import { onMount } from 'svelte';
 
   export let book: Book;
   export let featured: boolean = false;
-  
+
   let imageElement: HTMLImageElement;
   let imageLoaded = false;
   let imageError = false;
   let isLoading = true;
 
-  // Cover now stores a Firebase Storage path
-  $: coverUrl = book.cover;
+  // Final URL we render (resolved from filename or normalized URL)
+  let coverUrl: string | null = null;
+
+  // Always have a visual fallback
   $: fallbackSrc = createImageFallback(book.title, 'book');
-  
-  onMount(() => {
-    if (coverUrl) {
-      // Preload the image
-      imageLoader.load(coverUrl).then((result) => {
-        if (result && imageElement) {
-          imageElement.src = result;
-          imageLoaded = true;
-          imageError = false;
-        } else {
-          imageError = true;
-          if (imageElement) {
-            imageElement.src = fallbackSrc;
-          }
-        }
-        isLoading = false;
-      }).catch(() => {
-        imageError = true;
-        if (imageElement) {
-          imageElement.src = fallbackSrc;
-        }
-        isLoading = false;
-      });
-    } else {
-      // No cover URL, use fallback immediately
-      isLoading = false;
+
+  onMount(async () => {
+    try {
+      coverUrl = await resolveCover(book.cover);
+      if (!coverUrl) imageError = true;
+    } catch {
       imageError = true;
+    } finally {
+      isLoading = false;
     }
   });
 
@@ -67,13 +51,14 @@
       Featured
     </span>
   {/if}
-  <!-- Loading State -->
+
   {#if isLoading}
+    <!-- Loading skeleton -->
     <div class="w-full h-80 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
       <div class="text-gray-400 text-sm">Loading...</div>
     </div>
   {:else}
-    <!-- Image -->
+    <!-- Cover image (with graceful fallback) -->
     <img
       bind:this={imageElement}
       src={coverUrl || fallbackSrc}
@@ -85,18 +70,15 @@
       on:load={handleImageLoad}
       on:error={handleImageError}
     />
-    
-    <!-- Error indicator -->
+
     {#if imageError}
-      <div class="absolute inset-0 bg-red-900 bg-opacity-20 rounded-lg flex items-center justify-center">
-        <div class="text-white text-xs bg-red-800 px-2 py-1 rounded">
-          Cover Unavailable
-        </div>
+      <div class="absolute inset-0 bg-red-900/20 rounded-lg flex items-center justify-center">
+        <div class="text-white text-xs bg-red-800 px-2 py-1 rounded">Cover Unavailable</div>
       </div>
     {/if}
   {/if}
-  
-  <!-- Book Info Overlay -->
+
+  <!-- Info overlay -->
   <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
     <h3 class="text-white font-bold text-lg mb-1">{book.title}</h3>
     {#if book.description}
