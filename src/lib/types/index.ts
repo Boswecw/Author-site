@@ -55,6 +55,7 @@ export interface PostDoc {
   title: string;
   excerpt?: string | null;
   contentMarkdown?: string | null;
+  contentHtml?: string | null;
   heroImage?: string | null;
   publishDate?: Date | string | null;
   publishedAt?: Date | string | null;
