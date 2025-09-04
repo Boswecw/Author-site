@@ -39,7 +39,7 @@
   $: fallbackSrc = createFallback(fallbackType);
   
   // Load image when src changes
-  $: if (cleanSrc && cleanSrc !== currentSrc) {
+  $: if (browser && cleanSrc && cleanSrc !== currentSrc) {
     loadImage(cleanSrc);
   }
   
@@ -96,10 +96,12 @@
   }
 
   onMount(() => {
-    if (cleanSrc) {
-      loadImage(cleanSrc);
-    } else {
-      handleError();
+    if (browser) {
+      if (cleanSrc) {
+        loadImage(cleanSrc);
+      } else {
+        handleError();
+      }
     }
   });
 </script>
