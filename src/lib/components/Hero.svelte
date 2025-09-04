@@ -1,14 +1,20 @@
 <!-- src/lib/components/Hero.svelte - FIXED VERSION -->
 <script lang="ts">
-  import { createImageFallback } from '$lib/utils/image';
-  import { normalizeFirebaseUrl } from '$lib/utils/urls';
+  import { onMount } from 'svelte';
+  import { createImageFallback, resolveCover } from '$lib/utils/image';
 
-  export let title: string;
-  export let subtitle: string;
-  export let ctaLink: string;
-  export let ctaText: string;
+  export let title: string = 'Epic Fantasy Born from Real Experience';
+  export let subtitle: string = 'From Navy decks to wildfire frontlines—stories forged in grit.';
+  export let ctaLink: string = '/books';
+  export let ctaText: string = 'Browse Books';
   export let genre: 'faith' | 'epic' | 'sci-fi' | null | undefined = null;
   export let bookCover: string | null | undefined = null;
+
+  let coverUrl: string | null = null;
+
+  onMount(async () => {
+    coverUrl = await resolveCover(bookCover);
+  });
 
   // Normalize genre so we always have a safe value
   $: safeGenre =
@@ -34,29 +40,28 @@
       ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'
       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700';
 
-  // Normalize Firebase cover URLs (adds alt=media and returns the original domain)
-  $: coverSrc = bookCover ? normalizeFirebaseUrl(bookCover) : null;
-
   function dimOrFallback(e: Event) {
     const img = e.currentTarget as HTMLImageElement;
     if (!img.dataset._logged) {
       console.warn('[Hero cover] failed to load:', img.src);
       img.dataset._logged = '1';
     }
-    img.src = createImageFallback('Cover Unavailable');
+    img.src = createImageFallback('Cover Unavailable', 'book');
     img.style.opacity = '1';
   }
 </script>
 
 <section class={`relative text-white py-20 overflow-hidden ${gradientClass}`}>
   <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-    {#if coverSrc}
+    {#if coverUrl}
       <div class="w-48 h-72 flex-shrink-0">
         <img
-          src={coverSrc}
+          src={coverUrl}
           alt={`${title} cover`}
           class="w-full h-full object-cover rounded shadow-lg transition-opacity duration-300"
           on:error={dimOrFallback}
+          loading="lazy"
+          decoding="async"
         />
       </div>
     {/if}

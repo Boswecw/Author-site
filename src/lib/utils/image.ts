@@ -1,4 +1,4 @@
-// src/lib/utils/image.ts - COMPLETE FIX
+// src/lib/utils/image.ts
 import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
 const isBrowser = typeof window !== 'undefined';
@@ -18,13 +18,13 @@ export function toBase64UnicodeSafe(svg: string): string {
 export function createImageFallback(text: string, type: 'book' | 'avatar' | 'logo'): string {
   const dimensions = type === 'book' ? { w: 300, h: 400 } : { w: 300, h: 300 };
   const displayText = text.length > 10 ? text.substring(0, 10) + '...' : text;
-  
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.w}" height="${dimensions.h}" viewBox="0 0 ${dimensions.w} ${dimensions.h}">
     <rect width="100%" height="100%" fill="#f3f4f6"/>
-    <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" 
+    <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
           font-family="Arial, sans-serif" font-size="20" fill="#6b7280">${displayText}</text>
   </svg>`;
-  
+
   return `data:image/svg+xml;base64,${toBase64UnicodeSafe(svg)}`;
 }
 
@@ -33,10 +33,10 @@ export function createImageFallback(text: string, type: 'book' | 'avatar' | 'log
  */
 export async function preloadImage(url?: string | null): Promise<string | null> {
   if (!isBrowser || !url) return null;
-  
+
   return new Promise((resolve) => {
     const img = new Image();
-    
+
     const timeout = setTimeout(() => {
       img.onload = img.onerror = null;
       console.warn('[preloadImage] Timeout loading:', url);
@@ -56,7 +56,7 @@ export async function preloadImage(url?: string | null): Promise<string | null> 
 
     // Set CORS for Firebase images
     if (url.includes('firebasestorage.googleapis.com')) {
-      img.crossOrigin = 'anonymous';
+      (img as HTMLImageElement).crossOrigin = 'anonymous';
     }
 
     img.src = url;
@@ -112,25 +112,42 @@ class ProgressiveImageLoader {
 export const imageLoader = new ProgressiveImageLoader();
 
 /**
+ * Resolve a book cover URL by normalizing and preloading it.
+ * NOTE: This expects `url` to already be a full HTTP(S) URL.
+ * If you now store filenames (e.g. "Symbiogenesis.png"),
+ * resolve those to URLs *before* calling this (e.g. via Firebase getDownloadURL).
+ */
+export async function resolveCover(url?: string | null): Promise<string | null> {
+  const normalized = normalizeFirebaseUrl(url) ?? url ?? null;
+  if (!normalized) return null;
+  try {
+    return await imageLoader.load(normalized);
+  } catch (err) {
+    console.warn('[resolveCover] Failed to load', normalized, err);
+    return null;
+  }
+}
+
+/**
  * Batch preload with better error handling
  */
-export async function preloadImages(urls: (string | null | undefined)[]): Promise<{
+export async function preloadImages(
+  urls: (string | null | undefined)[]
+): Promise<{
   loaded: string[];
   failed: string[];
 }> {
   if (!isBrowser) return { loaded: [], failed: [] };
-  
+
   const validUrls = urls
     .map((u) => normalizeFirebaseUrl(u) ?? u ?? '')
-    .filter(Boolean);
-  
-  const results = await Promise.allSettled(
-    validUrls.map((url) => imageLoader.load(url))
-  );
-  
+    .filter(Boolean) as string[];
+
+  const results = await Promise.allSettled(validUrls.map((url) => imageLoader.load(url)));
+
   const loaded: string[] = [];
   const failed: string[] = [];
-  
+
   results.forEach((result, index) => {
     if (result.status === 'fulfilled' && result.value) {
       loaded.push(validUrls[index]);
@@ -138,7 +155,7 @@ export async function preloadImages(urls: (string | null | undefined)[]): Promis
       failed.push(validUrls[index]);
     }
   });
-  
+
   return { loaded, failed };
 }
 
