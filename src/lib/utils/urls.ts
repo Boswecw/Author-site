@@ -16,8 +16,19 @@ export function normalizeFirebaseUrl(url?: string | null): string | null {
                 const urlObj = new URL(normalized);
                 if (!urlObj.searchParams.has('alt')) {
                   urlObj.searchParams.set('alt', 'media');
-                  normalized = urlObj.toString();
                 }
+
+                // Some buckets incorrectly end with .firebasestorage.app
+                const bucketMatch = urlObj.pathname.match(/\/b\/([^\/]+)/);
+                if (bucketMatch) {
+                  const bucket = bucketMatch[1];
+                  if (bucket.endsWith('.firebasestorage.app')) {
+                        const fixedBucket = bucket.replace('.firebasestorage.app', '.appspot.com');
+                        urlObj.pathname = urlObj.pathname.replace(bucket, fixedBucket);
+                  }
+                }
+
+                normalized = urlObj.toString();
           }
 
           return normalized;
