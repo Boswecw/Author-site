@@ -2,6 +2,7 @@
   import { page } from '$app/stores';
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
 
   let mobileMenuOpen = false;
 
@@ -44,7 +45,7 @@
     <!-- Left: Brand -->
     <a href="/" class="flex items-center gap-3 min-w-0" aria-label="Charles Boswell - Home">
       <img
-        src="https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/Signaturelogo.png?alt=media&token=11b771f1-789b-426a-b9e0-b24caf98150f"
+        src={FIREBASE_IMAGES.ICONS.SIGNATURE_LOGO}
         alt="Charles Boswell signature logo"
         width="56"
         height="56"
