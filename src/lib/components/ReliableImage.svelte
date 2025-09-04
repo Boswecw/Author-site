@@ -2,6 +2,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { normalizeFirebaseUrl } from '$lib/utils/urls';
+  import { toBase64UnicodeSafe } from '$lib/utils/image';
   import { browser } from '$app/environment';
   
   // Props
@@ -30,7 +31,7 @@
             font-family="Arial, sans-serif" font-size="24" fill="#6b7280">${text}</text>
     </svg>`;
     
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    return `data:image/svg+xml;base64,${toBase64UnicodeSafe(svg)}`;
   }
   
   // Reactive statements
