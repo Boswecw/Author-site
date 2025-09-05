@@ -1,15 +1,11 @@
 [build]
-  command = "npm run build"
+  command = "npx -y @sveltejs/kit@2.37.0 build"
   publish = ".svelte-kit/output/client"
 
 [functions]
   node_bundler = "esbuild"
-  # Don’t bundle heavy native deps; let Netlify install them
   external_node_modules = ["mongodb"]
 
-[template.environment]
-  MONGODB_URI = "your Mongo connection string"
-  MONGODB_DB = "Author-site"
-
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
+  NPM_CONFIG_PRODUCTION = "false"
