@@ -7,30 +7,6 @@
 			"$lib/*": [
 				"../src/lib/*"
 			],
-			"$components": [
-				"../src/lib/components"
-			],
-			"$components/*": [
-				"../src/lib/components/*"
-			],
-			"$server": [
-				"../src/lib/server"
-			],
-			"$server/*": [
-				"../src/lib/server/*"
-			],
-			"$utils": [
-				"../src/lib/utils"
-			],
-			"$utils/*": [
-				"../src/lib/utils/*"
-			],
-			"$routes": [
-				"../src/routes"
-			],
-			"$routes/*": [
-				"../src/routes/*"
-			],
 			"$app/types": [
 				"./types/index.d.ts"
 			]
