@@ -1,4 +1,9 @@
 <!-- src/routes/blog/[slug]/+page.svelte -->
+<script context="module" lang="ts">
+  // 🚫 Disable prerender so this route is always SSR
+  export const prerender = false;
+</script>
+
 <script lang="ts">
   import type { PageData } from './$types';
   import { resolveCover } from '$lib/services/imageService';
@@ -41,7 +46,11 @@
 
     {#if post.publishDate}
       <p class="text-sm text-gray-500 mb-6">
-        {new Date(post.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        {new Date(post.publishDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })}
       </p>
     {/if}
 
