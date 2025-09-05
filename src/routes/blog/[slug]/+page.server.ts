@@ -1,41 +1,44 @@
 // src/routes/blog/[slug]/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { normalizeFirebaseUrl } from '$lib/utils/urls';
+import { getDb } from '$lib/server/db';
+import { mdToHtml } from '$lib/server/markdown';
 
 export const load: PageServerLoad = async ({ params }) => {
-	try {
-		// CRITICAL FIX: Dynamic imports to prevent build issues
-		const [{ getPostBySlug }, { mdToHtml }] = await Promise.all([
-			import('$lib/server/posts'),
-			import('$lib/server/markdown')
-		]);
+  const db = await getDb();
+  const col = db.collection('posts');
 
-		const post = await getPostBySlug(params.slug);
+  const doc = await col.findOne(
+    { slug: params.slug },
+    {
+      projection: {
+        _id: 1,
+        slug: 1,
+        title: 1,
+        excerpt: 1,
+        contentMarkdown: 1,
+        heroImage: 1,          // ← we’ll pass this through unchanged
+        publishDate: 1,
+        publishedAt: 1,
+        tags: 1,
+        genre: 1,
+        status: 1
+      }
+    }
+  );
 
-		if (!post || post.status !== 'published') {
-			throw error(404, 'Post not found');
-		}
+  if (!doc || doc.status !== 'published') throw error(404, 'Post not found');
 
-		// ✅ Ensure _id is serializable
-		const { _id, ...rest } = post as any;
+  const { _id, ...rest } = doc as any;
 
-		return {
-			post: {
-				id: _id ? String(_id) : undefined, // convert ObjectId to string
-				...rest,
-				heroImage: normalizeFirebaseUrl(post.heroImage) ?? undefined,
-				contentHtml: await mdToHtml(post.contentMarkdown ?? '')
-			}
-		};
-	} catch (err) {
-		console.error('[blog/slug] Load error:', params.slug, err);
-
-		// Re-throw SvelteKit errors
-		if (err && typeof err === 'object' && 'status' in err) {
-			throw err;
-		}
-
-		throw error(500, 'Failed to load blog post');
-	}
+  return {
+    post: {
+      id: _id ? String(_id) : undefined,
+      ...rest,
+      // ⚠️ pass-through to match list page behavior
+      heroImage: rest.heroImage ?? null,
+      publishDate: rest.publishDate ?? rest.publishedAt ?? undefined,
+      contentHtml: await mdToHtml(rest.contentMarkdown ?? '')
+    }
+  };
 };

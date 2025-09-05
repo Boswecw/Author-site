@@ -4,7 +4,7 @@
   import { createImageFallback } from '$lib/services/authorImages';
 
   export let data: PageData;
-  const IS_DEV = import.meta.env.DEV; // ✅ works in Svelte/Vite
+  const IS_DEV = import.meta.env.DEV;
 
   const norm = (g?: string | null) => (g ?? '').trim().toLowerCase().replace(/\s+/g, '-');
   const coverSrc = (book: any) => book.cover ?? createImageFallback(book.title, 'book');
@@ -20,8 +20,6 @@
     {JSON.stringify(data?.books?.map(b => ({ id:b.id, genre:b.genre })), null, 2)}
   </pre>
 {/if}
-
-
 
 <svelte:head>
   <title>Books by Charles W. Boswell - Faith, Epic & Sci-Fi Fiction</title>
@@ -42,7 +40,7 @@
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.faith}
-          <img src={data.genreIcons.faith} alt="Faith icon" class="h-8 w-8 mr-2" />
+          <img src={data.genreIcons.faith} alt="Faith icon" class="h-36 w-36 mr-2" />
         {:else}
           <span class="mr-2">✝️</span>
         {/if}
@@ -51,8 +49,14 @@
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each faithBooks as book}
           <a href={`/books/${book.id}`} class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow block">
-            <div class="aspect-[3/4] overflow-hidden">
-              <img src={coverSrc(book)} alt={`${book.title} - Book cover`} class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+            <!-- ✅ FIXED: Use proper book aspect ratio and object-contain -->
+            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center">
+              <img 
+                src={coverSrc(book)} 
+                alt={`${book.title} - Book cover`} 
+                class="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" 
+                loading="lazy" 
+              />
             </div>
             <div class="p-6">
               <h3 class="text-xl font-bold text-gray-900 mb-2">{book.title}</h3>
@@ -73,7 +77,7 @@
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.epic}
-          <img src={data.genreIcons.epic} alt="Epic icon" class="h-8 w-8 mr-2" />
+          <img src={data.genreIcons.epic} alt="Epic icon" class="h-36 w-36 mr-2" />
         {:else}
           <span class="mr-2">🗡️</span>
         {/if}
@@ -82,8 +86,14 @@
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each epicBooks as book}
           <a href={`/books/${book.id}`} class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow block">
-            <div class="aspect-[3/4] overflow-hidden">
-              <img src={coverSrc(book)} alt={`${book.title} - Book cover`} class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+            <!-- ✅ FIXED: Use proper book aspect ratio and object-contain -->
+            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center">
+              <img 
+                src={coverSrc(book)} 
+                alt={`${book.title} - Book cover`} 
+                class="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" 
+                loading="lazy" 
+              />
             </div>
             <div class="p-6">
               <h3 class="text-xl font-bold text-gray-900 mb-2">{book.title}</h3>
@@ -104,7 +114,7 @@
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.['sci-fi']}
-          <img src={data.genreIcons['sci-fi']} alt="Sci-Fi icon" class="h-8 w-8 mr-2" />
+          <img src={data.genreIcons['sci-fi']} alt="Sci-Fi icon" class="h-36 w-36 mr-2" />
         {:else}
           <span class="mr-2">🚀</span>
         {/if}
@@ -113,8 +123,14 @@
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each sciFiBooks as book}
           <a href={`/books/${book.id}`} class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow block">
-            <div class="aspect-[3/4] overflow-hidden">
-              <img src={coverSrc(book)} alt={`${book.title} - Book cover`} class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+            <!-- ✅ FIXED: Use proper book aspect ratio and object-contain -->
+            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center">
+              <img 
+                src={coverSrc(book)} 
+                alt={`${book.title} - Book cover`} 
+                class="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" 
+                loading="lazy" 
+              />
             </div>
             <div class="p-6">
               <h3 class="text-xl font-bold text-gray-900 mb-2">{book.title}</h3>

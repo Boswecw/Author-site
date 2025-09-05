@@ -5,48 +5,81 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Variables */
+/* ===== UPDATED CSS VARIABLES - COHESIVE COLOR SCHEME ===== */
 :root {
-  --fire-50:  #fef7f0;
-  --fire-600: #dc3b21;
-  --fire-700: #b72c16;
-  --stone-900: #0b0b0c;
-  --brand-charcoal: #1A1A1A;
-  --brand-cream:    #F8F4E9;
-  --brand-gold:     #C9A227;
-  --brand-bronze:   #8C7853;
-  --faith-ember:    #E4572E;
-  --faith-forest:   #355E3B;
-  --fantasy-storm:  #1C3A55;
-  --fantasy-light:  #FFD65A;
-  --fantasy-earth:  #6E4B2B;
-  --fantasy-crimson:#7A1C1C;
-  --scifi-neon:     #39FF14;
-  --scifi-orange:   #FF6F3C;
-  --scifi-shadow:   #0F2A1E;
+  /* Primary grays - main brand colors */
+  --primary-50: #f8f9fa;
+  --primary-100: #e9ecef;
+  --primary-200: #dee2e6;
+  --primary-300: #ced4da;
+  --primary-400: #6c757d;
+  --primary-500: #495057;  /* main text */
+  --primary-600: #343a40;
+  --primary-700: #212529;  /* headings */
+  --primary-800: #1a1e21;
+  --primary-900: #0d1117;
+
+  /* Accent gold - buttons, highlights */
+  --accent-50: #fefdf8;
+  --accent-100: #fef7e0;
+  --accent-200: #fcefc7;
+  --accent-300: #f8e3a3;
+  --accent-400: #f2d679;
+  --accent-500: #e6c54d;  /* main accent */
+  --accent-600: #d4af37;  /* hover states */
+  --accent-700: #b8941f;
+  --accent-800: #967618;
+  --accent-900: #7a5f0f;
+
+  /* Subtle genre hints */
+  --faith-light: #e8f4f8;
+  --faith-main: #4a90a4;
+  --faith-dark: #2c5f6f;
+
+  --fantasy-light: #f0f4ff;
+  --fantasy-main: #5b6eb0;
+  --fantasy-dark: #384478;
+
+  --scifi-light: #f0fdf4;
+  --scifi-main: #22c55e;
+  --scifi-dark: #166534;
+
+  /* Semantic colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
 }
 
 .dark {
-  --brand-cream:    #0f1115;
-  --stone-900:      #e7e5e4;
-  --brand-charcoal: #0B0D10;
+  --primary-50: #0d1117;
+  --primary-100: #1a1e21;
+  --primary-700: #e9ecef;
+  --primary-900: #f8f9fa;
 }
 
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
-    color: var(--stone-900);
+    color: var(--primary-700);
     background-color: white;
     scroll-behavior: smooth;
   }
 
   .dark html,
   .dark body {
-    background-color: var(--brand-cream);
+    background-color: var(--primary-50);
+    color: var(--primary-700);
   }
 
   body {
     line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
   }
 
   img {
@@ -56,6 +89,7 @@
 }
 
 @layer components {
+  /* ===== BRAND STYLES ===== */
   .brand-name {
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
@@ -63,6 +97,11 @@
     letter-spacing: 0.02em;
   }
 
+  .brand-gradient {
+    background: linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 50%, var(--accent-700) 100%);
+  }
+
+  /* ===== TYPOGRAPHY ===== */
   .heading-fantasy {
     font-family: 'Cinzel', serif;
     letter-spacing: 0.01em;
@@ -71,5 +110,138 @@
   .heading-scifi {
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 0.03em;
+  }
+
+  /* ===== TEXT UTILITIES ===== */
+  .text-primary {
+    color: var(--primary-700);
+  }
+
+  .text-secondary {
+    color: var(--primary-500);
+  }
+
+  .text-muted {
+    color: var(--primary-400);
+  }
+
+  .text-accent {
+    color: var(--accent-600);
+  }
+
+  /* ===== BACKGROUND UTILITIES ===== */
+  .bg-soft {
+    background-color: var(--primary-50);
+  }
+
+  .bg-subtle {
+    background-color: var(--primary-100);
+  }
+
+  .bg-accent {
+    background-color: var(--accent-500);
+  }
+
+  .bg-accent:hover {
+    background-color: var(--accent-600);
+  }
+
+  /* ===== GENRE ACCENTS (used sparingly) ===== */
+  .text-faith {
+    color: var(--faith-main);
+  }
+
+  .text-fantasy {
+    color: var(--fantasy-main);
+  }
+
+  .text-scifi {
+    color: var(--scifi-main);
+  }
+
+  .border-faith {
+    border-color: var(--faith-main);
+  }
+
+  .border-fantasy {
+    border-color: var(--fantasy-main);
+  }
+
+  .border-scifi {
+    border-color: var(--scifi-main);
+  }
+
+  .bg-faith-light {
+    background-color: var(--faith-light);
+  }
+
+  .bg-fantasy-light {
+    background-color: var(--fantasy-light);
+  }
+
+  .bg-scifi-light {
+    background-color: var(--scifi-light);
+  }
+
+  /* ===== BUTTON STYLES ===== */
+  .btn-primary {
+    background-color: var(--accent-500);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--accent-600);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--primary-700);
+    border: 1px solid var(--primary-300);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--primary-100);
+    border-color: var(--primary-400);
+  }
+
+  /* ===== GENRE ICON STYLES ===== */
+  .genre-icon {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+  }
+
+  /* ===== LAYOUT UTILITIES ===== */
+  .layout-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .layout-container main {
+    flex: 1;
+  }
+}
+
+@layer utilities {
+  /* ===== CUSTOM UTILITIES ===== */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .shadow-soft {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  }
+
+  .shadow-accent {
+    box-shadow: 0 4px 6px -1px rgba(230, 197, 77, 0.2), 0 2px 4px -1px rgba(230, 197, 77, 0.1);
   }
 }

@@ -1,4 +1,4 @@
-<!-- src/routes/+layout.svelte - FIXED CSS IMPORT -->
+<!-- src/routes/+layout.svelte - FIXED HYDRATION ISSUE -->
 <script lang="ts">
   // ✅ CRITICAL: Import CSS first
   import '../app.css';
@@ -7,8 +7,10 @@
   import Footer from '$lib/components/Footer.svelte';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import { browser } from '$app/environment';
 
-  $: pathname = $page.url.pathname;
+  // ✅ FIX: Guard against undefined $page.url during hydration
+  $: pathname = browser && $page?.url?.pathname ? $page.url.pathname : '/';
 
   function getPageTitle(pathname: string): string {
     switch (pathname) {

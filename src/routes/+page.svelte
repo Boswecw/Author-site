@@ -118,6 +118,7 @@
   </div>
 </section>
 
+
 <!-- Upcoming Books Section -->
 {#if upcoming.length > 0}
   <section class="py-16 bg-brand-cream">
@@ -130,11 +131,12 @@
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {#each upcoming.slice(0, 6) as book}
             <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              <div class="aspect-[3/4] overflow-hidden">
+              <!-- ✅ FIXED: Use proper book aspect ratio and object-contain -->
+              <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center">
                 <ReliableImage
                   src={book.cover}
                   alt={book.title}
-                  className="w-full h-full object-cover"
+                  className="max-w-full max-h-full object-contain"
                   fallbackType="book"
                 />
               </div>

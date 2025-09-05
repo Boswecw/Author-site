@@ -1,3 +1,4 @@
+<!-- src/lib/components/ReliableImage.svelte - DIRECT URL FIX -->
 <script lang="ts">
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
@@ -17,52 +18,84 @@
   let isLoading = true;
   let hasError = false;
   let resolvedSrc: string | null = null;
-  let imgElement: HTMLImageElement;
+  let currentSrc: string | null = null;
 
   // Create fallback image
   $: fallbackSrc = createFallbackImage(fallbackText, fallbackType);
 
-  // Resolve image when src changes
-  $: if (browser && src && src !== resolvedSrc) {
+  // Dynamic styles for loading placeholder
+  $: placeholderStyle = [
+    width ? `width: ${typeof width === 'number' ? width + 'px' : width};` : '',
+    height ? `height: ${typeof height === 'number' ? height + 'px' : height};` : ''
+  ].filter(Boolean).join(' ');
+
+  // Handle src changes
+  $: if (browser && src !== currentSrc) {
+    currentSrc = src;
     loadImage(src);
   }
 
-  async function loadImage(imageSrc: string) {
+  async function loadImage(imageSrc: string | null | undefined) {
     if (!browser) return;
+
+    if (!imageSrc) {
+      handleNoSource();
+      return;
+    }
 
     isLoading = true;
     hasError = false;
 
     try {
-      // Try to resolve Firebase image
+      // ✅ KEY FIX: If it's already a Firebase Storage URL, use it directly
+      if (imageSrc.includes('firebasestorage.googleapis.com')) {
+        console.log('[ReliableImage] Using direct Firebase URL:', imageSrc);
+        resolvedSrc = imageSrc;
+        isLoading = false;
+        hasError = false;
+        return;
+      }
+
+      // ✅ Only resolve if it's NOT already a full URL
+      if (/^https?:\/\//i.test(imageSrc)) {
+        console.log('[ReliableImage] Using direct URL:', imageSrc);
+        resolvedSrc = imageSrc;
+        isLoading = false;
+        hasError = false;
+        return;
+      }
+
+      // Only try to resolve Firebase paths (not full URLs)
+      console.log('[ReliableImage] Resolving Firebase path:', imageSrc);
       const resolved = await resolveFirebaseImage(imageSrc);
       
       if (resolved) {
-        // Test if the resolved URL actually loads
-        await new Promise<void>((resolve, reject) => {
-          const testImg = new Image();
-          testImg.onload = () => resolve();
-          testImg.onerror = () => reject(new Error('Image failed to load'));
-          testImg.src = resolved;
-        });
-
         resolvedSrc = resolved;
         isLoading = false;
+        hasError = false;
       } else {
         throw new Error('Failed to resolve image');
       }
     } catch (error) {
       console.warn('[ReliableImage] Load error:', imageSrc, error);
-      hasError = true;
-      isLoading = false;
-      resolvedSrc = fallbackSrc;
+      handleError();
     }
   }
 
   function handleImageError() {
     console.warn('[ReliableImage] Image error event:', src);
+    handleError();
+  }
+
+  function handleError() {
     hasError = true;
     isLoading = false;
+    resolvedSrc = fallbackSrc;
+  }
+
+  function handleNoSource() {
+    isLoading = false;
+    hasError = true;
     resolvedSrc = fallbackSrc;
   }
 
@@ -70,9 +103,7 @@
     if (src) {
       loadImage(src);
     } else {
-      isLoading = false;
-      hasError = true;
-      resolvedSrc = fallbackSrc;
+      handleNoSource();
     }
   });
 </script>
@@ -80,13 +111,14 @@
 {#if isLoading}
   <div 
     class={`bg-gray-200 animate-pulse flex items-center justify-center ${className}`}
-    style={`${width ? `width: ${typeof width === 'number' ? width + 'px' : width};` : ''}${height ? ` height: ${typeof height === 'number' ? height + 'px' : height};` : ''}`}
+    style={placeholderStyle}
+    role="img"
+    aria-label="Loading image..."
   >
-    <span class="text-gray-400 text-sm">Loading...</span>
+    <span class="text-gray-400 text-sm select-none">Loading...</span>
   </div>
 {:else}
   <img
-    bind:this={imgElement}
     src={resolvedSrc || fallbackSrc}
     {alt}
     class={className}

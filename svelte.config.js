@@ -1,4 +1,4 @@
-// svelte.config.js - CLEAN WORKING VERSION
+// svelte.config.js — CLEAN, WORKING
 import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
@@ -8,28 +8,24 @@ const config = {
 
   kit: {
     adapter: adapter(),
-    
-    prerender: {
-  handleMissingId: 'warn',
-  handleHttpError: 'warn',
-  handleUnseenRoutes: 'warn'
+
+    // Put your aliases here (not in tsconfig)
+    alias: {
+      $lib: 'src/lib',
+      $components: 'src/lib/components',
+      $server: 'src/lib/server',
+      $utils: 'src/lib/utils',
+      $routes: 'src/routes'
     },
 
-    typescript: {
-      config: (config) => ({
-        ...config,
-        compilerOptions: {
-          ...config.compilerOptions,
-          moduleResolution: 'bundler',
-          allowSyntheticDefaultImports: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          strict: true
-        }
-      })
+    prerender: {
+      handleMissingId: 'warn',
+      handleHttpError: 'warn',
+      handleUnseenRoutes: 'warn'
     }
   },
 
+  // Svelte compiler options
   compilerOptions: {
     runes: false,
     dev: process.env.NODE_ENV === 'development'

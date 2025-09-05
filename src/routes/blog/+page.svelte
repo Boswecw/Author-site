@@ -54,14 +54,17 @@
           <article class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
             {#if post.heroImage}
               <a href="/blog/{post.slug}" class="block">
-                <img
-                  src={heroUrls[post.slug] /* resolved or fallback */}
-                  alt={post.title}
-                  class="w-full h-56 object-cover transition-opacity duration-300"
-                  loading="lazy"
-                  decoding="async"
-                  on:error={(e) => handleImageError(e, post.title)}
-                />
+                <!-- ✅ FIXED: Use proper aspect ratio and object-contain -->
+                <div class="aspect-[16/9] bg-gray-50 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={heroUrls[post.slug]}
+                    alt={post.title}
+                    class="max-w-full max-h-full object-contain transition-opacity duration-300"
+                    loading="lazy"
+                    decoding="async"
+                    on:error={(e) => handleImageError(e, post.title)}
+                  />
+                </div>
               </a>
             {/if}
 

@@ -1,8 +1,9 @@
 <!-- src/lib/components/Navigation.svelte -->
 <script lang="ts">
-  import { page } from '$app/stores';           // ✅ import as "page"
+  import { page } from '$app/stores';
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
 
   let mobileMenuOpen = false;
 
@@ -42,8 +43,8 @@
     img.replaceWith(span);
   }
 
-  // current path, for active link state
-  $: pathname = $page.url.pathname;            // ✅ use $page (auto-subscribes)
+  // ✅ FIX: Guard against undefined $page.url during hydration
+  $: pathname = browser && $page?.url?.pathname ? $page.url.pathname : '/';
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));

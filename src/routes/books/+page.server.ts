@@ -19,9 +19,9 @@ const ensurePath = (nameOrPath: string, folder: string) =>
 
 // 🖼️ Map genre -> icon *paths* (adjust names if needed)
 const GENRE_ICON_FILES: Record<'faith' | 'epic' | 'sci-fi', string | null> = {
-  faith:  `${ICONS_FOLDER}/ChristianFiction.png`,
-  epic:   `${ICONS_FOLDER}/EpicFantasy.png`,
-  'sci-fi': `${ICONS_FOLDER}/SciFi.png`, // set to null if not uploaded yet
+  faith:  `${ICONS_FOLDER}/faith-icon.png`,
+  epic:   `${ICONS_FOLDER}/epic-icon.png`,
+  'sci-fi': `${ICONS_FOLDER}/sci-fi-icon.png`, // set to null if not uploaded yet
 };
 
 // Build icon URL map

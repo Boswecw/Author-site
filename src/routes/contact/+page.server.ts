@@ -1,98 +1,98 @@
 // src/routes/contact/+page.server.ts
 export const prerender = false;
+
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 
-// CRITICAL FIX: Add minimal load function to prevent 500 during preload
-export const load: PageServerLoad = async () => {
-  return {};
-};
+export const load: PageServerLoad = async () => ({});
 
 export const actions: Actions = {
   default: async ({ request }) => {
-    const formData = await request.formData();
-    const name = formData.get('name')?.toString() ?? '';
-    const email = formData.get('email')?.toString() ?? '';
-    const subject = formData.get('subject')?.toString() ?? '';
-    const message = formData.get('message')?.toString() ?? '';
-    
-    // Honeypot spam protection
-    const website = formData.get('website')?.toString();
-    if (website) {
-      // Silent failure for bots
-      return fail(400, { message: 'Invalid submission.' });
-    }
+    const fd = await request.formData();
+    const name = fd.get('name')?.toString() ?? '';
+    const email = fd.get('email')?.toString() ?? '';
+    const subject = fd.get('subject')?.toString() ?? '';
+    const message = fd.get('message')?.toString() ?? '';
+    const website = fd.get('website')?.toString();
 
-    // Basic validation
+    // Honeypot
+    if (website) return { success: true, message: 'Thanks!' };
+
+    // Validation
     if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
-      return fail(400, { 
-        message: 'All fields are required.',
-        values: { name, email, subject, message }
-      });
+      return fail(400, { message: 'All fields are required.', values: { name, email, subject, message } });
     }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return fail(400, { 
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(email)) {
+      return fail(400, {
         message: 'Please enter a valid email address.',
-        values: { name, email, subject, message }
+        values: { name, email, subject, message },
+        errors: { email: 'Invalid email.' }
       });
     }
 
-    // CRITICAL FIX: Guard environment variables gracefully
-    const gmailUser = process.env.GMAIL_USER;
-    const gmailPassword = process.env.GMAIL_APP_PASSWORD;
-    
-    if (!gmailUser || !gmailPassword) {
-      console.error('[contact] Missing email configuration');
-      return fail(500, { 
-        message: 'Email service is not configured. Please try again later.',
-        values: { name, email, subject, message }
+    // Workspace sender + App Password
+    const gmailUser = env.GMAIL_USER;
+    const gmailPass = env.GMAIL_APP_PASSWORD;
+
+    // Who the email appears from / goes to
+    const emailFrom = env.EMAIL_FROM ?? (gmailUser ? `Author Website <${gmailUser}>` : undefined);
+    const emailTo = env.EMAIL_TO ?? gmailUser;
+
+    if (!gmailUser || !gmailPass) {
+      console.warn('[contact] Missing email configuration. Message NOT sent.', {
+        from: { name, email },
+        subject
       });
+      return {
+        success: false,
+        message: 'Email temporarily unavailable. Please email me directly.',
+        values: { name, email, subject, message }
+      };
     }
 
     try {
-      // CRITICAL FIX: Import nodemailer inside the action to prevent build issues
       const nodemailer = await import('nodemailer');
 
+      // Explicit Gmail SMTP (Workspace)
       const transporter = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: {
-          user: gmailUser,
-          pass: gmailPassword
-        }
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // SSL
+        auth: { user: gmailUser, pass: gmailPass }
       });
 
+      // Optional: sanity check during setup (remove after it passes once)
+      await transporter.verify();
+
       await transporter.sendMail({
-        from: `"Author Website" <${gmailUser}>`,
-        to: gmailUser,
+        from: emailFrom ?? gmailUser,        // must be your Workspace address or an approved alias
+        to: emailTo ?? gmailUser,
+        replyTo: { name, address: email },   // reply directly to the sender
         subject: `New Contact Form: ${subject}`,
         text: `From: ${name} <${email}>\n\n${message}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px;">
             <h2 style="color: #dc2626;">New Contact Form Submission</h2>
-            <p><strong>From:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>From:</strong> ${name} &lt;${email}&gt;</p>
             <p><strong>Subject:</strong> ${subject}</p>
             <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
-            <div style="background: #f9fafb; padding: 20px; border-radius: 8px;">
-              ${message.replace(/\n/g, '<br>')}
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; white-space: pre-wrap;">
+              ${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
             </div>
           </div>
         `
       });
 
-      return { 
-        success: true, 
-        message: 'Thanks — your message has been sent. I\'ll get back to you soon!' 
-      };
+      return { success: true, message: "Thanks — your message has been sent. I'll get back to you soon!" };
     } catch (err) {
       console.error('[contact] email sending error:', err);
-      return fail(500, { 
-        message: 'Failed to send message. Please try again later.',
+      return {
+        success: false,
+        message: 'Failed to send message. Please email me directly.',
         values: { name, email, subject, message }
-      });
+      };
     }
   }
 };

@@ -1,4 +1,4 @@
-// tailwind.config.js
+// tailwind.config.js - UPDATED COHESIVE COLOR SCHEME
 import typography from '@tailwindcss/typography'
 
 export default {
@@ -7,53 +7,70 @@ export default {
   theme: {
     extend: {
       colors: {
-        // keep your fire scale as-is
-        fire: {
-          50: '#fef7f0',
-          100: '#fdeee1',
-          200: '#fbd9c2',
-          300: '#f8b898',
-          400: '#f4926c',
-          500: '#f0734a',
-          600: '#e15a2f',
-          700: '#bc4525',
-          800: '#963924',
-          900: '#783220',
-          950: '#411710'
+        // ===== MAIN BRAND PALETTE =====
+        // Professional grays for primary content
+        primary: {
+          50: '#f8f9fa',
+          100: '#e9ecef', 
+          200: '#dee2e6',
+          300: '#ced4da',
+          400: '#6c757d',
+          500: '#495057',  // main text
+          600: '#343a40',
+          700: '#212529',  // headings
+          800: '#1a1e21',
+          900: '#0d1117'
         },
 
-        // --- Shared brand metals & neutrals ---
-        brand: {
-          gold:     '#C9A227', // signature muted gold
-          bronze:   '#8C7853',
-          charcoal: '#1A1A1A',
-          cream:    '#F8F4E9'
+        // Sophisticated gold accent for buttons, highlights
+        accent: {
+          50: '#fefdf8',
+          100: '#fef7e0',
+          200: '#fcefc7', 
+          300: '#f8e3a3',
+          400: '#f2d679',
+          500: '#e6c54d',  // main accent
+          600: '#d4af37',  // hover states
+          700: '#b8941f',
+          800: '#967618',
+          900: '#7a5f0f'
         },
 
-        // --- Genre accents ---
+        // ===== SUBTLE GENRE HINTS =====
+        // Used sparingly for icons, borders, small accents
         faith: {
-          ember:  '#E4572E', // firestorm glow
-          forest: '#355E3B', // steady natural tone
+          light: '#e8f4f8',
+          main: '#4a90a4',
+          dark: '#2c5f6f'
         },
+        
         fantasy: {
-          storm:   '#1C3A55', // stormy blue
-          light:   '#FFD65A', // glowing orb gold
-          earth:   '#6E4B2B'  // medieval grounding
+          light: '#f0f4ff',
+          main: '#5b6eb0', 
+          dark: '#384478'
         },
+        
         scifi: {
-          neon:    '#39FF14', // biotech green
-          orange:  '#FF6F3C', // subtitle accent
-          shadow:  '#0F2A1E'  // swamp/alien dark
-        }
+          light: '#f0fdf4',
+          main: '#22c55e',
+          dark: '#166534'
+        },
+
+        // ===== SEMANTIC COLORS =====
+        success: '#10b981',
+        warning: '#f59e0b', 
+        error: '#ef4444',
+        info: '#3b82f6'
       },
 
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        // optional per-genre heading fonts (if you install them via Google Fonts)
-        serif: ['Cormorant Garamond', 'serif'], // for Christian Fiction
-        fantasy: ['Cinzel', 'serif'],           // for Fantasy
-        scifi: ['Orbitron', 'sans-serif']      // for Sci-Fi
-      }
+        serif: ['Crimson Text', 'Georgia', 'serif'],
+        mono: ['JetBrains Mono', 'monospace']
+      },
+
+      // Remove the old complex color schemes
+      // No more fire scale, brand metallics, or competing genre palettes
     }
   },
   plugins: [typography]

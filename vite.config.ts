@@ -10,18 +10,25 @@ export default defineConfig({
   
   build: {
     rollupOptions: {
-      external: [
-        /^https:\/\/firebasestorage\.googleapis\.com/,
-        /^https:\/\/storage\.googleapis\.com/,
-        /^https:\/\/.*\.firebasestorage\.app/
-      ]
+      // Remove external Firebase URLs - they were causing build issues
+      output: {
+        manualChunks: {
+          'firebase': ['firebase/app', 'firebase/storage'],
+          'vendor': ['marked']
+        }
+      }
     },
     chunkSizeWarningLimit: 1000,
-    sourcemap: true
+    sourcemap: true,
+    target: 'esnext'
   },
 
   optimizeDeps: {
-    include: ['marked'],
+    include: [
+      'firebase/app',
+      'firebase/storage',
+      'marked'
+    ],
     exclude: ['mongodb', '@sveltejs/kit']
   },
 
@@ -31,7 +38,7 @@ export default defineConfig({
   },
 
   ssr: {
-    noExternal: ['marked']
+    noExternal: ['marked', 'firebase']
   },
 
   server: {
@@ -54,5 +61,8 @@ export default defineConfig({
     '**/*.gif',
     '**/*.svg',
     '**/*.webp'
-  ]
+  ],
+
+  // Handle environment variables properly
+  envPrefix: 'VITE_'
 });
