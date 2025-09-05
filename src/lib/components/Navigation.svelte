@@ -1,8 +1,8 @@
+<!-- src/lib/components/Navigation.svelte -->
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/stores';           // ✅ import as "page"
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
 
   let mobileMenuOpen = false;
 
@@ -14,11 +14,25 @@
     { name: 'Contact', href: '/contact' }
   ] as const;
 
+  // --- Logo handling (filename OR full URL) ---
+  export let logo: string | null = 'Signaturelogo.png';
+
+  const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
+  const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
+  const buildImageUrl = (filename: string) =>
+    `${BASE_URL}/${encodeURIComponent(filename)}?alt=media`;
+
+  $: logoSrc =
+    typeof logo === 'string' && logo.trim()
+      ? (logo.includes('/') || logo.startsWith('http'))
+        ? logo.trim()
+        : buildImageUrl(logo.trim())
+      : null;
+
   function closeMenu() {
     mobileMenuOpen = false;
   }
 
-  // smaller fallback to match reduced logo size
   function onLogoError(e: Event) {
     const img = e.currentTarget as HTMLImageElement;
     const span = document.createElement('span');
@@ -29,11 +43,11 @@
   }
 
   // current path, for active link state
-  $: pathname = $page.url.pathname;
+  $: pathname = $page.url.pathname;            // ✅ use $page (auto-subscribes)
+
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));
 
-  // auto-close mobile menu after nav
   onMount(() => afterNavigate(() => (mobileMenuOpen = false)));
 </script>
 
@@ -44,17 +58,23 @@
   <div class="w-full h-16 px-3 md:px-6 grid grid-cols-[auto_1fr_auto] items-center gap-4">
     <!-- Left: Brand -->
     <a href="/" class="flex items-center gap-3 min-w-0" aria-label="Charles Boswell - Home">
-      <img
-        src={FIREBASE_IMAGES.ICONS.SIGNATURE_LOGO}
-        alt="Charles Boswell signature logo"
-        width="56"
-        height="56"
-        class="h-14 w-14 object-contain drop-shadow-sm"
-        loading="eager"
-        decoding="async"
-        fetchpriority="high"
-        on:error={onLogoError}
-      />
+      {#if logoSrc}
+        <img
+          src={logoSrc}
+          alt="Charles Boswell signature logo"
+          width="56"
+          height="56"
+          class="h-14 w-14 object-contain drop-shadow-sm"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          on:error={onLogoError}
+        />
+      {:else}
+        <span class="inline-flex items-center justify-center h-14 w-14 rounded bg-[var(--brand-cream)] text-[var(--brand-charcoal)] font-semibold">
+          CB
+        </span>
+      {/if}
       <span class="brand-name text-xl md:text-2xl tracking-wide text-[color:var(--stone-900)] truncate">
         Charles Boswell
       </span>
@@ -68,6 +88,7 @@
         <a
           href={l.href}
           aria-current={isActive(l.href) ? 'page' : undefined}
+          data-sveltekit-preload-data
           class={`text-sm font-medium transition-opacity hover:opacity-80 ${
             isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'
           }`}
@@ -98,6 +119,7 @@
             }`}
             on:click={closeMenu}
             aria-current={isActive(l.href) ? 'page' : undefined}
+            data-sveltekit-preload-data
           >
             {l.name}
           </a>

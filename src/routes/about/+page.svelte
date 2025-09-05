@@ -1,6 +1,11 @@
+<!-- src/routes/about/+page.svelte - Updated for new Firebase service -->
 <script lang="ts">
-  import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
-  import { normalizeFirebaseUrl } from '$lib/utils/urls';
+  import { AUTHOR_IMAGES } from '$lib/services/authorImages';
+  
+  // Direct image URLs - no normalizeFirebaseUrl needed!
+  const authorPortrait = AUTHOR_IMAGES.AUTHOR.AUGUST_25;
+  const navyPhoto = AUTHOR_IMAGES.AUTHOR.NAVY;
+  const firefighterPhoto = AUTHOR_IMAGES.AUTHOR.FIREFIGHTER;
 </script>
 
 <svelte:head>
@@ -18,7 +23,7 @@
       <!-- Top-center oval portrait -->
       <figure class="flex justify-center mb-6">
         <img
-          src={normalizeFirebaseUrl(FIREBASE_IMAGES.AUTHOR.AUGUST_25)}
+          src={authorPortrait}
           alt="Portrait of Charles W. Boswell"
           width="320"
           height="384"
@@ -44,9 +49,10 @@
       <!-- Author Photo -->
       <div class="lg:col-span-1">
         <img
-          src={normalizeFirebaseUrl(FIREBASE_IMAGES.AUTHOR.NAVY)}
-          alt="Charles W. Boswell, author portrait"
+          src={navyPhoto}
+          alt="Charles W. Boswell in Navy uniform, 1993"
           class="rounded-lg shadow-xl w-full h-auto sticky top-8"
+          loading="lazy"
         />
       </div>
 
@@ -69,19 +75,27 @@
 
         <div>
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Wildland Firefighting</h2>
-          <p class="text-gray-600 mb-4">
-            After my naval service, I spent sixteen years as a wildland firefighter,
-            battling some of the most dangerous fires across the American West. This career
-            put me face-to-face with nature's raw power and taught me about courage,
-            teamwork, and the split-second decisions that can mean the difference between
-            life and death.
-          </p>
-          <p class="text-gray-600">
-            The camaraderie among firefighters mirrors the brotherhood found in military units,
-            and these bonds of trust and mutual reliance feature prominently in my writing.
-            The elemental forces I battled in real life inspire the magical systems and
-            environmental challenges in my fantasy worlds.
-          </p>
+          <div class="mb-4">
+            <img
+              src={firefighterPhoto}
+              alt="Charles Boswell as USFS Firefighter"
+              class="float-right ml-4 mb-4 w-48 h-auto rounded-lg shadow-md"
+              loading="lazy"
+            />
+            <p class="text-gray-600 mb-4">
+              After my naval service, I spent sixteen years as a wildland firefighter,
+              battling some of the most dangerous fires across the American West. This career
+              put me face-to-face with nature's raw power and taught me about courage,
+              teamwork, and the split-second decisions that can mean the difference between
+              life and death.
+            </p>
+            <p class="text-gray-600">
+              The camaraderie among firefighters mirrors the brotherhood found in military units,
+              and these bonds of trust and mutual reliance feature prominently in my writing.
+              The elemental forces I battled in real life inspire the magical systems and
+              environmental challenges in my fantasy worlds.
+            </p>
+          </div>
         </div>
 
         <div>
@@ -138,6 +152,71 @@
       </div>
     </div>
 
+    <!-- Writing Inspiration -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-8 mb-16">
+      <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">From Experience to Story</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-4">Real-World Inspiration</h3>
+          <ul class="space-y-3 text-gray-600">
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-blue-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Military brotherhood becomes fantasy fellowships
+            </li>
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-blue-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Wildfire battles inspire magical conflicts
+            </li>
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-blue-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Faith journeys become character arcs
+            </li>
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-blue-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Life-or-death decisions shape plot tension
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-4">Core Themes</h3>
+          <ul class="space-y-3 text-gray-600">
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-yellow-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Courage in the face of overwhelming odds
+            </li>
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-yellow-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Faith as a source of strength and guidance
+            </li>
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-yellow-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Sacrifice for others and higher purpose
+            </li>
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-yellow-600 mt-1 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Redemption and second chances
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <!-- Personal Touch -->
     <div class="text-center">
       <h2 class="text-3xl font-bold text-gray-900 mb-6">Beyond the Books</h2>
@@ -147,7 +226,24 @@
         I believe in the power of community and the importance of passing on the lessons
         learned through service to others.
       </p>
-      <a href="/contact" class="btn-primary">Get in Touch</a>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/contact" class="btn-primary">Get in Touch</a>
+        <a href="/books" class="btn-secondary">Explore My Books</a>
+      </div>
     </div>
   </div>
 </section>
+
+<style>
+  .btn-primary {
+    @apply inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200;
+  }
+  
+  .brand-name {
+    font-family: Georgia, serif;
+  }
+</style>

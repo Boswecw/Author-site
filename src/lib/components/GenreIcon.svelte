@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FIREBASE_IMAGES } from '$lib/services/imageLoading';
+  import { FIREBASE_IMAGES } from '$lib/services/authorImages';
   
   export let genre: 'faith' | 'epic' = 'faith';
   export let size: 'sm' | 'md' | 'lg' = 'md';

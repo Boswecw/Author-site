@@ -1,112 +1,83 @@
-<!-- src/lib/components/ReliableImage.svelte - COMPLETE FIX -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { normalizeFirebaseUrl } from '$lib/utils/urls';
-  import { toBase64UnicodeSafe } from '$lib/utils/image';
   import { browser } from '$app/environment';
-  
+  import { onMount } from 'svelte';
+  import { resolveFirebaseImage, createFallbackImage } from '$lib/utils/imageResolver';
+
   // Props
   export let src: string | null | undefined = null;
   export let alt: string = '';
   export let className: string = '';
-  export let width: number | string | undefined = undefined;
-  export let height: number | string | undefined = undefined;
-  export let loading: 'eager' | 'lazy' = 'lazy';
-  export let fallbackType: 'book' | 'author' | 'logo' = 'book';
-  
+  export let width: string | number | undefined = undefined;
+  export let height: string | number | undefined = undefined;
+  export let loading: 'lazy' | 'eager' = 'lazy';
+  export let fallbackType: 'book' | 'avatar' | 'logo' = 'book';
+  export let fallbackText: string = 'Loading';
+
   // State
-  let imgElement: HTMLImageElement;
   let isLoading = true;
   let hasError = false;
-  let currentSrc = '';
-  
-  // Create simple fallback SVG
-  function createFallback(type: 'book' | 'author' | 'logo'): string {
-    const dimensions = type === 'book' ? '300 400' : '300 300';
-    const text = type === 'book' ? 'BOOK' : type === 'author' ? 'AUTHOR' : 'CB';
-    
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.split(' ')[0]}" height="${dimensions.split(' ')[1]}" viewBox="0 0 ${dimensions}">
-      <rect width="100%" height="100%" fill="#f3f4f6"/>
-      <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" 
-            font-family="Arial, sans-serif" font-size="24" fill="#6b7280">${text}</text>
-    </svg>`;
-    
-    return `data:image/svg+xml;base64,${toBase64UnicodeSafe(svg)}`;
+  let resolvedSrc: string | null = null;
+  let imgElement: HTMLImageElement;
+
+  // Create fallback image
+  $: fallbackSrc = createFallbackImage(fallbackText, fallbackType);
+
+  // Resolve image when src changes
+  $: if (browser && src && src !== resolvedSrc) {
+    loadImage(src);
   }
-  
-  // Reactive statements
-  $: cleanSrc = normalizeFirebaseUrl(src) ?? src ?? null;
-  $: fallbackSrc = createFallback(fallbackType);
-  
-  // Load image when src changes
-  $: if (browser && cleanSrc && cleanSrc !== currentSrc) {
-    loadImage(cleanSrc);
-  }
-  
-  function loadImage(url: string) {
-    if (!browser || !url) {
-      handleError();
-      return;
-    }
+
+  async function loadImage(imageSrc: string) {
+    if (!browser) return;
 
     isLoading = true;
     hasError = false;
-    currentSrc = url;
 
-    const img = new Image();
-    
-    // Set CORS for Firebase images
-    if (url.includes('firebasestorage.googleapis.com')) {
-      img.crossOrigin = 'anonymous';
-    }
+    try {
+      // Try to resolve Firebase image
+      const resolved = await resolveFirebaseImage(imageSrc);
+      
+      if (resolved) {
+        // Test if the resolved URL actually loads
+        await new Promise<void>((resolve, reject) => {
+          const testImg = new Image();
+          testImg.onload = () => resolve();
+          testImg.onerror = () => reject(new Error('Image failed to load'));
+          testImg.src = resolved;
+        });
 
-    // Timeout to prevent hanging
-    const timeout = setTimeout(() => {
-      img.onload = img.onerror = null;
-      handleError();
-    }, 10000);
-
-    img.onload = () => {
-      clearTimeout(timeout);
-      isLoading = false;
-      hasError = false;
-      if (imgElement) {
-        imgElement.src = url;
+        resolvedSrc = resolved;
+        isLoading = false;
+      } else {
+        throw new Error('Failed to resolve image');
       }
-    };
-
-    img.onerror = () => {
-      clearTimeout(timeout);
-      handleError();
-    };
-
-    img.src = url;
+    } catch (error) {
+      console.warn('[ReliableImage] Load error:', imageSrc, error);
+      hasError = true;
+      isLoading = false;
+      resolvedSrc = fallbackSrc;
+    }
   }
 
-  function handleError() {
-    console.warn('[ReliableImage] Failed to load', currentSrc);
-    isLoading = false;
+  function handleImageError() {
+    console.warn('[ReliableImage] Image error event:', src);
     hasError = true;
-    if (imgElement) imgElement.src = fallbackSrc;
-  }
-
-  function handleImgError() {
-    handleError();
+    isLoading = false;
+    resolvedSrc = fallbackSrc;
   }
 
   onMount(() => {
-    if (browser) {
-      if (cleanSrc) {
-        loadImage(cleanSrc);
-      } else {
-        handleError();
-      }
+    if (src) {
+      loadImage(src);
+    } else {
+      isLoading = false;
+      hasError = true;
+      resolvedSrc = fallbackSrc;
     }
   });
 </script>
 
-<!-- Loading placeholder -->
-{#if isLoading && !hasError}
+{#if isLoading}
   <div 
     class={`bg-gray-200 animate-pulse flex items-center justify-center ${className}`}
     style={`${width ? `width: ${typeof width === 'number' ? width + 'px' : width};` : ''}${height ? ` height: ${typeof height === 'number' ? height + 'px' : height};` : ''}`}
@@ -114,10 +85,9 @@
     <span class="text-gray-400 text-sm">Loading...</span>
   </div>
 {:else}
-  <!-- Actual image -->
   <img
     bind:this={imgElement}
-    src={hasError ? fallbackSrc : (cleanSrc || fallbackSrc)}
+    src={resolvedSrc || fallbackSrc}
     {alt}
     class={className}
     class:opacity-75={hasError}
@@ -125,13 +95,12 @@
     {height}
     {loading}
     decoding="async"
-    on:error={handleImgError}
+    on:error={handleImageError}
   />
 {/if}
 
-<!-- Error indicator for debugging -->
-{#if hasError && process.env.NODE_ENV === 'development'}
-  <div class="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 py-0.5 rounded">
-    Fallback
+{#if hasError && browser}
+  <div class="sr-only">
+    Image failed to load: {src}
   </div>
 {/if}

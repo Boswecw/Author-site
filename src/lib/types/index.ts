@@ -1,4 +1,4 @@
-// src/lib/types/index.ts - UPDATED TO FIX EXPORTS
+// src/lib/types/index.ts - COMPLETE WITH PostDoc
 import type { ObjectId } from 'mongodb';
 
 /**
@@ -9,7 +9,7 @@ export interface BookDoc {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null; // Firebase Storage path
+  cover?: string | null;
   genre?: 'faith' | 'epic' | 'sci-fi' | null;
   status?: 'published' | 'writing' | 'coming-soon' | 'draft' | null;
   publishDate?: string | Date | null;
@@ -21,23 +21,22 @@ export interface BookDoc {
     barnes?: string | null;
     other?: string | null;
   } | null;
-  featured?: boolean;
-  // ADD MISSING LINKS PROPERTY
   links?: {
     amazon?: string | null;
     barnes?: string | null;
     other?: string | null;
   } | null;
+  featured?: boolean;
 }
 
 /**
- * Client-side book type (sanitized)
+ * Client-side book type
  */
 export interface Book {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null; // Firebase Storage path
+  cover?: string | null;
   genre?: 'faith' | 'epic' | 'sci-fi' | null;
   status?: 'published' | 'writing' | 'coming-soon' | 'draft' | null;
   publishDate?: string | null;
@@ -49,7 +48,6 @@ export interface Book {
     barnes?: string | null;
     other?: string | null;
   } | null;
-  // ADD MISSING LINKS PROPERTY  
   links?: {
     amazon?: string | null;
     barnes?: string | null;
@@ -58,7 +56,7 @@ export interface Book {
 }
 
 /**
- * Blog post types - ENSURE PostDoc IS EXPORTED
+ * Blog post MongoDB document
  */
 export interface PostDoc {
   _id?: ObjectId;
@@ -75,6 +73,9 @@ export interface PostDoc {
   genre?: string | null;
 }
 
+/**
+ * Client-side post type
+ */
 export interface Post {
   slug: string;
   title: string;
@@ -86,14 +87,15 @@ export interface Post {
   genre?: string;
 }
 
-// ADD MISSING NewsletterSignupData EXPORT
+/**
+ * Form data types
+ */
 export interface NewsletterSignupData {
   email: string;
   firstName?: string;
   interests?: string[];
 }
 
-// ADD MISSING ContactFormData EXPORT  
 export interface ContactFormData {
   name: string;
   email: string;
@@ -101,4 +103,9 @@ export interface ContactFormData {
   subject?: string;
 }
 
+/**
+ * Status type definitions
+ */
 export type BookStatus = 'published' | 'writing' | 'coming-soon' | 'draft';
+export type PostStatus = 'published' | 'draft';
+export type BookGenre = 'faith' | 'epic' | 'sci-fi';

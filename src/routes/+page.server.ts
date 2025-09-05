@@ -1,16 +1,16 @@
-// src/routes/+page.server.ts - FIXED
+// src/routes/+page.server.ts - UPDATED for books/ subfolder
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
-// Covers now store Firebase Storage paths
+import { placeholderBooks } from '$lib/data/books';
 
 type BookDoc = {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null; // Firebase Storage path
+  cover?: string | null; // filename stored in Mongo (e.g., "Symbiogenesis.png")
   genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
-  status?: string | null;
-  publishDate?: string | null;
+  status?: 'draft' | 'upcoming' | 'published' | 'coming-soon' | string | null;
+  publishDate?: string | Date | null;
   isbn?: string | null;
   format?: string | null;
   pages?: number | null;
@@ -18,110 +18,118 @@ type BookDoc = {
   featured?: boolean;
 };
 
+// Firebase URL builder (accepts full object path, e.g. "books/Heart.png")
+const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
+const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
+const buildImageUrl = (path: string) =>
+  `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
+
+// Folder for covers in your bucket
+const COVERS_FOLDER = 'books';
+
+// If a bare filename is provided, prefix with books/; if it's already a path, keep it
+const ensureCoverPath = (nameOrPath: string) =>
+  nameOrPath.includes('/') ? nameOrPath : `${COVERS_FOLDER}/${nameOrPath}`;
+
+// Normalize a BookDoc -> returned shape for the UI
+function normalizeBook(book: BookDoc) {
+  const coverPath = book.cover ? ensureCoverPath(book.cover) : null;
+
+  return {
+    id: book.id,
+    title: book.title,
+    description: book.description ?? '',
+    cover: coverPath ? buildImageUrl(coverPath) : null, // 🔑 filename -> books/<file> -> URL
+    genre: book.genre ?? 'faith',
+    status: book.status ?? 'draft',
+    publishDate: book.publishDate
+      ? book.publishDate instanceof Date
+        ? book.publishDate.toISOString()
+        : String(book.publishDate)
+      : null,
+    isbn: book.isbn ?? null,
+    format: book.format ?? 'EPUB',
+    pages: book.pages ?? null,
+    buyLinks: book.buyLinks ?? null,
+    featured: !!book.featured
+  };
+}
+
 export const load: PageServerLoad = async () => {
   const db = await getDb();
   const coll = db.collection<BookDoc>('books');
 
+  const projection = {
+    _id: 0,
+    id: 1,
+    title: 1,
+    description: 1,
+    cover: 1,
+    genre: 1,
+    status: 1,
+    publishDate: 1,
+    isbn: 1,
+    format: 1,
+    pages: 1,
+    buyLinks: 1,
+    featured: 1
+  } as const;
+
+  const sortByDateDesc = (a: BookDoc, b: BookDoc) => {
+    const da =
+      a.publishDate instanceof Date
+        ? a.publishDate.getTime()
+        : a.publishDate
+        ? Date.parse(a.publishDate)
+        : -Infinity;
+    const dbb =
+      b.publishDate instanceof Date
+        ? b.publishDate.getTime()
+        : b.publishDate
+        ? Date.parse(b.publishDate)
+        : -Infinity;
+    return dbb - da;
+  };
+
   try {
-    // 1) Try to get the explicit featured book
-    const featuredDoc = await coll.findOne(
-      { featured: true },
+    // 1) Featured (if explicitly set)
+    const featuredDoc =
+      (await coll.findOne({ featured: true }, { projection })) ?? null;
+
+    // 2) Non-draft, non-featured for the "upcoming" rail
+    const nonDraftCursor = coll.find(
       {
-        projection: {
-          _id: 0,
-          id: 1,
-          title: 1,
-          description: 1,
-          cover: 1,
-          genre: 1,
-          status: 1,
-          publishDate: 1,
-          isbn: 1,
-          format: 1,
-          pages: 1,
-          buyLinks: 1,
-          featured: 1
-        }
-      }
+        featured: { $ne: true },
+        $or: [{ status: { $exists: false } }, { status: { $ne: 'draft' } }]
+      },
+      { projection }
     );
 
-    // 2) Also fetch a list of non-featured books (e.g., for cards)
-    const upcoming = await coll
-      .find(
-        { featured: { $ne: true } },
-        {
-          projection: {
-            _id: 0,
-            id: 1,
-            title: 1,
-            description: 1,
-            cover: 1,
-            genre: 1,
-            status: 1,
-            publishDate: 1,
-            isbn: 1,
-            format: 1,
-            pages: 1,
-            buyLinks: 1,
-            featured: 1
-          }
-        }
-      )
-      .sort({ publishDate: -1 }) // newest first if present
-      .limit(12)
-      .toArray();
+    const nonDraft = await nonDraftCursor.toArray();
+    nonDraft.sort(sortByDateDesc);
 
-    if (!featuredDoc && upcoming.length === 0) {
-      console.warn('[+page.server] No books found, returning placeholder data');
+    // 3) Pick final featured + upcoming
+    const featured = featuredDoc ?? nonDraft[0] ?? null;
+    const upcomingRaw = (featured
+      ? nonDraft.filter((b) => b.id !== featured.id)
+      : nonDraft
+    ).slice(0, 12);
 
-      const featured = {
-        id: 'faith-in-a-firestorm',
-        title: 'Faith in a Firestorm',
-        description:
-          'A faith-forward wildfire drama inspired by 16 years on the line—courage, family, and grace when everything burns.',
-        cover: 'books/Faith_in_a_FireStorm.png',
-        genre: 'faith',
-        status: 'upcoming'
-      } as const;
-
-      const upcomingSample = [
-        {
-          id: 'conviction-in-a-flood',
-          title: 'Conviction in a Flood',
-          cover: 'books/Conviction_in_a_Flood Cover.png',
-          genre: 'faith',
-          status: 'upcoming'
-        },
-        {
-          id: 'hurricane-eve',
-          title: 'Hurricane Eve',
-          cover: 'books/Hurricane_Eve Cover.png',
-          genre: 'epic',
-          status: 'upcoming'
-        }
-      ];
-
-      return { featured, upcoming: upcomingSample };
+    if (!featured && upcomingRaw.length === 0) {
+      // Fallback to placeholders (leave as-is; they may already include URLs)
+      console.warn('[+page.server] No books found, using placeholderBooks');
+      const [phFeatured, ...phRest] = placeholderBooks;
+      return { featured: phFeatured, upcoming: phRest };
     }
 
-    // 3) If no featured is set, fall back to the most recent from upcoming
-    const effectiveFeatured = featuredDoc ?? upcoming[0] ?? null;
+    // 4) Normalize + build image URLs (with books/ prefix)
+    const featuredOut = featured ? normalizeBook(featured) : null;
+    const upcoming = upcomingRaw.map(normalizeBook);
 
-    const featured = effectiveFeatured ?? null;
-
-    console.log('[+page.server] Featured book:', featured?.title, 'cover:', featured?.cover);
-    console.log('[+page.server] Upcoming books:', upcoming.length);
-
-    return {
-      featured,
-      upcoming
-    };
-
+    return { featured: featuredOut, upcoming };
   } catch (error) {
     console.error('[+page.server] Database error:', error);
-    return { 
-      featured: null, 
-      upcoming: [] 
-    };
+    const [phFeatured, ...phRest] = placeholderBooks;
+    return { featured: phFeatured, upcoming: phRest };
   }
 };

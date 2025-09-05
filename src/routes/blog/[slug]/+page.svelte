@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createImageFallback } from '$lib/utils/image';
+  import { createImageFallback } from '$lib/services/authorImages';
   import { normalizeFirebaseUrl } from '$lib/utils/urls';
 
   type Post = {

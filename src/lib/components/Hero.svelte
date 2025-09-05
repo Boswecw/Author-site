@@ -1,28 +1,38 @@
-<!-- src/lib/components/Hero.svelte - FIXED VERSION -->
+<!-- src/lib/components/Hero.svelte -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { createImageFallback, resolveCover } from '$lib/utils/image';
+  import { createImageFallback } from '$lib/services/authorImages';
 
   export let title: string = 'Epic Fantasy Born from Real Experience';
   export let subtitle: string = 'From Navy decks to wildfire frontlines—stories forged in grit.';
   export let ctaLink: string = '/books';
   export let ctaText: string = 'Browse Books';
   export let genre: 'faith' | 'epic' | 'sci-fi' | null | undefined = null;
-  export let bookCover: string | null | undefined = null;
+  export let bookCover: string | null | undefined = null; // filename OR path OR full URL
 
-  let coverUrl: string | null = null;
+  // Firebase URL builder (accepts full object path)
+  const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
+  const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
+  const buildImageUrl = (path: string) => `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
 
-  onMount(async () => {
-    coverUrl = await resolveCover(bookCover);
-  });
+  // Folder for book covers in your bucket
+  const COVERS_FOLDER = 'books';
+
+  // If it's a bare filename, prefix with books/; if it's already a path or full URL, use as-is.
+  const resolveCoverPath = (val: string) =>
+    val.startsWith('http') ? val : (val.includes('/') ? val : `${COVERS_FOLDER}/${val}`);
+
+  $: coverUrl =
+    typeof bookCover === 'string' && bookCover.trim()
+      ? bookCover.startsWith('http')
+        ? bookCover.trim() // already a full URL
+        : buildImageUrl(resolveCoverPath(bookCover.trim()))
+      : null;
 
   // Normalize genre so we always have a safe value
   $: safeGenre =
-    genre === 'epic'
-      ? 'epic'
-      : genre === 'sci-fi'
-      ? 'sci-fi'
-      : 'faith';
+    genre === 'epic' ? 'epic'
+    : genre === 'sci-fi' ? 'sci-fi'
+    : 'faith';
 
   // Background gradients by genre
   $: gradientClass =
@@ -53,18 +63,17 @@
 
 <section class={`relative text-white py-20 overflow-hidden ${gradientClass}`}>
   <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-    {#if coverUrl}
-      <div class="w-48 h-72 flex-shrink-0">
-        <img
-          src={coverUrl}
-          alt={`${title} cover`}
-          class="w-full h-full object-cover rounded shadow-lg transition-opacity duration-300"
-          on:error={dimOrFallback}
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-    {/if}
+    <!-- Always render an image: real cover if available, otherwise SVG fallback -->
+    <div class="w-48 h-72 flex-shrink-0">
+      <img
+        src={coverUrl || createImageFallback(title || 'Cover', 'book')}
+        alt={`${title} cover`}
+        class="w-full h-full object-cover rounded shadow-lg transition-opacity duration-300"
+        on:error={dimOrFallback}
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
 
     <div class="text-center md:text-left">
       <h1 class="text-4xl md:text-5xl font-bold mb-4">{title}</h1>

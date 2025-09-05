@@ -1,103 +1,120 @@
-<!-- src/lib/components/BookCard.svelte - FIXED VERSION -->
+<!-- src/lib/components/BookCard.svelte -->
 <script lang="ts">
   import type { Book } from '$lib/types';
-  import { createImageFallback, resolveCover } from '$lib/utils/image';
+  import { resolveCover } from '$lib/services/imageService';
+  import { createImageFallback } from '$lib/utils/image';
   import { onMount } from 'svelte';
 
   export let book: Book;
-  export let featured: boolean = false;
+  export let width = 200;
+  export let height = 300;
 
-  let imageElement: HTMLImageElement;
+  let coverUrl: string | null = null;
   let imageLoaded = false;
   let imageError = false;
-  let isLoading = true;
 
-  // Final URL we render (resolved from filename or normalized URL)
-  let coverUrl: string | null = null;
-
-  // Always have a visual fallback
-  $: fallbackSrc = createImageFallback(book.title, 'book');
-
+  // Resolve once on mount…
   onMount(async () => {
-    try {
-      coverUrl = await resolveCover(book.cover);
-      if (!coverUrl) imageError = true;
-    } catch {
-      imageError = true;
-    } finally {
-      isLoading = false;
-    }
+    coverUrl = await resolveCover(book.cover ?? null);
+    // console.debug('[BookCard] resolved on mount:', { id: book.id, cover: book.cover, coverUrl });
   });
 
-  function handleImageLoad() {
+  // …and whenever the book.cover changes
+  $: (async () => {
+    if (typeof book?.cover === 'string') {
+      const u = await resolveCover(book.cover);
+      if (u !== coverUrl) coverUrl = u;
+    } else {
+      coverUrl = null;
+    }
+  })();
+
+  // Fallback SVG (sized by the container)
+  $: fallbackUrl = createImageFallback(book.title || 'BOOK', 'book');
+
+  function handleLoad() {
     imageLoaded = true;
     imageError = false;
-    isLoading = false;
   }
 
-  function handleImageError() {
+  function handleError(e: Event) {
     imageError = true;
     imageLoaded = false;
-    isLoading = false;
-    if (imageElement) {
-      imageElement.src = fallbackSrc;
-    }
+    // swap to fallback immediately
+    const img = e.currentTarget as HTMLImageElement;
+    img.src = fallbackUrl;
   }
 </script>
 
-<div class="relative group" class:ring-2={featured} class:ring-yellow-400={featured}>
-  {#if featured}
-    <span class="absolute top-2 left-2 z-10 bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded shadow">
-      Featured
-    </span>
-  {/if}
-
-  {#if isLoading}
-    <!-- Loading skeleton -->
-    <div class="w-full h-80 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
-      <div class="text-gray-400 text-sm">Loading...</div>
-    </div>
-  {:else}
-    <!-- Cover image (with graceful fallback) -->
+<div class="book-card" style="width:{width}px;">
+  <div class="image-container" style="height:{height}px;">
+    <!-- Always render an <img>: real cover if available, else fallback -->
     <img
-      bind:this={imageElement}
-      src={coverUrl || fallbackSrc}
-      alt={`Cover of ${book.title}`}
-      class="w-full h-80 object-cover rounded-lg shadow-lg transition-all duration-300 group-hover:shadow-xl"
-      class:opacity-75={imageError}
+      src={coverUrl || fallbackUrl}
+      alt={`${book.title} - Book cover`}
+      on:load={handleLoad}
+      on:error={handleError}
+      class:loaded={imageLoaded && !imageError}
+      class:fallback={imageError || !coverUrl}
       loading="lazy"
       decoding="async"
-      on:load={handleImageLoad}
-      on:error={handleImageError}
     />
+  </div>
 
-    {#if imageError}
-      <div class="absolute inset-0 bg-red-900/20 rounded-lg flex items-center justify-center">
-        <div class="text-white text-xs bg-red-800 px-2 py-1 rounded">Cover Unavailable</div>
-      </div>
-    {/if}
-  {/if}
-
-  <!-- Info overlay -->
-  <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-    <h3 class="text-white font-bold text-lg mb-1">{book.title}</h3>
+  <div class="book-info">
+    <h3>{book.title}</h3>
     {#if book.description}
-      <p class="text-gray-200 text-sm line-clamp-2">{book.description}</p>
-    {/if}
-    {#if book.status === 'coming-soon' && book.publishDate}
-      <p class="text-orange-300 text-xs mt-2">
-        Coming {new Date(book.publishDate).toLocaleDateString()}
-      </p>
+      <p>{book.description}</p>
     {/if}
   </div>
 </div>
 
 <style>
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
+  .book-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+    transition: transform .2s ease;
+    background: #fff;
+  }
+  .book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,.15);
+  }
+  .image-container {
+    position: relative;
+    overflow: hidden;
+    background: #f3f4f6;
+  }
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity .3s ease;
+  }
+  img.loaded {
+    opacity: 1;
+  }
+  img.fallback {
+    opacity: .85;
+    filter: saturate(.9);
+  }
+  .book-info {
+    padding: 15px;
+  }
+  .book-info h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  .book-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
   }
 </style>

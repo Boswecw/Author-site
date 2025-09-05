@@ -1,7 +1,38 @@
 // src/routes/books/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
-import type { BookDoc } from '$lib/types'; // Import from types instead of books
+import type { BookDoc } from '$lib/types';
+
+// Firebase URL builder (accepts full object path, e.g. "books/Heart.png")
+const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
+const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
+const buildImageUrl = (path: string) =>
+  `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
+
+// Folders in your bucket
+const COVERS_FOLDER = 'books';
+const ICONS_FOLDER  = 'icons';
+
+// Ensure we include the folder when a bare filename is provided
+const ensurePath = (nameOrPath: string, folder: string) =>
+  nameOrPath.includes('/') ? nameOrPath : `${folder}/${nameOrPath}`;
+
+// 🖼️ Map genre -> icon *paths* (adjust names if needed)
+const GENRE_ICON_FILES: Record<'faith' | 'epic' | 'sci-fi', string | null> = {
+  faith:  `${ICONS_FOLDER}/ChristianFiction.png`,
+  epic:   `${ICONS_FOLDER}/EpicFantasy.png`,
+  'sci-fi': `${ICONS_FOLDER}/SciFi.png`, // set to null if not uploaded yet
+};
+
+// Build icon URL map
+function getGenreIcons() {
+  return Object.fromEntries(
+    (Object.keys(GENRE_ICON_FILES) as Array<'faith' | 'epic' | 'sci-fi'>).map((k) => {
+      const p = GENRE_ICON_FILES[k];
+      return [k, p ? buildImageUrl(p) : null];
+    })
+  ) as Record<'faith' | 'epic' | 'sci-fi', string | null>;
+}
 
 export const load: PageServerLoad = async () => {
   const db = await getDb();
@@ -23,30 +54,38 @@ export const load: PageServerLoad = async () => {
           isbn: 1,
           format: 1,
           pages: 1,
-          buyLinks: 1
+          buyLinks: 1,
+          featured: 1
         }
       }
     )
     .sort({ status: 1, publishDate: 1, title: 1 })
     .toArray();
 
-  const books = docs.map((book) => ({
-    id: book.id,
-    title: book.title,
-    description: book.description ?? '',
-    cover: book.cover ?? null,
-    genre: book.genre ?? 'faith',
-    status: book.status ?? 'writing',
-    publishDate: book.publishDate
-      ? book.publishDate instanceof Date
-        ? book.publishDate.toISOString()
-        : String(book.publishDate)
-      : null,
-    isbn: book.isbn ?? null,
-    format: book.format ?? 'EPUB',
-    pages: book.pages ?? null,
-    buyLinks: book.buyLinks ?? null
-  }));
+  const books = docs.map((b) => {
+    const coverPath = b.cover ? ensurePath(b.cover, COVERS_FOLDER) : null;
+    return {
+      id: b.id,
+      title: b.title,
+      description: b.description ?? '',
+      // filename or path -> full Firebase URL (with books/ prefix when needed)
+      cover: coverPath ? buildImageUrl(coverPath) : null,
+      genre: b.genre ?? 'faith',
+      status: b.status ?? 'writing',
+      publishDate: b.publishDate
+        ? b.publishDate instanceof Date
+          ? b.publishDate.toISOString()
+          : String(b.publishDate)
+        : null,
+      isbn: b.isbn ?? null,
+      format: b.format ?? 'EPUB',
+      pages: b.pages ?? null,
+      buyLinks: b.buyLinks ?? null,
+      featured: b.featured ?? false
+    };
+  });
 
-  return { books };
+  const genreIcons = getGenreIcons();
+
+  return { books, genreIcons };
 };

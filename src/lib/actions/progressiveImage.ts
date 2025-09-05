@@ -1,6 +1,6 @@
 // src/lib/actions/progressiveImage.ts - COMPLETE FIX
 import { browser } from '$app/environment';
-import { createImageFallback } from '$lib/utils/image';
+import { createImageFallback } from '$lib/services/authorImages';
 import type { ActionReturn } from 'svelte/action';
 
 interface ProgressiveImageOptions {

@@ -1,23 +1,30 @@
-// src/lib/services/firebaseClient.ts - Firebase client initialization
+// src/lib/services/firebaseClient.ts
+import { browser } from '$app/environment';
 
-import { initializeApp, getApps } from 'firebase/app';
-import { getStorage } from 'firebase/storage';
-
-// Helper to read environment variables safely in both Vite and Node environments
 function env(name: string): string | undefined {
   return (import.meta as any).env?.[name] || process.env?.[name];
 }
 
-const config = {
-  apiKey: env('VITE_FIREBASE_API_KEY'),
-  authDomain: env('VITE_FIREBASE_AUTH_DOMAIN'),
-  projectId: env('VITE_FIREBASE_PROJECT_ID'),
-  storageBucket: env('FIREBASE_BUCKET') || env('VITE_FIREBASE_STORAGE_BUCKET')
-};
+let _storage: import('firebase/storage').FirebaseStorage | null = null;
 
-// Ensure we only initialize once
-const firebaseApp = getApps().length ? getApps()[0] : initializeApp(config);
+export async function getClientStorage() {
+  if (!browser) return null;
+  if (_storage) return _storage;
 
-// Export both app and storage
-export { firebaseApp };
-export const storage = getStorage(firebaseApp);
+  const [{ initializeApp, getApps }, { getStorage }] = await Promise.all([
+    import('firebase/app'),
+    import('firebase/storage')
+  ]);
+
+  const app = getApps().length
+    ? getApps()[0]
+    : initializeApp({
+        apiKey: env('VITE_FIREBASE_API_KEY'),
+        authDomain: env('VITE_FIREBASE_AUTH_DOMAIN'),
+        projectId: env('VITE_FIREBASE_PROJECT_ID'),
+        storageBucket: env('VITE_FIREBASE_STORAGE_BUCKET')
+      });
+
+  _storage = getStorage(app);
+  return _storage;
+}

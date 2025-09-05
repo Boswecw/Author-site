@@ -29,7 +29,6 @@
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"noUncheckedIndexedAccess": false,
 		"strict": true
 	},
 	"include": [

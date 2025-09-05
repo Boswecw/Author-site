@@ -1,27 +1,22 @@
-// src/app.d.ts - TypeScript declarations for the app
+// src/app.d.ts
 
-// See https://kit.svelte.dev/docs/types#app
-// for information about these interfaces
+/// <reference types="@sveltejs/kit" />
+
 declare global {
 	namespace App {
 	  // interface Error {}
 	  // interface Locals {}
-	  // interface PageData {}
 	  // interface Platform {}
+  
 	  interface PageData {
 		featured?: import('$lib/types').Book;
 		upcoming?: import('$lib/types').Book[];
 		books?: import('$lib/types').Book[];
-		posts?: import('$lib/types').Post[];
+		posts?: import('$lib/types').Post[];   // ✅ use Post (singular)
+		drafts?: import('$lib/types').Book[];  // optional draft list
 	  }
 	}
   }
   
-  // Declare Svelte component modules
-  declare module '$lib/components/*.svelte' {
-	import type { ComponentType } from 'svelte';
-	const component: ComponentType;
-	export default component;
-  }
-  
   export {};
+  
