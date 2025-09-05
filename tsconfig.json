@@ -9,5 +9,5 @@
     "postcss.config.cjs",
     "tailwind.config.*",
     "**/*.spec.*"
-  ]
+  ],
 }

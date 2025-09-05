@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
-  import { resolveFirebaseImage, createFallbackImage } from '$lib/utils/imageResolver';
+  import { resolveFirebaseImage, createFallbackImage } from '$lib/utils/image';
 
   // Props
   export let src: string | null | undefined = null;

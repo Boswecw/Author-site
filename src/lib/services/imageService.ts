@@ -1,92 +1,70 @@
-<script lang="ts">
-  import { onMount } from 'svelte';
-  import { resolveCover } from '$lib/services/imageService';   // ✅ use your unified image service
-  import { createImageFallback } from '$lib/utils/image';      // ✅ fallback SVG
+// src/lib/services/imageService.ts
+import { browser } from '$app/environment';
+import { getClientStorage } from '$lib/services/firebaseClient';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { normalizeFirebaseUrl } from '$lib/utils/urls';
+import { createImageFallback } from '$lib/utils/image';
 
-  export let title: string = 'Epic Fantasy Born from Real Experience';
-  export let subtitle: string = 'From Navy decks to wildfire frontlines—stories forged in grit.';
-  export let ctaLink: string = '/books';
-  export let ctaText: string = 'Browse Books';
-  export let genre: 'faith' | 'epic' | 'sci-fi' | null | undefined = null;
-  export let bookCover: string | null | undefined = null;
+class ImageService {
+  private cache = new Map<string, Promise<string | null>>();
+  private loaded = new Set<string>();
 
-  let coverUrl: string | null = null;
-
-  // Resolve once on mount…
-  onMount(async () => {
-    coverUrl = await resolveCover(bookCover);
-    console.debug('[Hero] resolved on mount:', { bookCover, coverUrl });
-  });
-
-  // …and whenever the prop changes
-  $: (async () => {
-    if (typeof bookCover === 'string') {
-      const u = await resolveCover(bookCover);
-      if (u !== coverUrl) {
-        coverUrl = u;
-        console.debug('[Hero] resolved on change:', { bookCover, coverUrl });
-      }
-    } else {
-      coverUrl = null;
+  async resolveCover(input?: string | null): Promise<string | null> {
+    if (!input) return null;
+    if (/^https?:\/\//i.test(input)) {
+      const u = normalizeFirebaseUrl(input) ?? input;
+      return u;
     }
-  })();
+    if (!browser) return null; // SSR-safe
 
-  // Normalize genre so we always have a safe value
-  $: safeGenre =
-    genre === 'epic' ? 'epic'
-    : genre === 'sci-fi' ? 'sci-fi'
-    : 'faith';
+    const key = `storage:${input}`;
+    if (this.cache.has(key)) return this.cache.get(key)!;
 
-  // Background gradients by genre
-  $: gradientClass =
-    safeGenre === 'epic'
-      ? 'bg-gradient-to-br from-red-900 via-red-700 to-orange-600'
-      : safeGenre === 'sci-fi'
-      ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-700'
-      : 'bg-gradient-to-br from-blue-900 via-blue-700 to-indigo-600';
-
-  // CTA button style by genre
-  $: ctaStyle =
-    safeGenre === 'epic'
-      ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700'
-      : safeGenre === 'sci-fi'
-      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'
-      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700';
-
-  function dimOrFallback(e: Event) {
-    const img = e.currentTarget as HTMLImageElement;
-    if (!img.dataset._logged) {
-      console.warn('[Hero cover] failed to load:', img.src);
-      img.dataset._logged = '1';
-    }
-    img.src = createImageFallback('Cover Unavailable', 'book');
-    img.style.opacity = '1';
+    const p = this.resolveFromStorage(input);
+    this.cache.set(key, p);
+    return p;
   }
-</script>
 
-<section class={`relative text-white py-20 overflow-hidden ${gradientClass}`}>
-  <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-    <!-- Always render an image (real cover OR fallback) -->
-    <div class="w-48 h-72 flex-shrink-0">
-      <img
-        src={coverUrl || createImageFallback(title || 'Cover', 'book')}
-        alt={`${title} cover`}
-        class="w-full h-full object-cover rounded shadow-lg transition-opacity duration-300"
-        on:error={dimOrFallback}
-        loading="lazy"
-        decoding="async"
-      />
-    </div>
+  private async resolveFromStorage(path: string): Promise<string | null> {
+    try {
+      const storage = await getClientStorage();
+      if (!storage) return null;
+      const url = await getDownloadURL(ref(storage, path));
+      const normalized = normalizeFirebaseUrl(url) ?? url;
+      this.loaded.add(normalized);
+      return normalized;
+    } catch (e) {
+      console.warn('[ImageService] Failed to resolve', path, e);
+      return null;
+    }
+  }
 
-    <div class="text-center md:text-left">
-      <h1 class="text-4xl md:text-5xl font-bold mb-4">{title}</h1>
-      <p class="text-xl mb-8">{subtitle}</p>
-      <a
-        href={ctaLink}
-        class={`inline-block px-8 py-4 rounded-lg font-semibold transition-colors duration-300 ${ctaStyle}`}
-      >
-        {ctaText}
-      </a>
-    </div>
-  </div>
-</section>
+  async preloadImage(url?: string | null): Promise<string | null> {
+    if (!browser || !url) return null;
+    const u = normalizeFirebaseUrl(url) ?? url;
+    if (this.loaded.has(u)) return u;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      const tid = setTimeout(() => resolve(null), 10000);
+      img.onload = () => { clearTimeout(tid); this.loaded.add(u); resolve(u); };
+      img.onerror = () => { clearTimeout(tid); resolve(null); };
+      if (u.includes('firebasestorage.googleapis.com')) img.crossOrigin = 'anonymous';
+      img.src = u;
+    });
+  }
+
+  getFallbackImage(type: 'book' | 'author' | 'logo', text = ''): string {
+    type Kind = 'book' | 'avatar' | 'logo';
+    const map: Record<'book' | 'author' | 'logo', Kind> = { book: 'book', author: 'avatar', logo: 'logo' };
+    const label = text || (type === 'author' ? 'AUTHOR' : type.toUpperCase());
+    return createImageFallback(label, map[type]);
+  }
+
+  clear() { this.cache.clear(); this.loaded.clear(); }
+}
+
+export const imageService = new ImageService();
+export const resolveCover = imageService.resolveCover.bind(imageService);
+export const preloadImage = imageService.preloadImage.bind(imageService);
+export const getFallbackImage = imageService.getFallbackImage.bind(imageService);

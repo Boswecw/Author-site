@@ -1,31 +1,48 @@
-// src/lib/server/db.ts
-import { MongoClient } from 'mongodb';
+import { MongoClient, type Db } from 'mongodb';
+import { env } from '$env/dynamic/private';
 
-const uri = process.env.MONGODB_URI!;
-const dbOverride = process.env.MONGODB_DB; // e.g. "Author-site"
+let client: MongoClient | null = null;
+let db: Db | null = null;
 
-let client: MongoClient;
-let dbPromise: Promise<import('mongodb').Db>;
+function required(name: string): string {
+  const val = env[name];
+  if (!val) throw new Error(`${name} environment variable is not set`);
+  return val;
+}
 
-export async function getDb() {
-  if (!dbPromise) {
+export async function getDb(): Promise<Db> {
+  if (db) return db;
+
+  const uri = required('MONGODB_URI');
+  const dbName = required('MONGODB_DB');
+
+  if (!client) {
     client = new MongoClient(uri);
-    const connected = client.connect();
-    dbPromise = connected.then(() => {
-      // get DB name from URI path if present
-      let dbFromUri: string | undefined;
-      try {
-        const u = new URL(uri);
-        const path = u.pathname.replace(/^\//, '');
-        dbFromUri = path || undefined;
-      } catch {
-        dbFromUri = undefined;
-      }
-      const dbName = dbOverride || dbFromUri || 'author_site'; // last resort default
-      const db = client.db(dbName);
-      console.log('[mongo] using db:', db.databaseName); // keep for now; remove later
-      return db;
-    });
+    await client.connect();
+    console.log('[mongo] connected');
   }
-  return dbPromise;
+
+  db = client.db(dbName);
+  console.log('[mongo] using db:', db.databaseName);
+  return db;
+}
+
+export async function closeDb(): Promise<void> {
+  if (client) {
+    await client.close();
+    client = null;
+    db = null;
+    console.log('[mongo] connection closed');
+  }
+}
+
+export async function testConnection(): Promise<boolean> {
+  try {
+    const d = await getDb();
+    await d.admin().ping();
+    return true;
+  } catch (err) {
+    console.error('[mongo] ping failed:', err);
+    return false;
+  }
 }

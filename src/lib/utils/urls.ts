@@ -1,79 +1,31 @@
-// src/lib/utils/urls.ts - COMPLETE FIX
-/**
- * Normalize Firebase Storage URLs for consistent access
- */
-export function normalizeFirebaseUrl(url?: string | null): string | null {
-        if (!url || typeof url !== 'string') return null;
+// Extract "object path" from a Firebase Storage URL or gs:// URL.
+// Returns null if it can't find a path.
+export function extractFirebasePath(input?: string | null): string | null {
+  if (!input) return null;
 
-        try {
-          // Already normalized or not a Firebase URL
-          if (!url.includes('firebase')) return url;
+  // If it's already a simple path like "books/Foo.png"
+  if (!/^https?:\/\//i.test(input) && !/^gs:\/\//i.test(input)) {
+    return input;
+  }
 
-          let normalized = url;
+  // gs://bucket/dir/file.ext
+  const gs = /^gs:\/\/[^/]+\/(.+)$/.exec(input);
+  if (gs) return decodeURIComponent(gs[1]);
 
-          // Ensure alt=media parameter is present for direct access
-          if (normalized.includes('firebasestorage.googleapis.com')) {
-                const urlObj = new URL(normalized);
-                if (!urlObj.searchParams.has('alt')) {
-                  urlObj.searchParams.set('alt', 'media');
-                }
+  try {
+    const u = new URL(input);
+    // Typical REST form:
+    // https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<ENCODED_PATH>?...
+    if (/firebasestorage.googleapis.com$/.test(u.hostname)) {
+      const parts = u.pathname.split('/'); // ['', 'v0', 'b', '<bucket>', 'o', '<ENCODED_PATH>']
+      const oIdx = parts.indexOf('o');
+      if (oIdx !== -1 && parts[oIdx + 1]) {
+        return decodeURIComponent(parts[oIdx + 1]);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
 
-                // Some buckets incorrectly end with .firebasestorage.app
-                const bucketMatch = urlObj.pathname.match(/\/b\/([^\/]+)/);
-                if (bucketMatch) {
-                  const bucket = bucketMatch[1];
-                  if (bucket.endsWith('.firebasestorage.app')) {
-                        const fixedBucket = bucket.replace('.firebasestorage.app', '.appspot.com');
-                        urlObj.pathname = urlObj.pathname.replace(bucket, fixedBucket);
-                  }
-                }
-
-                normalized = urlObj.toString();
-          }
-
-          return normalized;
-        } catch (error) {
-          console.warn('[normalizeFirebaseUrl] Invalid URL:', url, error);
-          return url; // Return original if parsing fails
-        }
-}
-
-/**
- * Legacy function name for backward compatibility - maps to normalizeFirebaseUrl
- */
-export function toFirebaseDownloadIfNeeded(url?: string | null): string | null {
-	return normalizeFirebaseUrl(url);
-}
-
-/**
- * Check if URL is a Firebase Storage URL
- */
-export function isFirebaseStorageUrl(url?: string | null): boolean {
-	if (!url || typeof url !== 'string') return false;
-	return url.includes('firebasestorage.googleapis.com') || 
-		   (url.includes('firebase') && url.includes('storage'));
-}
-
-/**
- * Get Firebase storage bucket from URL
- */
-export function getFirebaseBucket(url?: string | null): string | null {
-	if (!url || !isFirebaseStorageUrl(url)) return null;
-	
-	const match = url.match(/\/b\/([^\/]+)\./);
-	return match ? match[1] : null;
-}
-
-/**
- * Validate that URL is accessible (basic check)
- */
-export function isValidUrl(url?: string | null): boolean {
-	if (!url || typeof url !== 'string') return false;
-	
-	try {
-	  new URL(url);
-	  return true;
-	} catch {
-	  return false;
-	}
+  return null;
 }

@@ -1,16 +1,17 @@
+// src/lib/utils/image.ts
 import { browser } from '$app/environment';
 import { getClientStorage } from '$lib/services/firebaseClient';
 import { ref, getDownloadURL } from 'firebase/storage';
 
 /**
- * Create a fallback SVG image
+ * ✅ Create a fallback SVG image
  */
-export function createFallbackImage(
+export function createImageFallback(
   text: string,
   type: 'book' | 'avatar' | 'logo'
 ): string {
   const dimensions = type === 'book' ? { w: 300, h: 400 } : { w: 300, h: 300 };
-  const displayText = text.length > 10 ? text.substring(0, 10) + '...' : text;
+  const displayText = text.length > 10 ? text.substring(0, 10) + '…' : text;
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.w}" height="${dimensions.h}" viewBox="0 0 ${dimensions.w} ${dimensions.h}">
     <rect width="100%" height="100%" fill="#f3f4f6"/>
@@ -18,23 +19,24 @@ export function createFallbackImage(
           font-family="Arial, sans-serif" font-size="20" fill="#6b7280">${displayText}</text>
   </svg>`;
 
-  const base64 = browser ? btoa(unescape(encodeURIComponent(svg))) : Buffer.from(svg, 'utf8').toString('base64');
+  const base64 = browser
+    ? btoa(unescape(encodeURIComponent(svg)))
+    : Buffer.from(svg, 'utf8').toString('base64');
+
   return `data:image/svg+xml;base64,${base64}`;
 }
 
 /**
- * Resolve Firebase Storage paths to download URLs
+ * ✅ Resolve Firebase Storage paths to download URLs
  */
 export async function resolveFirebaseImage(path: string): Promise<string | null> {
   if (!browser || !path) return null;
 
   try {
-    // If already a full URL, return as-is
     if (/^https?:\/\//i.test(path)) {
-      return path;
+      return path; // already a full URL
     }
 
-    // Handle Firebase Storage paths lazily
     const storage = await getClientStorage();
     if (!storage) return null;
 
@@ -48,23 +50,27 @@ export async function resolveFirebaseImage(path: string): Promise<string | null>
 }
 
 /**
- * Fixed book cover resolver - returns Firebase URL or fallback
+ * ✅ Book cover resolver – tries Firebase first, falls back to SVG
  */
 export async function resolveCover(coverPath?: string | null): Promise<string> {
   if (!coverPath) {
-    return createFallbackImage('BOOK', 'book');
+    return createImageFallback('BOOK', 'book');
   }
 
   const resolvedUrl = await resolveFirebaseImage(coverPath);
   if (resolvedUrl) return resolvedUrl;
 
   console.warn(`[resolveCover] Using fallback for: ${coverPath}`);
-  return createFallbackImage('BOOK', 'book');
+  return createImageFallback('BOOK', 'book');
 }
 
-// Pre-defined fallback images
+/**
+ * ✅ Pre-defined fallback images
+ */
 export const FALLBACK_IMAGES = {
-  BOOK_COVER: createFallbackImage('BOOK', 'book'),
-  AUTHOR_PHOTO: createFallbackImage('AUTHOR', 'avatar'),
-  LOGO: createFallbackImage('CB', 'logo')
+  BOOK_COVER: createImageFallback('BOOK', 'book'),
+  AUTHOR_PHOTO: createImageFallback('AUTHOR', 'avatar'),
+  LOGO: createImageFallback('CB', 'logo')
 } as const;
+// Keep legacy imports working
+export { createImageFallback as createFallbackImage };

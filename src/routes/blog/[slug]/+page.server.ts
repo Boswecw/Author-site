@@ -17,9 +17,13 @@ export const load: PageServerLoad = async ({ params }) => {
 			throw error(404, 'Post not found');
 		}
 
+		// ✅ Ensure _id is serializable
+		const { _id, ...rest } = post as any;
+
 		return {
 			post: {
-				...post,
+				id: _id ? String(_id) : undefined, // convert ObjectId to string
+				...rest,
 				heroImage: normalizeFirebaseUrl(post.heroImage) ?? undefined,
 				contentHtml: await mdToHtml(post.contentMarkdown ?? '')
 			}
