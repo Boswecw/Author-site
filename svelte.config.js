@@ -1,35 +1,18 @@
-// svelte.config.js — CLEAN, WORKING
-import adapter from '@sveltejs/adapter-auto';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { vitePreprocess } from '@sveltejs/kit/vite';
+import adapter from '@sveltejs/adapter-netlify';
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
+export default {
   preprocess: vitePreprocess(),
-
   kit: {
-    adapter: adapter(),
-
-    // Put your aliases here (not in tsconfig)
-    alias: {
-      $lib: 'src/lib',
-      $components: 'src/lib/components',
-      $server: 'src/lib/server',
-      $utils: 'src/lib/utils',
-      $routes: 'src/routes'
-    },
-
+    adapter: adapter({
+      // IMPORTANT: MongoDB needs Node functions, not Edge
+      edge: false,
+      // split: true can reduce cold start by splitting functions; optional
+      split: true
+    }),
     prerender: {
-      handleMissingId: 'warn',
-      handleHttpError: 'warn',
-      handleUnseenRoutes: 'warn'
+      // Avoid crawler warnings for dynamic routes you don’t link to at build time
+      handleUnseenRoutes: 'ignore'
     }
-  },
-
-  // Svelte compiler options
-  compilerOptions: {
-    runes: false,
-    dev: process.env.NODE_ENV === 'development'
   }
 };
-
-export default config;
