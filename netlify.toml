@@ -1,10 +1,10 @@
-[build]
-command = "corepack enable && yarn --version && yarn install --immutable && yarn build"
-publish = "build"                        # ✅ correct for adapter-netlify
+// svelte.config.js
+import adapter from '@sveltejs/adapter-netlify';
+import { vitePreprocess } from '@sveltejs/kit/vite';
 
-[functions]
-node_bundler = "esbuild"
-external_node_modules = ["mongodb"]
-
-[[plugins]]
-package = "@netlify/plugin-lighthouse"
+export default {
+  preprocess: vitePreprocess(),
+  kit: {
+    adapter: adapter()
+  }
+};
