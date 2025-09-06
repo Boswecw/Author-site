@@ -1,6 +1,5 @@
-/*    /index.html   200
+/*      /.netlify/functions/server   200
 /home           /               301
 /books.html     /books          301
 /blog.html      /blog           301
-/api/*          /.netlify/functions/:splat    200
-/_health        /.netlify/functions/health-check    200
+
