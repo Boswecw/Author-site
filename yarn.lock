@@ -1078,6 +1078,11 @@
     protobufjs "^7.2.5"
     yargs "^17.7.2"
 
+"@iarna/toml@^2.2.5":
+  version "2.2.5"
+  resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.5.tgz#b32366c89b43c6f8cefbdefac778b9c828e3ba8c"
+  integrity sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==
+
 "@isaacs/cliui@^8.0.2":
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/@isaacs/cliui/-/cliui-8.0.2.tgz#b37667b7bc181c168782259bab42474fbf52b550"
@@ -1804,6 +1809,15 @@
   dependencies:
     import-meta-resolve "^4.1.0"
 
+"@sveltejs/adapter-netlify@^5.2.3":
+  version "5.2.3"
+  resolved "https://registry.yarnpkg.com/@sveltejs/adapter-netlify/-/adapter-netlify-5.2.3.tgz#42b126d56b8ac6d25dab893041adf2aafdcc48ab"
+  integrity sha512-xO9qsChQqfncgsrXgQb3phGTpKhlyPn7jusnl/HJwKJqzmEZ/xB/dAa0qFqrp+LNxEA+FPE7rJg36cmBaydXSg==
+  dependencies:
+    "@iarna/toml" "^2.2.5"
+    esbuild "^0.25.4"
+    set-cookie-parser "^2.6.0"
+
 "@sveltejs/adapter-node@^5.3.1":
   version "5.3.1"
   resolved "https://registry.yarnpkg.com/@sveltejs/adapter-node/-/adapter-node-5.3.1.tgz#dfe8202d8bb2abf890d241d009f946f2d53e9a69"
@@ -1822,10 +1836,10 @@
     "@vercel/nft" "^0.30.0"
     esbuild "^0.25.4"
 
-"@sveltejs/kit@^2.37.0":
-  version "2.37.0"
-  resolved "https://registry.yarnpkg.com/@sveltejs/kit/-/kit-2.37.0.tgz#572ba3a2352f6bf15f75e76d2d4d5ad05520dba1"
-  integrity sha512-xgKtpjQ6Ry4mdShd01ht5AODUsW7+K1iValPDq7QX8zI1hWOKREH9GjG8SRCN5tC4K7UXmMhuQam7gbLByVcnw==
+"@sveltejs/kit@^2":
+  version "2.37.1"
+  resolved "https://registry.yarnpkg.com/@sveltejs/kit/-/kit-2.37.1.tgz#de858dc43933081fdc0a0ef778f8064f890ae1ea"
+  integrity sha512-4T9rF2Roe7RGvHfcn6+n92Yc2NF88k7ljFz9+wE0jWxyencqRpadr2/CvlcQbbTXf1ozmFxgMO6af+qm+1mPFw==
   dependencies:
     "@standard-schema/spec" "^1.0.0"
     "@sveltejs/acorn-typescript" "^1.0.5"
@@ -3263,7 +3277,7 @@ svelte-check@^4.0.4:
     picocolors "^1.0.0"
     sade "^1.7.4"
 
-svelte@^5.0.0-next.1:
+svelte@^5:
   version "5.38.7"
   resolved "https://registry.yarnpkg.com/svelte/-/svelte-5.38.7.tgz#8dd076599908ac19e431529241a87528292b7a1b"
   integrity sha512-1ld9TPZSdUS3EtYGQzisU2nhwXoIzNQcZ71IOU9fEmltaUofQnVfW5CQuhgM/zFsZ43arZXS1BRKi0MYgUV91w==

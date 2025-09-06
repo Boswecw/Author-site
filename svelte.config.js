@@ -1,8 +1,7 @@
-import adapter from '@sveltejs/adapter-netlify';
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
+import netlify from '@sveltejs/adapter-netlify';
+
+export default {
   kit: {
-    adapter: adapter(),
+    adapter: netlify()
   }
 };
-export default config;

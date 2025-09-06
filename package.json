@@ -4,23 +4,20 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "vite dev --port 3000 --host 127.0.0.1",
-		"build": "vite build",
-		"preview": "vite preview --port 3000",
+		"dev": "vite dev",
 		"sync": "svelte-kit sync",
-		"postinstall": "svelte-kit sync",
-		"check": "svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
-		"clean": "rm -rf .svelte-kit dist build node_modules"
+		"build": "npm run sync && vite build",
+		"preview": "vite preview"
 	},
 	"engines": {
 		"node": ">=18.13"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^3",
+		"@sveltejs/adapter-netlify": "^5.2.3",
 		"@sveltejs/adapter-node": "^5.3.1",
 		"@sveltejs/adapter-vercel": "^5.10.2",
-		"@sveltejs/kit": "^2.37.0",
+		"@sveltejs/kit": "^2",
 		"@sveltejs/vite-plugin-svelte": "^4",
 		"@tailwindcss/typography": "^0.5.16",
 		"@types/node": "^20.14.11",
@@ -30,7 +27,7 @@
 		"prettier": "^3.3.3",
 		"prettier-plugin-svelte": "^3.2.6",
 		"rollup": "^4",
-		"svelte": "^5.0.0-next.1",
+		"svelte": "^5",
 		"svelte-check": "^4.0.4",
 		"tailwindcss": "^3.4.17",
 		"typescript": "^5.6.3",
