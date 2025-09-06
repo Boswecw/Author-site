@@ -1,16 +1,16 @@
-# netlify.toml
+# netlify.toml (root)
 
 [build]
+# If you're using Yarn 1, --frozen-lockfile is correct
 command = "yarn install --frozen-lockfile && yarn build"
+# You can omit publish and let the adapter set it, or leave this line:
 publish = ".svelte-kit/output/client"
 
 [build.environment]
 NODE_VERSION = "20"
 
-[functions]
-node_bundler = "esbuild"
-external_node_modules = ["mongodb"]
-
-# Optional: remove while debugging if you want
-# [[plugins]]
-# package = "@netlify/plugin-lighthouse"
+# Force all routes to your SvelteKit server function named "server"
+[[redirects]]
+from = "/*"
+to = "/.netlify/functions/server"
+status = 200
