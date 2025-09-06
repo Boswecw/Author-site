@@ -55,3 +55,18 @@ export async function getDb(): Promise<Db> {
     } as unknown as Db;
   }
 }
+
+/**
+ * Lightweight health check that pings the DB.
+ * Returns true on success, false on failure.
+ */
+export async function testConnection(): Promise<boolean> {
+  try {
+    const db = await getDb();
+    await db.command({ ping: 1 });
+    return true;
+  } catch (err) {
+    console.error('[mongo] ping failed:', err);
+    return false;
+  }
+}
