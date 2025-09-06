@@ -1,7 +1,4 @@
-import netlify from '@sveltejs/adapter-netlify';
-
+import adapter from '@sveltejs/adapter-netlify';
 export default {
-  kit: {
-    adapter: netlify()
-  }
-};
+  kit: { adapter: adapter() }
+}
