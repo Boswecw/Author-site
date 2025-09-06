@@ -1,8 +1,8 @@
-import adapter from '@sveltejs/adapter-netlify';
+// svelte.config.js
+import adapter from '@sveltejs/adapter-auto';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 export default {
-  kit: {
-    adapter: adapter({ edge: false, split: true }),
-    prerender: { handleUnseenRoutes: 'ignore' }
-  }
+  kit: { adapter: adapter() },
+  preprocess: vitePreprocess()
 };

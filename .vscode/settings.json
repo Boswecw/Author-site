@@ -1,42 +1,49 @@
 {
-    // Let VS Code know these are PostCSS files
-    "files.associations": {
-      "*.css": "postcss"
-    },
-  
-    // Turn off the default CSS validator (it doesn’t understand @tailwind/@apply)
-    "css.validate": false,
-  
-    // Ensure Tailwind works in Svelte
-    "tailwindCSS.includeLanguages": {
-      "svelte": "html",
-      "postcss": "css"
-    },
-    "cSpell.words": [
-      "appspot",
-      "bookcard",
-      "Bosewll",
-      "firebasestorage",
-      "frontlines",
-      "gunnach",
-      "Gunnach",
-      "Hurrican",
-      "maxage",
-      "metallics",
-      "oklab",
-      "Orbitron",
-      "Paczer",
-      "prerendered",
-      "rgba",
-      "Rowetha",
-      "scifi",
-      "Signaturelogo",
-      "Symbiogenesis",
-      "USFS",
-      "vercel",
-      "Virex",
-      "vite",
-      "wildland"
-    ]
-  }
-  
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "svelte.language-server.runtime": "/usr/bin/node",
+
+  "files.associations": {
+    "*.css": "postcss"
+  },
+  "css.validate": false,
+
+  "tailwindCSS.includeLanguages": {
+    "svelte": "html",
+    "postcss": "css"
+  },
+
+  "cSpell.words": [
+    "appspot",
+    "bookcard",
+    "Boswell",
+    "bson",
+    "esbuild",
+    "firebasestorage",
+    "frontlines",
+    "geolocation",
+    "gunnach",
+    "Gunnach",
+    "Hurrican",
+    "maxage",
+    "metallics",
+    "nosniff",
+    "oklab",
+    "Orbitron",
+    "Paczer",
+    "prerendered",
+    "rgba",
+    "Rowetha",
+    "scifi",
+    "Signaturelogo",
+    "signup",
+    "STARTTLS",
+    "Symbiogenesis",
+    "USFS",
+    "vercel",
+    "Virex",
+    "vite",
+    "webp",
+    "wildland",
+    "yourgmailaddress"
+  ]
+}

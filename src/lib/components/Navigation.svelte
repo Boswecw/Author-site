@@ -39,15 +39,24 @@
     const span = document.createElement('span');
     span.textContent = 'CB';
     span.className =
-      'inline-flex items-center justify-center h-14 w-14 rounded bg-[var(--brand-cream)] text-[var(--brand-charcoal)] font-semibold';
+      'inline-flex items-center justify-center h-14 w-14 rounded bg-[var(--accent-100)] text-[var(--primary-700)] font-semibold';
     img.replaceWith(span);
   }
 
-  // ✅ FIX: Guard against undefined $page.url during hydration
-  $: pathname = browser && $page?.url?.pathname ? $page.url.pathname : '/';
+  // Current path (normalized)
+  $: pathname = normalizePath(browser ? $page.url.pathname : '/');
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== '/' && pathname.startsWith(href));
+  function normalizePath(p: string) {
+    if (!p) return '/';
+    return p !== '/' ? p.replace(/\/+$/, '') : '/';
+  }
+
+  // Highlight current section (Home exact, others include subpaths)
+  function isActive(href: string) {
+    if (!pathname) return false;
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(href + '/');
+  }
 
   onMount(() => afterNavigate(() => (mobileMenuOpen = false)));
 </script>
@@ -72,11 +81,11 @@
           on:error={onLogoError}
         />
       {:else}
-        <span class="inline-flex items-center justify-center h-14 w-14 rounded bg-[var(--brand-cream)] text-[var(--brand-charcoal)] font-semibold">
+        <span class="inline-flex items-center justify-center h-14 w-14 rounded bg-[var(--accent-100)] text-[var(--primary-700)] font-semibold">
           CB
         </span>
       {/if}
-      <span class="brand-name text-xl md:text-2xl tracking-wide text-[color:var(--stone-900)] truncate">
+      <span class="brand-name text-xl md:text-2xl tracking-wide text-[color:var(--primary-700)] truncate">
         Charles Boswell
       </span>
     </a>
@@ -84,15 +93,14 @@
     <div></div>
 
     <!-- Right: Links (desktop) -->
-    <nav aria-label="Primary" class="hidden md:flex justify-end items-center gap-6">
+    <nav aria-label="Primary" class="hidden md:flex justify-end items-center gap-2">
       {#each navigation as l}
         <a
           href={l.href}
+          class="nav-link"
+          class:active={isActive(l.href)}
           aria-current={isActive(l.href) ? 'page' : undefined}
           data-sveltekit-preload-data
-          class={`text-sm font-medium transition-opacity hover:opacity-80 ${
-            isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'
-          }`}
         >
           {l.name}
         </a>
@@ -109,15 +117,14 @@
       </summary>
 
       <div
-        class="absolute right-3 w-48 rounded-lg border border-gray-200 bg-white shadow-lg p-2 space-y-1"
+        class="absolute right-3 w-52 rounded-lg border border-gray-200 bg-white shadow-lg p-2 space-y-1"
         style="top: var(--nav-h);"
       >
         {#each navigation as l}
           <a
             href={l.href}
-            class={`block px-3 py-2 rounded-md text-sm transition-colors hover:bg-gray-50 ${
-              isActive(l.href) ? 'text-[var(--brand-gold)]' : 'text-gray-700'
-            }`}
+            class="nav-link w-full"
+            class:active={isActive(l.href)}
             on:click={closeMenu}
             aria-current={isActive(l.href) ? 'page' : undefined}
             data-sveltekit-preload-data

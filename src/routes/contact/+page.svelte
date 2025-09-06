@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { onMount } from 'svelte';
 
-  // SvelteKit form actions result
   export let form:
     | {
         success?: boolean;
@@ -11,21 +11,65 @@
       }
     | undefined;
 
-  // Live client-side helpers
+  // Bound inputs (preserve on failed submit)
   let name = form?.values?.name ?? '';
   let email = form?.values?.email ?? '';
   let subject = form?.values?.subject ?? '';
   let message = form?.values?.message ?? '';
 
-  // Optional: basic client validation feedback
+  // Toast
+  let showToast = false;
+  let toastTimer: ReturnType<typeof setTimeout> | null = null;
+  function openToast() {
+    showToast = true;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (showToast = false), 4000);
+  }
+
+  // Simple client email hint
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   $: emailHint = email && !emailRe.test(email) ? 'Enter a valid email address.' : '';
+
+  // If this page is rendered with a success already present (non-JS or full reload)
+  onMount(() => {
+    if (form?.success) openToast();
+  });
+
+  // ✅ Correct enhance signature
+  const enhanceSubmit = (node: HTMLFormElement) =>
+    enhance(node, ({ form: _f, submit }) => {
+      // Use default submit behavior but intercept the result afterwards
+      return async ({ result, update }) => {
+        if (result.type === 'success') {
+          openToast();
+          update({ reset: true }); // clears native form
+          // clear bound values too
+          name = '';
+          email = '';
+          subject = '';
+          message = '';
+        }
+        // On failure, SvelteKit injects new `form` data; bound values remain as-typed
+      };
+    });
 </script>
 
 <svelte:head>
   <title>Contact — Charles W. Boswell</title>
   <meta name="description" content="Get in touch with author Charles W. Boswell." />
 </svelte:head>
+
+{#if showToast}
+  <div
+    class="fixed inset-x-0 top-4 z-[200] mx-auto w-fit rounded-lg px-4 py-3 text-white shadow-lg"
+    style="background: var(--accent-600)"
+    role="status"
+    aria-live="polite"
+  >
+    <span class="font-semibold">Message sent.</span>
+    <span class="ml-2 opacity-90">{form?.message ?? 'Thanks for reaching out!'}</span>
+  </div>
+{/if}
 
 <section class="pt-28 pb-20 bg-white scroll-mt-28">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,8 +89,12 @@
       </div>
     {/if}
 
-    <form method="POST" class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6 md:p-8 space-y-6" use:enhance>
-      <!-- Honeypot (hidden from humans) -->
+    <form
+      method="POST"
+      class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6 md:p-8 space-y-6"
+      use:enhanceSubmit
+    >
+      <!-- Honeypot -->
       <div class="hidden">
         <label for="website">Website (leave this blank)</label>
         <input id="website" name="website" type="text" autocomplete="off" tabindex="-1" />
@@ -133,7 +181,10 @@
           Send message
         </button>
 
-        <a href="mailto:charlesboswell@boswellwebdevelopment.com" class="text-sm font-semibold text-gray-600 hover:text-gray-800">
+        <a
+          href="mailto:charlesboswell@boswellwebdevelopment.com"
+          class="text-sm font-semibold text-gray-600 hover:text-gray-800"
+        >
           or email me directly
         </a>
       </div>

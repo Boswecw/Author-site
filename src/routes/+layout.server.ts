@@ -1,5 +1,3 @@
-export const prerender = false;
-
 import type { LayoutServerLoad } from './$types';
 import { getFeaturedBook, getUpcomingBooks } from '$lib/server/books';
 
@@ -8,5 +6,9 @@ export const load: LayoutServerLoad = async () => {
     getFeaturedBook(),
     getUpcomingBooks(6)
   ]);
-  return { featured: featured ?? null, upcoming: upcoming ?? [] };
+
+  return {
+    featured: featured ?? null,
+    upcoming: upcoming ?? [] // will contain normalized cover URLs
+  };
 };

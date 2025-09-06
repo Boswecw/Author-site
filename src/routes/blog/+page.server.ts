@@ -1,14 +1,11 @@
 // src/routes/blog/+page.server.ts
+export const prerender = false;
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { mdToHtml } from '$lib/server/markdown';
 
-// ✅ Prevent prerender so Netlify doesn’t hit Mongo during build
-export const prerender = false;
-
 export const load: PageServerLoad = async ({ url }) => {
-  const pageParam = url.searchParams.get('page') ?? '1';
-  const page = Math.max(1, Number.parseInt(pageParam, 10) || 1);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
   const pageSize = 10;
 
   const db = await getDb();
@@ -29,12 +26,12 @@ export const load: PageServerLoad = async ({ url }) => {
   const docs = await col
     .find(match, {
       projection: {
-        _id: 0, // ✅ keep _id out (serializable)
+        _id: 0,              // ✅ keep _id out (serializable)
         slug: 1,
         title: 1,
         excerpt: 1,
         contentMarkdown: 1,
-        heroImage: 1, // pass through; client resolves URL/fallback
+        heroImage: 1,        // ✅ store filename or full URL in DB; resolve on client
         publishDate: 1,
         publishedAt: 1,
         tags: 1,
@@ -51,6 +48,7 @@ export const load: PageServerLoad = async ({ url }) => {
       slug: p.slug,
       title: p.title,
       excerpt: p.excerpt,
+      // ⚠️ DO NOT normalize/resolve here (server). Just pass the path/URL through.
       heroImage: p.heroImage ?? null,
       publishDate: p.publishDate ?? p.publishedAt ?? undefined,
       tags: Array.isArray(p.tags) ? p.tags : [],

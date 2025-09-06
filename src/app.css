@@ -19,14 +19,14 @@
   --primary-800: #1a1e21;
   --primary-900: #0d1117;
 
-  /* Accent gold - buttons, highlights */
+  /* Accent gold - buttons, highlights (footer gradient uses these) */
   --accent-50: #fefdf8;
   --accent-100: #fef7e0;
   --accent-200: #fcefc7;
   --accent-300: #f8e3a3;
   --accent-400: #f2d679;
   --accent-500: #e6c54d;  /* main accent */
-  --accent-600: #d4af37;  /* hover states */
+  --accent-600: #d4af37;  /* hover / active */
   --accent-700: #b8941f;
   --accent-800: #967618;
   --accent-900: #7a5f0f;
@@ -101,89 +101,53 @@
     background: linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 50%, var(--accent-700) 100%);
   }
 
-  /* ===== TYPOGRAPHY ===== */
-  .heading-fantasy {
-    font-family: 'Cinzel', serif;
-    letter-spacing: 0.01em;
-  }
-
-  .heading-scifi {
-    font-family: 'Orbitron', sans-serif;
-    letter-spacing: 0.03em;
-  }
-
-  /* ===== TEXT UTILITIES ===== */
-  .text-primary {
+  /* ===== NAVIGATION LINKS ===== */
+  .nav-link {
+    @apply inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors;
     color: var(--primary-700);
   }
 
-  .text-secondary {
-    color: var(--primary-500);
-  }
-
-  .text-muted {
-    color: var(--primary-400);
-  }
-
-  .text-accent {
-    color: var(--accent-600);
-  }
-
-  /* ===== BACKGROUND UTILITIES ===== */
-  .bg-soft {
-    background-color: var(--primary-50);
-  }
-
-  .bg-subtle {
+  .nav-link:hover {
     background-color: var(--primary-100);
   }
 
-  .bg-accent {
-    background-color: var(--accent-500);
-  }
-
-  .bg-accent:hover {
+  /* The “current page” pill */
+  .nav-link.active {
     background-color: var(--accent-600);
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
 
-  /* ===== GENRE ACCENTS (used sparingly) ===== */
-  .text-faith {
-    color: var(--faith-main);
-  }
+  /* ===== TYPOGRAPHY ===== */
+  .heading-fantasy { font-family: 'Cinzel', serif; letter-spacing: 0.01em; }
+  .heading-scifi { font-family: 'Orbitron', sans-serif; letter-spacing: 0.03em; }
 
-  .text-fantasy {
-    color: var(--fantasy-main);
-  }
+  /* ===== TEXT UTILITIES ===== */
+  .text-primary { color: var(--primary-700); }
+  .text-secondary { color: var(--primary-500); }
+  .text-muted { color: var(--primary-400); }
+  .text-accent { color: var(--accent-600); }
 
-  .text-scifi {
-    color: var(--scifi-main);
-  }
+  /* ===== BACKGROUND UTILITIES ===== */
+  .bg-soft { background-color: var(--primary-50); }
+  .bg-subtle { background-color: var(--primary-100); }
+  .bg-accent { background-color: var(--accent-500); }
+  .bg-accent:hover { background-color: var(--accent-600); }
 
-  .border-faith {
-    border-color: var(--faith-main);
-  }
+  /* ===== GENRE ACCENTS ===== */
+  .text-faith { color: var(--faith-main); }
+  .text-fantasy { color: var(--fantasy-main); }
+  .text-scifi { color: var(--scifi-main); }
 
-  .border-fantasy {
-    border-color: var(--fantasy-main);
-  }
+  .border-faith { border-color: var(--faith-main); }
+  .border-fantasy { border-color: var(--fantasy-main); }
+  .border-scifi { border-color: var(--scifi-main); }
 
-  .border-scifi {
-    border-color: var(--scifi-main);
-  }
+  .bg-faith-light { background-color: var(--faith-light); }
+  .bg-fantasy-light { background-color: var(--fantasy-light); }
+  .bg-scifi-light { background-color: var(--scifi-light); }
 
-  .bg-faith-light {
-    background-color: var(--faith-light);
-  }
-
-  .bg-fantasy-light {
-    background-color: var(--fantasy-light);
-  }
-
-  .bg-scifi-light {
-    background-color: var(--scifi-light);
-  }
-
-  /* ===== BUTTON STYLES ===== */
+  /* ===== BUTTONS ===== */
   .btn-primary {
     background-color: var(--accent-500);
     color: white;
@@ -192,10 +156,7 @@
     font-weight: 500;
     transition: background-color 0.2s ease;
   }
-
-  .btn-primary:hover {
-    background-color: var(--accent-600);
-  }
+  .btn-primary:hover { background-color: var(--accent-600); }
 
   .btn-secondary {
     background-color: transparent;
@@ -206,42 +167,15 @@
     font-weight: 500;
     transition: all 0.2s ease;
   }
+  .btn-secondary:hover { background-color: var(--primary-100); border-color: var(--primary-400); }
 
-  .btn-secondary:hover {
-    background-color: var(--primary-100);
-    border-color: var(--primary-400);
-  }
-
-  /* ===== GENRE ICON STYLES ===== */
-  .genre-icon {
-    width: 64px;
-    height: 64px;
-    object-fit: contain;
-  }
-
-  /* ===== LAYOUT UTILITIES ===== */
-  .layout-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .layout-container main {
-    flex: 1;
-  }
+  /* ===== LAYOUT ===== */
+  .layout-container { min-height: 100vh; display: flex; flex-direction: column; }
+  .layout-container main { flex: 1; }
 }
 
 @layer utilities {
-  /* ===== CUSTOM UTILITIES ===== */
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  .shadow-soft {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  }
-
-  .shadow-accent {
-    box-shadow: 0 4px 6px -1px rgba(230, 197, 77, 0.2), 0 2px 4px -1px rgba(230, 197, 77, 0.1);
-  }
+  .text-balance { text-wrap: balance; }
+  .shadow-soft { box-shadow: 0 4px 6px -1px rgba(0,0,0,.05), 0 2px 4px -1px rgba(0,0,0,.03); }
+  .shadow-accent { box-shadow: 0 4px 6px -1px rgba(230,197,77,.2), 0 2px 4px -1px rgba(230,197,77,.1); }
 }

@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-  <title>About Charles W. Boswell — Navy Veteran & Fantasy Author</title>
+  <title>About Charles Boswell — Navy Veteran & Fantasy Author</title>
   <meta
     name="description"
     content="Learn about Charles W. Boswell's journey from U.S. Navy service to wildland firefighting to becoming a published fantasy author."

@@ -1,11 +1,11 @@
 [build]
-  command = "npx svelte-kit build"
-  publish = ".svelte-kit/output/client"
+  command = "npm run build"
+  publish = "build"
 
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["mongodb"]
 
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION = "20"
   NPM_CONFIG_PRODUCTION = "false"
