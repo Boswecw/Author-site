@@ -1,6 +1,6 @@
 # Netlify configuration (uses npm)
 [build]
-  command = "npm run build"
+  command = "svelte-kit build"
   # For SvelteKit + adapter-netlify, the client assets are here:
   publish = ".svelte-kit/output/client"
 
