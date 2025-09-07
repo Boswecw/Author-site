@@ -1,11 +1,13 @@
 # Netlify configuration (uses npm)
 [build]
   command = "npm run build"
-  publish = "build"
+  # For SvelteKit + adapter-netlify, the client assets are here:
+  publish = ".svelte-kit/output/client"
 
 [build.environment]
   NODE_VERSION = "20"
+  NPM_VERSION  = "11.4.2"
 
-# Make sure serverless functions get proper node version as well
+# Ensure serverless functions use the same Node version
 [functions]
   node_bundler = "esbuild"
