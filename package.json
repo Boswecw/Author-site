@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "svelte-kit dev",
 		"sync": "svelte-kit sync",
-		"build": "svelte-kit sync && svelte-kit build",
+                "build": "svelte-kit build",
 		"preview": "svelte-kit preview"
 	},
 	"engines": {
