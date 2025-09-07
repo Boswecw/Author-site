@@ -4,13 +4,12 @@ import sveltePreprocess from 'svelte-preprocess';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  // Use svelte-preprocess to avoid the vitePreprocess export issue (works for TS, PostCSS, etc.)
-  preprocess: sveltePreprocess(),
+  preprocess: sveltePreprocess(), // supports TS, PostCSS/Tailwind, etc.
 
   kit: {
     adapter: adapter({
       edge: false,
-      split: true
+      split: true,
     })
   }
 };
