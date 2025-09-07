@@ -3,6 +3,10 @@
   command = "npm run build"
   publish = "build"
 
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_VERSION  = "11.4.2"
+
 # Make sure serverless functions get proper node version as well
 [functions]
   node_bundler = "esbuild"
