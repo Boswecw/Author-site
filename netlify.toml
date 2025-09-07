@@ -1,8 +1,8 @@
+# netlify.toml
 [build]
-  command = "yarn install --frozen-lockfile && yarn build"
-  publish = ".svelte-kit/output/client"
+  command = "npm run build"
+  publish = "build"
 
-[build.environment]
-  NODE_VERSION = "20"
-
-# Do NOT put any [[redirects]] blocks here. The adapter and/or _redirects file handles routing.
+# Make sure serverless functions get proper node version as well
+[functions]
+  node_bundler = "esbuild"

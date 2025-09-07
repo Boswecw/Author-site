@@ -1,13 +1,16 @@
 // svelte.config.js
 import adapter from '@sveltejs/adapter-netlify';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { vitePreprocess } from '@sveltejs/kit/vite';
 
-export default {
+const config = {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter({
-      edge: false,   // classic Functions (good default)
-      split: false   // single function named "server"
+      // keep default settings; these work well
+      edge: false,
+      split: true
     })
   }
 };
+
+export default config;
