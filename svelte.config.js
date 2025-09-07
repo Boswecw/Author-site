@@ -1,12 +1,14 @@
 // svelte.config.js
 import adapter from '@sveltejs/adapter-netlify';
-import { vitePreprocess } from '@sveltejs/kit/vite';
+import sveltePreprocess from 'svelte-preprocess';
 
+/** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: vitePreprocess(),
+  // Use svelte-preprocess to avoid the vitePreprocess export issue (works for TS, PostCSS, etc.)
+  preprocess: sveltePreprocess(),
+
   kit: {
     adapter: adapter({
-      // keep default settings; these work well
       edge: false,
       split: true
     })
