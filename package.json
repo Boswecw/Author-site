@@ -4,10 +4,10 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "svelte-kit dev",
 		"sync": "svelte-kit sync",
-		"build": "npm run sync && vite build",
-		"preview": "vite preview"
+		"build": "svelte-kit sync && svelte-kit build",
+		"preview": "svelte-kit preview"
 	},
 	"engines": {
 		"node": ">=18.13"

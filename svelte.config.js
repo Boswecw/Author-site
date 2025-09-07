@@ -2,15 +2,15 @@
 import adapter from '@sveltejs/adapter-netlify';
 import sveltePreprocess from 'svelte-preprocess';
 
-/** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: sveltePreprocess(), // supports TS, PostCSS/Tailwind, etc.
+  // If you don’t need preprocessing, you can remove this line entirely.
+  preprocess: sveltePreprocess(),
 
   kit: {
-    adapter: adapter({
-      edge: false,
-      split: true,
-    })
+    adapter: adapter(),
+    alias: {
+      $lib: 'src/lib'
+    }
   }
 };
 
