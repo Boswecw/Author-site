@@ -1,5 +1,5 @@
 // svelte.config.js
-import adapter from '@sveltejs/adapter-netlify';
+import netlify from '@sveltejs/adapter-netlify';
 import sveltePreprocess from 'svelte-preprocess';
 
 const config = {
@@ -7,7 +7,7 @@ const config = {
   preprocess: sveltePreprocess(),
 
   kit: {
-    adapter: adapter(),
+    adapter: netlify(),
     alias: {
       $lib: 'src/lib'
     }
