@@ -1,4 +1,4 @@
-# netlify.toml
+# Netlify configuration (uses npm)
 [build]
   command = "npm run build"
   publish = "build"
