@@ -65,18 +65,16 @@ git clone git@github.com:Boswell-web/author-site.git
 cd author-site
 ```
 
-Install dependencies (Yarn preferred):
+Install dependencies:
 
 ```bash
-yarn install
-# or
 npm install
 ```
 
 Start the dev server:
 
 ```bash
-yarn dev
+npm run dev
 ```
 
 Open the site at **[http://localhost:5173](http://localhost:5173)**
@@ -195,7 +193,7 @@ export interface PostDoc {
    * Build with:
 
      ```bash
-     yarn build
+     npm run build
      netlify deploy --prod
      ```
 
