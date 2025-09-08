@@ -1,4 +1,5 @@
-import type { BookDoc } from '$lib/types/book';
+// src/lib/server/placeholderData.ts
+import type { BookDoc } from '$lib/types'; // ✅ Fixed: import from correct location
 
 // CRITICAL: Use correct Firebase Storage paths (remove spaces from filenames)
 export const placeholderBooks: BookDoc[] = [
@@ -15,7 +16,7 @@ export const placeholderBooks: BookDoc[] = [
     id: 'conviction-in-a-flood',
     title: 'Conviction in a Flood',
     description: 'When flood waters rise, so must faith. A story of resilience in the face of natural disaster.',
-    cover: 'Conviction_in_a_Flood_Cover.png',  // Fixed: use underscores instead of spaces
+    cover: 'Conviction_in_a_Flood.png',  // Fixed: simplified filename
     genre: 'faith',
     status: 'upcoming',
     publishDate: '2025-08-01'
@@ -24,7 +25,7 @@ export const placeholderBooks: BookDoc[] = [
     id: 'hurricane-eve',
     title: 'Hurricane Eve',
     description: 'A gripping tale of survival and faith during one of nature\'s most powerful storms.',
-    cover: 'Hurricane_Eve.png',  // Fixed: use underscores instead of spaces
+    cover: 'Hurricane_Eve.png',  // Fixed: correct spelling, simplified filename
     genre: 'faith',
     status: 'upcoming',
     publishDate: '2025-11-01'
