@@ -11,17 +11,17 @@ const buildImageUrl = (path: string) =>
 
 // Folders in your bucket
 const COVERS_FOLDER = 'books';
-const ICONS_FOLDER  = 'icons';
+const ICONS_FOLDER = 'icons';
 
 // Ensure we include the folder when a bare filename is provided
 const ensurePath = (nameOrPath: string, folder: string) =>
   nameOrPath.includes('/') ? nameOrPath : `${folder}/${nameOrPath}`;
 
-// 🖼️ Map genre -> icon *paths* (adjust names if needed)
+// Map genre -> icon paths
 const GENRE_ICON_FILES: Record<'faith' | 'epic' | 'sci-fi', string | null> = {
-  faith:  `${ICONS_FOLDER}/faith-icon.png`,
-  epic:   `${ICONS_FOLDER}/epic-icon.png`,
-  'sci-fi': `${ICONS_FOLDER}/sci-fi-icon.png`, // set to null if not uploaded yet
+  faith: `${ICONS_FOLDER}/faith-icon.png`,
+  epic: `${ICONS_FOLDER}/epic-icon.png`,
+  'sci-fi': `${ICONS_FOLDER}/sci-fi-icon.png`,
 };
 
 // Build icon URL map
@@ -35,57 +35,83 @@ function getGenreIcons() {
 }
 
 export const load: PageServerLoad = async () => {
-  const db = await getDb();
+  try {
+    const db = await getDb();
 
-  const docs = await db
-    .collection<BookDoc>('books')
-    .find(
-      {},
-      {
-        projection: {
-          _id: 0,
-          id: 1,
-          title: 1,
-          description: 1,
-          cover: 1,
-          genre: 1,
-          status: 1,
-          publishDate: 1,
-          isbn: 1,
-          format: 1,
-          pages: 1,
-          buyLinks: 1,
-          featured: 1
+    const docs = await db
+      .collection<BookDoc>('books')
+      .find(
+        {},
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            title: 1,
+            description: 1,
+            cover: 1,
+            genre: 1,
+            status: 1,
+            publishDate: 1,
+            isbn: 1,
+            format: 1,
+            pages: 1,
+            buyLinks: 1,
+            featured: 1
+          }
         }
+      )
+      .sort({ status: 1, publishDate: 1, title: 1 })
+      .toArray();
+
+    console.log(`[books/page.server] Found ${docs.length} books in database`);
+
+    const books = docs.map((b) => {
+      const coverPath = b.cover ? ensurePath(b.cover, COVERS_FOLDER) : null;
+      const coverUrl = coverPath ? buildImageUrl(coverPath) : null;
+      
+      // Debug logging for Hurricane Eve specifically
+      if (b.id === 'hurricane-eve') {
+        console.log(`[books/page.server] Hurricane Eve cover processing:`, {
+          originalCover: b.cover,
+          coverPath,
+          coverUrl: coverUrl?.substring(0, 100) + '...'
+        });
       }
-    )
-    .sort({ status: 1, publishDate: 1, title: 1 })
-    .toArray();
+      
+      return {
+        id: b.id,
+        title: b.title,
+        description: b.description ?? '',
+        cover: coverUrl,
+        genre: (b.genre ?? 'faith') as 'faith' | 'epic' | 'sci-fi',
+        status: b.status ?? 'writing',
+        publishDate: b.publishDate
+          ? b.publishDate instanceof Date
+            ? b.publishDate.toISOString()
+            : String(b.publishDate)
+          : null,
+        isbn: b.isbn ?? null,
+        format: b.format ?? 'EPUB',
+        pages: b.pages ?? null,
+        buyLinks: b.buyLinks ?? null,
+        featured: (b as any).featured ?? false
+      };
+    });
 
-  const books = docs.map((b) => {
-    const coverPath = b.cover ? ensurePath(b.cover, COVERS_FOLDER) : null;
+    const genreIcons = getGenreIcons();
+
+    return { books, genreIcons };
+  } catch (error) {
+    console.error('[books/page.server] Error loading books:', error);
+    
+    // Return empty data rather than crashing
     return {
-      id: b.id,
-      title: b.title,
-      description: b.description ?? '',
-      // filename or path -> full Firebase URL (with books/ prefix when needed)
-      cover: coverPath ? buildImageUrl(coverPath) : null,
-      genre: b.genre ?? 'faith',
-      status: b.status ?? 'writing',
-      publishDate: b.publishDate
-        ? b.publishDate instanceof Date
-          ? b.publishDate.toISOString()
-          : String(b.publishDate)
-        : null,
-      isbn: b.isbn ?? null,
-      format: b.format ?? 'EPUB',
-      pages: b.pages ?? null,
-      buyLinks: b.buyLinks ?? null,
-      featured: b.featured ?? false
+      books: [],
+      genreIcons: {
+        faith: null,
+        epic: null,
+        'sci-fi': null
+      }
     };
-  });
-
-  const genreIcons = getGenreIcons();
-
-  return { books, genreIcons };
+  }
 };
