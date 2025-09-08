@@ -1,5 +1,5 @@
 // src/lib/server/db.ts
-import { MongoClient, type Db } from 'mongodb';
+import { MongoClient, ServerApiVersion, type Db } from 'mongodb';
 import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 
@@ -10,10 +10,13 @@ const globalForMongo = globalThis as unknown as {
 
 /**
  * Get a required env var or throw.
+ * Trims whitespace to avoid issues on Render.
  */
 function required(name: string): string {
-  const val = env[name];
-  if (!val) throw new Error(`${name} environment variable is not set`);
+  const raw = env[name];
+  if (!raw) throw new Error(`${name} environment variable is not set`);
+  const val = raw.trim();
+  if (!val) throw new Error(`${name} is empty`);
   return val;
 }
 
@@ -26,12 +29,16 @@ export async function getDb(): Promise<Db> {
 
   try {
     const uri = required('MONGODB_URI');
-    // 👇 use the DB name exactly as provided (hyphens allowed!)
+    if (!/^mongodb(\+srv)?:\/\//.test(uri)) {
+      throw new Error('MONGODB_URI must start with "mongodb://" or "mongodb+srv://"');
+    }
+
     const dbName =
-      env.MONGODB_DB ?? (dev ? 'Author-site' : undefined) ?? required('MONGODB_DB');
+      env.MONGODB_DB?.trim() ?? (dev ? 'Author-site' : undefined) ?? required('MONGODB_DB');
 
     if (!globalForMongo.mongoClient) {
       globalForMongo.mongoClient = new MongoClient(uri, {
+        serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
         maxPoolSize: 5,
         minPoolSize: 0
       });
@@ -46,10 +53,13 @@ export async function getDb(): Promise<Db> {
   } catch (err) {
     console.error('[mongo] failed to connect:', err);
 
-    // Fail-safe: return stub DB so app doesn’t crash
+    // Fail-safe: return stub DB so the app doesn’t crash outright
     return {
       collection: () => ({
-        find: () => ({ toArray: async () => [] }),
+        find: () => ({
+          sort: () => ({ toArray: async () => [] }),
+          toArray: async () => []
+        }),
         findOne: async () => null
       })
     } as unknown as Db;
