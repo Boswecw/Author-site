@@ -39,8 +39,12 @@ export async function getDb(): Promise<Db> {
     if (!globalForMongo.mongoClient) {
       globalForMongo.mongoClient = new MongoClient(uri, {
         serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
+        // TLS/SRV robustness for Render/Atlas
+        tls: true,
+        tlsAllowInvalidCertificates: false,
         maxPoolSize: 5,
-        minPoolSize: 0
+        minPoolSize: 0,
+        serverSelectionTimeoutMS: 30_000
       });
       await globalForMongo.mongoClient.connect();
       console.log('[mongo] connected new client');
