@@ -2,12 +2,13 @@
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { placeholderBooks } from '$lib/data/books';
+import { env as publicEnv } from '$env/dynamic/public';
 
 type BookDoc = {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null; // filename stored in Mongo (e.g., "Symbiogenesis.png")
+  cover?: string | null; // filename or path stored in Mongo (e.g., "Symbiogenesis.png" or "books/Symbiogenesis.png")
   genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
   status?: 'draft' | 'upcoming' | 'published' | 'coming-soon' | string | null;
   publishDate?: string | Date | null;
@@ -18,20 +19,38 @@ type BookDoc = {
   featured?: boolean;
 };
 
-// Firebase URL builder (accepts full object path, e.g. "books/Heart.png")
-const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
-const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
-const buildImageUrl = (path: string) =>
-  `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
+// ───────────────────────────── Firebase URL helpers ─────────────────────────────
+
+/**
+ * Normalize a Firebase Storage bucket value so that it is the canonical bucket ID:
+ * <project-id>.appspot.com
+ * (Dev data may contain *.firebasestorage.app; convert to appspot.com for the REST endpoint.)
+ */
+function normalizeBucketId(input?: string | null): string {
+  const fallback = 'endless-fire-467204-n2.appspot.com';
+  if (!input) return fallback;
+  // strip protocol/host if someone pasted a URL by mistake
+  const raw = input.replace(/^https?:\/\/[^/]+\/?/i, '').trim();
+  if (raw.endsWith('.firebasestorage.app')) {
+    return raw.replace(/\.firebasestorage\.app$/, '.appspot.com');
+  }
+  return raw;
+}
+
+const BUCKET_ID = normalizeBucketId(publicEnv.PUBLIC_FIREBASE_STORAGE_BUCKET);
+const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_ID}/o`;
+
+/** Builds a public download URL from an object path in the bucket. */
+const buildImageUrl = (path: string) => `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
 
 // Folder for covers in your bucket
 const COVERS_FOLDER = 'books';
 
-// If a bare filename is provided, prefix with books/; if it's already a path, keep it
+/** If a bare filename is provided, prefix with books/; if it's already a path, keep it. */
 const ensureCoverPath = (nameOrPath: string) =>
   nameOrPath.includes('/') ? nameOrPath : `${COVERS_FOLDER}/${nameOrPath}`;
 
-// Normalize a BookDoc -> returned shape for the UI
+/** Normalize a BookDoc -> returned shape for the UI, with proper cover URL. */
 function normalizeBook(book: BookDoc) {
   const coverPath = book.cover ? ensureCoverPath(book.cover) : null;
 
@@ -39,7 +58,7 @@ function normalizeBook(book: BookDoc) {
     id: book.id,
     title: book.title,
     description: book.description ?? '',
-    cover: coverPath ? buildImageUrl(coverPath) : null, // 🔑 filename -> books/<file> -> URL
+    cover: coverPath ? buildImageUrl(coverPath) : null, // filename -> books/<file> -> URL
     genre: book.genre ?? 'faith',
     status: book.status ?? 'draft',
     publishDate: book.publishDate
