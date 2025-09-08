@@ -1,4 +1,4 @@
-// src/lib/services/authorImages.ts - FIXED TYPE ISSUES
+// src/lib/services/authorImages.ts - FIXED with books/ folder paths
 const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
 const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
 
@@ -7,15 +7,15 @@ function buildImageUrl(filename: string): string {
   return `${BASE_URL}/${encodedFilename}?alt=media`;
 }
 
-// ✅ FIXED: Add index signature for dynamic access
+// ✅ FIXED: Include books/ folder path for all book covers
 export const AUTHOR_IMAGES = {
   BOOKS: {
-    CONVICTION_IN_A_FLOOD: buildImageUrl('Conviction_in_a_Flood.png'),
-    FAITH_IN_A_FIRESTORM: buildImageUrl('Faith_in_a_FireStorm.png'),
-    HURRICANE_EVE: buildImageUrl('Hurricane_Eve.png'), // ✅ Fixed: added missing 'e'
-    SYMBIOGENESIS: buildImageUrl('Symbiogenesis.png'),
-    THE_FAITH_OF_THE_HUNTER: buildImageUrl('The_Faith_of_the_Hunter.png'),
-    HEART_OF_THE_STORM: buildImageUrl('Heart_of_the_Storm.png')
+    CONVICTION_IN_A_FLOOD: buildImageUrl('books/Conviction_in_a_Flood.png'),
+    FAITH_IN_A_FIRESTORM: buildImageUrl('books/Faith_in_a_FireStorm.png'),
+    HURRICANE_EVE: buildImageUrl('books/Hurricane_Eve.png'), // ✅ Fixed spelling and added books/
+    SYMBIOGENESIS: buildImageUrl('books/Symbiogenesis.png'),
+    THE_FAITH_OF_THE_HUNTER: buildImageUrl('books/The_Faith_of_the_Hunter.png'),
+    HEART_OF_THE_STORM: buildImageUrl('books/Heart_of_the_Storm.png')
   } as Record<string, string>, // ← Add this type annotation
   AUTHOR: {
     PORTRAIT: buildImageUrl('CharlesBoswell.jpg'),
@@ -24,9 +24,9 @@ export const AUTHOR_IMAGES = {
     AUGUST_25: buildImageUrl('August25.png')
   },
   ICONS: {
-    SIGNATURE_LOGO: buildImageUrl('Signaturelogo.png'),
-    CHRISTIAN_FICTION: buildImageUrl('ChristianFiction.png'),
-    EPIC_FANTASY: buildImageUrl('EpicFantasy.png')
+    SIGNATURE_LOGO: buildImageUrl('icons/Signaturelogo.png'),
+    CHRISTIAN_FICTION: buildImageUrl('icons/ChristianFiction.png'),
+    EPIC_FANTASY: buildImageUrl('icons/EpicFantasy.png')
   }
 };
 
