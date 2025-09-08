@@ -12,7 +12,7 @@ export const AUTHOR_IMAGES = {
   BOOKS: {
     CONVICTION_IN_A_FLOOD: buildImageUrl('Conviction_in_a_Flood.png'),
     FAITH_IN_A_FIRESTORM: buildImageUrl('Faith_in_a_FireStorm.png'),
-    HURRICANE_EVE: buildImageUrl('Hurrican_Eve.png'),
+    HURRICANE_EVE: buildImageUrl('Hurricane_Eve.png'), // ✅ Fixed: added missing 'e'
     SYMBIOGENESIS: buildImageUrl('Symbiogenesis.png'),
     THE_FAITH_OF_THE_HUNTER: buildImageUrl('The_Faith_of_the_Hunter.png'),
     HEART_OF_THE_STORM: buildImageUrl('Heart_of_the_Storm.png')

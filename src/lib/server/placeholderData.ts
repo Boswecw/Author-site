@@ -24,7 +24,7 @@ export const placeholderBooks: BookDoc[] = [
     id: 'hurricane-eve',
     title: 'Hurricane Eve',
     description: 'A gripping tale of survival and faith during one of nature\'s most powerful storms.',
-    cover: 'Hurricane_Eve_Cover.png',  // Fixed: use underscores instead of spaces
+    cover: 'Hurricane_Eve.png',  // Fixed: use underscores instead of spaces
     genre: 'faith',
     status: 'upcoming',
     publishDate: '2025-11-01'
