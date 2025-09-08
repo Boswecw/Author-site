@@ -22,32 +22,29 @@ function required(name: string): string {
 }
 
 /**
- * Create MongoDB client with Render-optimized settings
+ * Create MongoDB client with compatible settings for your driver version
  */
 function createMongoClient(uri: string): MongoClient {
   return new MongoClient(uri, {
     serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
     
-    // Render-optimized timeouts (increased from 30s to 60s)
+    // Render-optimized timeouts
     connectTimeoutMS: 60_000,
     serverSelectionTimeoutMS: 60_000,
     socketTimeoutMS: 60_000,
-    heartbeatFrequencyMS: 30_000,
     
-    // Improved connection pool settings
-    maxPoolSize: 10,        // Increased from 5
-    minPoolSize: 1,         // Keep at least 1 connection alive
-    maxIdleTimeMS: 120_000, // 2 minutes idle timeout
+    // Connection pool settings
+    maxPoolSize: 10,
+    minPoolSize: 1,
+    maxIdleTimeMS: 120_000,
     
     // TLS/SRV robustness for Render/Atlas
     tls: true,
     tlsAllowInvalidCertificates: false,
     
-    // Retry and buffering settings
+    // Retry settings
     retryWrites: true,
     retryReads: true,
-    bufferMaxEntries: 0,    // Disable buffering for immediate errors
-    bufferCommands: false,
   });
 }
 
@@ -58,19 +55,17 @@ async function getMongoClient(): Promise<MongoClient> {
   // Return existing client if it's healthy
   if (globalForMongo.mongoClient) {
     try {
-      // Quick health check on existing client
       await globalForMongo.mongoClient.db('admin').command({ ping: 1 });
       return globalForMongo.mongoClient;
     } catch (error) {
       console.warn('[mongo] existing client unhealthy, reconnecting...', error);
-      // Clean up dead client
       await globalForMongo.mongoClient.close().catch(() => {});
       globalForMongo.mongoClient = undefined;
       globalForMongo.mongoDb = undefined;
     }
   }
 
-  // If already connecting, wait for that connection to avoid race conditions
+  // If already connecting, wait for that connection
   if (globalForMongo.connecting) {
     console.log('[mongo] waiting for existing connection...');
     return await globalForMongo.connecting;
@@ -88,7 +83,6 @@ async function getMongoClient(): Promise<MongoClient> {
     
     try {
       await client.connect();
-      // Test the connection
       await client.db('admin').command({ ping: 1 });
       console.log('[mongo] ✅ connected new client successfully');
       return client;
@@ -118,7 +112,6 @@ export async function getDb(): Promise<Db> {
     // Return cached DB if available and healthy
     if (globalForMongo.mongoDb && globalForMongo.mongoClient) {
       try {
-        // Quick health check
         await globalForMongo.mongoClient.db('admin').command({ ping: 1 });
         return globalForMongo.mongoDb;
       } catch (error) {
@@ -137,13 +130,18 @@ export async function getDb(): Promise<Db> {
   } catch (err) {
     console.error('[mongo] failed to connect:', err);
 
-    // Fail-safe: return stub DB so the app doesn't crash outright
+    // Enhanced fallback DB with all required methods
     console.warn('[mongo] returning fallback database interface');
+    const emptyResult = { toArray: async () => [] };
+    
     return {
       collection: () => ({
         find: () => ({
-          sort: () => ({ toArray: async () => [] }),
-          limit: () => ({ toArray: async () => [] }),
+          sort: () => ({
+            limit: () => emptyResult,
+            toArray: async () => []
+          }),
+          limit: () => emptyResult,
           toArray: async () => []
         }),
         findOne: async () => null,
