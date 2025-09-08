@@ -1,5 +1,5 @@
-// src/lib/services/authorImages.ts - FIXED with books/ folder paths
-const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
+// src/lib/services/authorImages.ts - FIXED with books/ folder paths and .appspot.com domain
+const BUCKET_NAME = 'endless-fire-467204-n2.appspot.com';
 const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
 
 function buildImageUrl(filename: string): string {
