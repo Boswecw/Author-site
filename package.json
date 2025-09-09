@@ -11,7 +11,7 @@
     "dev": "dotenv -e .env.local -- vite dev --port 3000",
     "build": "svelte-kit sync && dotenv -e .env.local -- vite build",
     "preview": "dotenv -e .env.local -- vite preview --port 3000",
-    "start": "dotenv -e .env.local -- node build",
+    "start": "dotenv -e .env.local -- node build/index.js",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "format": "prettier --write .",
     "test": "vitest"
