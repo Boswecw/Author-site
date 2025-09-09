@@ -1,6 +1,8 @@
 // src/lib/server/db.ts - FIXED VERSION
 
-import { MongoClient, Db, ServerApiVersion } from 'mongodb';
+import '$lib/config/env';
+import { MongoClient, ServerApiVersion } from 'mongodb';
+import type { Db } from 'mongodb';
 import { dev } from '$app/environment';
 
 // Global connection management

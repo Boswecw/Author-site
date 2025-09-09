@@ -14,7 +14,7 @@ Thumbs.db
 *:*Zone.Identifier
 
 # Env
-.env
+# .env
 .env.*
 !.env.example
 !.env.test
@@ -22,5 +22,3 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-.env
-.env.*
