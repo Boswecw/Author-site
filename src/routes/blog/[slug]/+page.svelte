@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-  <title>{post.title} — Charles W. Boswell</title>
+  <title>{post.title} — Charles Boswell</title>
   {#if post.excerpt}
     <meta name="description" content={post.excerpt} />
   {/if}

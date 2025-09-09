@@ -6,8 +6,8 @@ import { buildBookCoverUrl, buildIconUrl } from '$lib/utils/firebase'; // ✅ Us
 
 // ✅ SIMPLIFIED: Just filenames, central utilities will add proper folder paths
 const GENRE_ICON_FILES: Record<'faith' | 'epic' | 'sci-fi', string> = {
-  faith: 'ChristianFiction.png',    // buildIconUrl will add icons/
-  epic: 'EpicFantasy.png',          // buildIconUrl will add icons/
+  faith: 'faith-icon.png',    // buildIconUrl will add icons/
+  epic: 'epic-icon.png',          // buildIconUrl will add icons/
   'sci-fi': 'sci-fi-icon.png',     // buildIconUrl will add icons/ (update filename to match your actual file)
 };
 

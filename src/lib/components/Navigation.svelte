@@ -4,7 +4,7 @@
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Import central util
+  import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Use central util
 
   let mobileMenuOpen = false;
 
@@ -19,12 +19,12 @@
   // --- Logo handling (filename OR full URL) ---
   export let logo: string | null = 'Signaturelogo.png';
 
-  // ✅ FIXED: Use central buildImageUrl instead of local function
+  // ✅ Use central buildImageUrl; accepts full URL or filename
   $: logoSrc =
     typeof logo === 'string' && logo.trim()
       ? (logo.includes('/') || logo.startsWith('http'))
         ? logo.trim()
-        : buildImageUrl(logo.trim(), 'icons') // ✅ Use icons/ folder for logos
+        : buildImageUrl(logo.trim(), 'icons') // store logos in icons/
       : null;
 
   function closeMenu() {
@@ -32,7 +32,9 @@
   }
 
   function onLogoError(e: Event) {
+    // client-only fallback if logo fails
     const img = e.currentTarget as HTMLImageElement;
+    if (!img?.replaceWith) return;
     const span = document.createElement('span');
     span.textContent = 'CB';
     span.className =
@@ -40,8 +42,8 @@
     img.replaceWith(span);
   }
 
-  // Current path (normalized)
-  $: pathname = normalizePath(browser ? $page.url.pathname : '/');
+  // Current path (normalized). Uses $page store; avoids passing URL via load.
+  $: pathname = normalizePath(browser ? $page.url?.pathname ?? '/' : '/');
 
   function normalizePath(p: string) {
     if (!p) return '/';
@@ -64,14 +66,14 @@
 >
   <div class="w-full h-16 px-3 md:px-6 grid grid-cols-[auto_1fr_auto] items-center gap-4">
     <!-- Left: Brand -->
-    <a href="/" class="flex items-center gap-3 min-w-0" aria-label="Charles Boswell - Home">
+    <a href="/" class="flex items-center gap-3 min-w-0" aria-label="Charles Boswell - Home" data-sveltekit-preload-data>
       {#if logoSrc}
         <img
           src={logoSrc}
           alt="Charles Boswell signature logo"
           width="56"
           height="56"
-          class="h-14 w-14 object-contain drop-shadow-sm"
+          class="h-20 w-20 object-contain drop-shadow-sm"
           loading="eager"
           decoding="async"
           fetchpriority="high"
@@ -133,3 +135,12 @@
     </details>
   </div>
 </header>
+
+<style>
+  :global(.nav-link) {
+    @apply px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition;
+  }
+  :global(.nav-link.active) {
+    @apply bg-gray-900 text-white hover:bg-gray-900;
+  }
+</style>

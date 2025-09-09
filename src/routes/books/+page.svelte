@@ -56,7 +56,7 @@
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.faith}
-          <img src={data.genreIcons.faith} alt="Faith icon" class="h-8 w-8 mr-3" />
+          <img src={data.genreIcons.faith} alt="Faith icon" class="h-32 w-32 mr-3" />
         {:else}
           <span class="mr-3">✝️</span>
         {/if}
@@ -105,7 +105,7 @@
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.epic}
-          <img src={data.genreIcons.epic} alt="Epic icon" class="h-8 w-8 mr-3" />
+          <img src={data.genreIcons.epic} alt="Epic icon" class="h-32 w-32 mr-3" />
         {:else}
           <span class="mr-3">🗡️</span>
         {/if}
@@ -154,7 +154,7 @@
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.['sci-fi']}
-          <img src={data.genreIcons['sci-fi']} alt="Sci-Fi icon" class="h-8 w-8 mr-3" />
+          <img src={data.genreIcons['sci-fi']} alt="Sci-Fi icon" class="h-32 w-32 mr-3" />
         {:else}
           <span class="mr-3">🚀</span>
         {/if}

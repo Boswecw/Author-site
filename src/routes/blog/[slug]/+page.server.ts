@@ -3,19 +3,31 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { mdToHtml } from '$lib/server/markdown';
-import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Use central utility
+import { buildImageUrl, buildBookCoverUrl } from '$lib/utils/firebase'; // ✅ Central utilities
 
-/** ✅ SIMPLIFIED: Build post image URL using central utility */
-function buildPostImageUrl(heroImage: string | null | undefined): string | null {
-  if (!heroImage) return null;
-  
-  // If it's already a complete URL, return as-is
-  if (heroImage.startsWith('http')) {
-    return heroImage;
-  }
-  
-  // ✅ Use central utility with posts/ folder for blog post images
-  return buildImageUrl(heroImage, 'posts');
+/** ✅ Robust hero resolver aligned with Books/Home:
+ *  - Full URLs pass through unchanged
+ *  - If a folder is present (e.g. "posts/hero.webp" or "books/cover.png"), use as-is via buildImageUrl
+ *  - If no folder is present, treat as a BOOK cover filename and resolve via buildBookCoverUrl (books/)
+ *  - Append ".png" when no extension is provided
+ */
+function resolveHero(ref?: string | null): string | null {
+  if (!ref) return null;
+  const raw = ref.trim();
+  if (!raw) return null;
+
+  // Already absolute URL
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const hasFolder = raw.includes('/');
+  const hasExt = /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(raw);
+  const file = hasExt ? raw : `${raw}.png`;
+
+  // Explicit key path (e.g., "posts/foo.webp" or "books/bar.png")
+  if (hasFolder) return buildImageUrl(file);
+
+  // Default: treat as book cover filename (matches working Books/Home behavior)
+  return buildBookCoverUrl(file);
 }
 
 interface PostDoc {
@@ -24,7 +36,7 @@ interface PostDoc {
   title: string;
   excerpt?: string | null;
   contentMarkdown?: string | null;
-  heroImage?: string | null; // Can be filename OR full URL
+  heroImage?: string | null; // filename | "folder/file.ext" | full URL
   publishDate?: Date | string | null;
   publishedAt?: Date | string | null;
   tags?: string[] | null;
@@ -35,7 +47,7 @@ interface PostDoc {
 export const load: PageServerLoad = async ({ params }) => {
   try {
     console.log(`[blog/slug] Loading post: ${params.slug}`);
-    
+
     const db = await getDb();
     const col = db.collection<PostDoc>('posts');
 
@@ -45,7 +57,7 @@ export const load: PageServerLoad = async ({ params }) => {
       title: 1,
       excerpt: 1,
       contentMarkdown: 1,
-      heroImage: 1, // Can be filename or full URL
+      heroImage: 1, // Can be filename, "folder/file.ext", or full URL
       publishDate: 1,
       publishedAt: 1,
       tags: 1,
@@ -67,22 +79,22 @@ export const load: PageServerLoad = async ({ params }) => {
 
     console.log(`[blog/slug] Found published post: ${doc.title}`);
 
-    // ✅ SIMPLIFIED: Use central utility for post images (posts/ folder)
-    const heroImageUrl = buildPostImageUrl(doc.heroImage);
+    // ✅ Resolve hero image to match Books/Home URL strategy
+    const heroImageUrl = resolveHero(doc.heroImage);
 
     // Debug logging for heroImage processing
     if (doc.heroImage) {
-      console.log(`[blog/slug] Post ${params.slug} heroImage processing:`, {
-        original: doc.heroImage.substring(0, 60) + '...',
-        processed: heroImageUrl?.substring(0, 80) + '...'
-      });
+      const orig = doc.heroImage.length > 80 ? doc.heroImage.slice(0, 80) + '…' : doc.heroImage;
+      const proc =
+        heroImageUrl && heroImageUrl.length > 120 ? heroImageUrl.slice(0, 120) + '…' : heroImageUrl;
+      console.log(`[blog/slug] Post ${params.slug} heroImage ->`, { original: orig, processed: proc });
     }
 
     const post = {
       slug: doc.slug,
       title: doc.title,
       excerpt: doc.excerpt ?? null,
-      heroImage: heroImageUrl, // ✅ Uses posts/ folder via central utility
+      heroImage: heroImageUrl, // ✅ Now resolves like Books/Home
       publishDate: doc.publishDate ?? doc.publishedAt ?? null,
       tags: Array.isArray(doc.tags) ? doc.tags : [],
       genre: doc.genre ?? null,
@@ -92,12 +104,12 @@ export const load: PageServerLoad = async ({ params }) => {
     return { post };
   } catch (err) {
     console.error('[blog/slug] Load error:', params.slug, err);
-    
+
     // Re-throw SvelteKit errors (like 404)
-    if (err && typeof err === 'object' && 'status' in err) {
-      throw err;
+    if (err && typeof err === 'object' && 'status' in (err as any)) {
+      throw err as any;
     }
-    
+
     // Convert other errors to 500
     throw error(500, 'Failed to load post');
   }
