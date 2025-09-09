@@ -1,245 +1,282 @@
+```markdown
 # Author-site
 
-This is my project README for the author site...
-Perfect 👍 Adding **MongoDB schemas** to your `README.md` will make it crystal-clear how your `books` and `posts` collections are structured. Here’s the updated README with `BookDoc` and `PostDoc` TypeScript interfaces included:
+A modern author portfolio and book showcase built with **SvelteKit 2**, **Svelte 5 (runes)**, **TypeScript**, **Tailwind CSS**, **MongoDB Atlas**, and **Firebase Storage**.
+
+It highlights:
+- 📚 **Books** — featured & upcoming titles (from MongoDB)
+- ✍️ **Blog** — posts in MongoDB with Markdown → HTML
+- 👤 **About** — bio & background
+- 📩 **Contact** — email form
 
 ---
 
-````markdown
-# Author Website
+## 🚀 Tech stack
 
-A modern author portfolio and book showcase site built with **SvelteKit 2**, **Svelte 5 (runes)**, **TypeScript**, **Tailwind CSS**, and **MongoDB Atlas**.  
-The site highlights Charles W. Boswell’s work as a Navy veteran, firefighter, and fantasy/faith-based author.  
-
-It provides sections for:
-- 📚 **Books** – Current, featured, and upcoming releases (pulled from MongoDB).
-- ✍️ **Blog** – Long-form posts and updates stored in MongoDB Atlas.
-- 👤 **About** – Professional biography, military/firefighting background, and writing journey.
-- 📩 **Contact** – Simple form for reader inquiries and professional outreach.
+- **Framework**: SvelteKit 2 + Svelte 5 (runes)
+- **Lang**: TypeScript
+- **Styling**: Tailwind CSS
+- **DB**: MongoDB Atlas (official `mongodb` driver)
+- **Assets**: Firebase Storage (covers, icons, images)
+- **Build/Dev**: Vite
+- **Env loader**: `dotenv-cli`
 
 ---
 
-## 🚀 Tech Stack
+## 📂 Project structure
 
-- **Frontend Framework**: [SvelteKit 2](https://kit.svelte.dev/) with [Svelte 5](https://svelte.dev/blog/runes) runes
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Language**: TypeScript
-- **Database**: [MongoDB Atlas](https://www.mongodb.com/atlas)  
-- **Driver**: Official [mongodb](https://www.npmjs.com/package/mongodb) Node.js driver
-- **Hosting**: Netlify (adapter-netlify) or Vercel
-- **Assets**: Firebase Storage for book covers, genre icons, and media. Covers are resolved client-side.
+```
 
----
-
-## 📂 Project Structure
-
-```bash
 author-site/
-├── src/
-│   ├── lib/
-│   │   ├── server/        # Server utilities (db.ts, books.ts, etc.)
-│   │   ├── services/      # Helpers (imageLoading, progressiveImage, etc.)
-│   │   └── assets/        # Icons, favicons, static images
-│   ├── routes/
-│   │   ├── +layout.svelte # Global layout
-│   │   ├── +page.svelte   # Homepage
-│   │   ├── about/         
-│   │   ├── books/         
-│   │   ├── blog/          
-│   │   └── contact/
-│   └── app.css            # Tailwind base styles
-├── static/                # Favicon and static assets
-├── package.json
-├── svelte.config.js
-└── tsconfig.json
+├─ src/
+│  ├─ lib/
+│  │  ├─ server/         # server utilities (db.ts, books.ts, etc.)
+│  │  ├─ utils/          # firebase image builders, etc.
+│  │  └─ data/           # placeholder data (e.g., placeholderBooks)
+│  ├─ routes/
+│  │  ├─ +layout.svelte  # global layout
+│  │  ├─ +page.server.ts # homepage loader
+│  │  ├─ books/
+│  │  └─ blog/
+│  └─ app.css
+├─ static/               # favicon and static assets
+├─ package.json
+├─ svelte.config.js
+└─ tsconfig.json
+
 ````
 
 ---
 
-## ⚙️ Setup & Installation
+## ⚙️ Requirements
 
-Clone the repo:
-
-```bash
-git clone git@github.com:Boswell-web/author-site.git
-cd author-site
-```
-
-Install dependencies (Yarn preferred):
-
-```bash
-yarn install
-# or
-npm install
-```
-
-Start the dev server:
-
-```bash
-yarn dev
-```
-
-Open the site at **[http://localhost:5173](http://localhost:5173)**
+- Node.js **v20+**
+- npm **v9+**
 
 ---
 
-## 🔑 Environment Variables
+## 🧰 Setup
 
-Copy the example environment file into the project root:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` as needed. A typical configuration looks like:
+Install dependencies:
 
 ```bash
-# MongoDB Atlas
-MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority"
+npm install
+````
+
+Create **`.env.local`** in the project root (quotes matter for values with spaces or `< >`):
+
+```dotenv
+# MongoDB
+MONGODB_URI="mongodb+srv://<USER>:<PASS>@<CLUSTER>.mongodb.net/?retryWrites=true&w=majority&appName=AuthorSite"
 MONGODB_DB="author_site"
 
-# Firebase client config
+# Email
+EMAIL_FROM="Charles Boswell <charlesboswell@boswellwebdevelopment.com>"
+
+# Firebase (public runtime config)
 PUBLIC_FIREBASE_API_KEY="..."
 PUBLIC_FIREBASE_AUTH_DOMAIN="..."
 PUBLIC_FIREBASE_PROJECT_ID="..."
-PUBLIC_FIREBASE_STORAGE_BUCKET="..."
+PUBLIC_FIREBASE_STORAGE_BUCKET="endless-fire-467204-n2.firebasestorage.app"
 ```
 
-Verify the MongoDB URI:
-
-```bash
-node -e "console.log(process.env.MONGODB_URI)"
-```
-
-Run the development server:
+Run the dev server (port **3000**):
 
 ```bash
 npm run dev
 ```
 
-### Resolving Covers
+Open: [http://localhost:3000](http://localhost:3000)
 
-Book covers live in Firebase Storage and are resolved on the client with `resolveCover`:
+Build & preview:
 
-```svelte
-<!-- BookCard.svelte -->
-<script lang="ts">
-  import { resolveCover } from '$lib/utils/covers';
-  $: cover = resolveCover(book.cover);
-</script>
-<img src={cover} alt={book.title} />
+```bash
+npm run build
+npm run preview
 ```
 
-```svelte
-<!-- Hero.svelte -->
-<script lang="ts">
-  import { resolveCover } from '$lib/utils/covers';
-  $: cover = resolveCover(bookCover);
-</script>
-{#if cover}
-  <img src={cover} alt="Book cover" />
-{/if}
+> The npm scripts use `dotenv-cli` to load `.env.local` for dev/build/preview.
+
+---
+
+## 🔌 Environment loading
+
+We read envs with **`process.env`** on the server. The dev/build scripts already wrap commands with:
+
+```
+dotenv -e .env.local -- <command>
+```
+
+To sanity-check the file:
+
+```bash
+npx dotenv -e .env.local -- node -e "console.log(!!process.env.MONGODB_URI, process.env.MONGODB_DB)"
+# expected: true author_site
 ```
 
 ---
 
-## 🗄️ MongoDB Schemas
+## 🖼 Image handling (Firebase)
 
-### BookDoc
+Centralized helpers in `src/lib/utils/firebase`:
 
 ```ts
-export interface BookDoc {
-  _id?: ObjectId;               // MongoDB ObjectId
-  id: string;                   // Short unique string identifier (e.g., "faith-in-a-firestorm")
-  title: string;                // Full book title
-  description: string;          // Short summary or back-cover copy
-  cover: string | null;         // Firebase Storage path for cover image
-  genre: "faith" | "epic";      // Genre key used for filtering/icons
-  status: "published" | "upcoming" | "featured";
-  publishDate?: string;         // ISO date string ("2025-09-01")
-  isbn?: string;                // ISBN number
-  format?: "ebook" | "paperback" | "hardcover";
-  createdAt?: Date;             // Auto-set on insertion
-  updatedAt?: Date;             // Auto-updated on edit
+// build a Firebase public URL for a cover under books/
+export function buildBookCoverUrl(nameOrPath: string): string;
+
+// build a Firebase public URL for any path (optionally prefix with a folder)
+export function buildImageUrl(nameOrPath: string, folder?: string): string;
+```
+
+Usage examples:
+
+```ts
+// books (always under "books/")
+const coverUrl = buildBookCoverUrl(book.cover);
+
+// blog hero images:
+// - full URLs pass through
+// - "posts/hero.webp" honored as-is
+// - bare file names default to "books/"
+function resolveHero(ref?: string | null) {
+  if (!ref) return null;
+  const s = ref.trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) return s;         // already absolute
+  if (s.includes('/')) return buildImageUrl(s);   // explicit folder
+  return buildBookCoverUrl(/\.(png|jpe?g|webp|gif|avif|svg)$/i.test(s) ? s : `${s}.png`);
 }
 ```
 
-### PostDoc
+---
+
+## 🗄 MongoDB schemas
+
+These interfaces reflect the data used by the loaders.
+
+### `BookDoc`
+
+```ts
+export type BookDoc = {
+  id: string; // short unique id, e.g. "faith-in-a-firestorm"
+  title: string;
+  description?: string | null;
+  cover?: string | null; // filename or "books/cover.png" or full URL
+  genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
+  status?: 'draft' | 'upcoming' | 'published' | 'coming-soon' | string | null;
+  publishDate?: string | Date | null;
+  isbn?: string | null;
+  format?: string | null; // e.g. "EPUB"
+  pages?: number | null;
+  buyLinks?: Record<string, string | null>;
+  featured?: boolean;
+};
+```
+
+**Recommended indexes**
+
+* `{ id: 1 }` unique
+* `{ featured: 1 }`
+* `{ status: 1, publishDate: -1 }`
+
+### `PostDoc`
 
 ```ts
 export interface PostDoc {
-  _id?: ObjectId;               // MongoDB ObjectId
-  slug: string;                 // Unique slug for routing (/blog/<slug>)
-  title: string;                // Blog post title
-  content: string;              // Markdown/HTML content
-  excerpt?: string;             // Short preview for blog listing
-  cover?: string | null;        // Optional cover image path
-  tags?: string[];              // e.g., ["writing", "faith", "inspiration"]
-  published: boolean;           // Controls visibility on site
-  createdAt: Date;              // Auto-set on insertion
-  updatedAt?: Date;             // Auto-updated on edit
+  _id?: any;
+  slug: string;             // unique slug (/blog/<slug>)
+  title: string;
+  excerpt?: string | null;
+  contentMarkdown?: string | null;
+  heroImage?: string | null; // filename | "folder/file.ext" | full URL
+  publishDate?: Date | string | null;
+  publishedAt?: Date | string | null;
+  tags?: string[] | null;
+  genre?: string | null;
+  status: 'published' | 'draft';
 }
+```
+
+**Recommended indexes**
+
+* `{ slug: 1 }` unique
+* `{ status: 1, publishDate: -1, publishedAt: -1 }`
+
+---
+
+## 🔌 Database helper
+
+`src/lib/server/db.ts` uses `process.env` and provides a **mock DB fallback** in dev if envs are missing, including a chainable cursor (`find().sort().skip().limit().toArray()`), so pages won’t crash.
+
+```ts
+import { getDb } from '$lib/server/db';
+const db = await getDb();
+const books = await db.collection<BookDoc>('books').find({}).toArray();
 ```
 
 ---
 
-## 🛠 Development Notes
+## 🧩 SvelteKit notes
 
-* **Database**:
+* Use the `$page` store for routing info in components (don’t pass `URL` instances from server `load`—they aren’t serializable):
 
-  * Collections: `books`, `posts`
-  * Documents follow the interfaces above for type safety and consistency.
-  * If no featured or upcoming books exist, the homepage loader returns a default featured book and sample upcoming titles using storage paths so the page still renders.
+```svelte
+<script lang="ts">
+  import { page } from '$app/stores';
+  $: pathname = $page.url?.pathname ?? '/';
+</script>
+```
 
-* **Image Handling**:
+---
 
-  * Covers are uploaded to Firebase Storage and resolved on the client with `resolveCover`—no manual tokens needed.
-  * Progressive loading helpers.
+## 🧪 Scripts (package.json)
 
-* **Styling**:
+```json
+{
+  "scripts": {
+    "dev": "dotenv -e .env.local -- vite dev --port 3000",
+    "build": "svelte-kit sync && dotenv -e .env.local -- vite build",
+    "preview": "dotenv -e .env.local -- vite preview --port 3000",
+    "start": "dotenv -e .env.local -- node build",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "format": "prettier --write .",
+    "test": "vitest"
+  }
+}
+```
 
-  * Tailwind components with custom utility classes in `app.css`.
-  * Favicon and logos in `/static`.
+> We use Vite for local `dev` to avoid CLI mismatches. `svelte-kit sync` is run during `build` to keep types in sync.
 
 ---
 
 ## 📦 Deployment
 
-1. **Netlify** (recommended):
-
-   * Install adapter: `@sveltejs/adapter-netlify`
-   * Build with:
-
-     ```bash
-     yarn build
-     netlify deploy --prod
-     ```
-
-2. **Vercel**:
-
-   * Install adapter: `@sveltejs/adapter-vercel`
-   * Push to GitHub, connect repo to Vercel dashboard.
+* **Netlify**: use `@sveltejs/adapter-netlify`; set `MONGODB_URI`/`MONGODB_DB` in dashboard env.
+* **Vercel**: use `@sveltejs/adapter-vercel`; set env vars in project settings.
+* **Node**: use `@sveltejs/adapter-node` and run `node build`.
 
 ---
 
-## ✨ Features Roadmap
+## 🛠 Troubleshooting
 
-* [x] Featured book on homepage
-* [x] Upcoming releases (faith/epic genres)
-* [x] Author About page with biography & portrait
-* [x] Blog posts stored in MongoDB Atlas
-* [ ] Newsletter signup integration
-* [ ] Admin dashboard for adding/editing books & posts
-* [ ] Dark mode toggle
+* **Hydration error: reading `pathname`**
+  Don’t return a `URL` object from server `load`. Use `$page.url` on the client or pass plain strings.
 
----
+* **`.env.local` syntax error**
+  Quote values with spaces/angle-brackets:
 
-## 📖 About the Author
+  ```
+  EMAIL_FROM="Charles Boswell <charlesboswell@boswellwebdevelopment.com>"
+  ```
 
-**Charles Boswell** is a U.S. Navy veteran and firefighter turned fantasy and faith-based author. His stories are shaped by 16 years of service in wildland firefighting and a lifelong love of storytelling.
+* **TypeScript can’t find `$env/*`**
+  Ensure `tsconfig.json` extends `./.svelte-kit/tsconfig.json` and run `npx svelte-kit sync`.
 
 ---
 
 ## 📜 License
 
-MIT License © 2025 Charles W. Boswell
+MIT © 2025 Charles W. Boswell
+
+```
+```
