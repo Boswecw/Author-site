@@ -42,10 +42,22 @@ export const load: PageServerLoad = async ({ url }) => {
 
     const match = { status: 'published' as const };
 
+    // In development or with mock databases some collection methods may be missing.
+    // Guard the calls so the page still renders with sensible defaults.
+    const estimatedDocsPromise =
+      typeof col.estimatedDocumentCount === 'function'
+        ? col.estimatedDocumentCount()
+        : Promise.resolve(0);
+
+    const countPublishedPromise =
+      typeof col.countDocuments === 'function'
+        ? col.countDocuments(match)
+        : Promise.resolve(0);
+
     const [collList, totalDocs, totalPublished] = await Promise.all([
       db.listCollections().toArray(),
-      col.estimatedDocumentCount(),
-      col.countDocuments(match)
+      estimatedDocsPromise,
+      countPublishedPromise
     ]);
 
     console.log('[blog] using db:', db.databaseName);
