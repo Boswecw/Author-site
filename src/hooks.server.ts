@@ -1,5 +1,9 @@
 // src/hooks.server.ts
 import type { Handle } from '@sveltejs/kit';
+import { validateEnv } from '$lib/config/env';
+
+// Fail fast if required environment variables are missing
+validateEnv();
 
 export const handle: Handle = async ({ event, resolve }) => {
   try {
