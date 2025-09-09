@@ -2,7 +2,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { validateEnv } from '$lib/config/env';
 
-// Fail fast if required environment variables are missing
+// Validate required environment variables at startup
 validateEnv();
 
 export const handle: Handle = async ({ event, resolve }) => {
