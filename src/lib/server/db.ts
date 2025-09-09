@@ -1,4 +1,4 @@
-// src/lib/server/db.ts
+// src/lib/server/db.ts - FIXED: Added TLS configuration for Render compatibility
 import { MongoClient, ServerApiVersion, type Db, type Document } from 'mongodb';
 
 let client: MongoClient | null = null;
@@ -126,21 +126,80 @@ function makeMockDb(): Db {
 
 async function connectRealDb(): Promise<Db> {
   const { MONGODB_URI, MONGODB_DB } = process.env;
-  if (!MONGODB_URI || !MONGODB_DB) return makeMockDb();
-
-  if (!client) {
-    client = new MongoClient(MONGODB_URI, { serverApi: ServerApiVersion.v1 });
-    await client.connect();
+  
+  if (!MONGODB_URI || !MONGODB_DB) {
+    console.error('[mongo] Missing environment variables - falling back to mock');
+    return makeMockDb();
   }
-  const db = client.db(MONGODB_DB);
-  console.log('[mongo] Using database:', db.databaseName);
-  return db;
+
+  console.log('[mongo] Connecting to MongoDB Atlas...');
+  console.log('[mongo] Database name:', MONGODB_DB);
+  console.log('[mongo] Connection string (masked):', MONGODB_URI.replace(/\/\/[^@]+@/, '//***:***@'));
+
+  try {
+    if (!client) {
+      client = new MongoClient(MONGODB_URI, { 
+        serverApi: {
+          version: ServerApiVersion.v1,
+          strict: true,
+          deprecationErrors: true,
+        },
+        // 🔥 FIX: TLS configuration for Render compatibility
+        tls: true,
+        tlsAllowInvalidCertificates: false,
+        tlsAllowInvalidHostnames: false,
+        tlsInsecure: false,
+        // Connection timeouts (longer for Render)
+        connectTimeoutMS: 30000,
+        socketTimeoutMS: 30000,
+        serverSelectionTimeoutMS: 30000,
+        // Connection pool settings
+        maxPoolSize: 5,
+        minPoolSize: 1,
+        // Retry configuration
+        retryWrites: true,
+        retryReads: true,
+        // 🔥 FIX: Force IPv4 for better compatibility with Render
+        family: 4,
+      });
+      
+      console.log('[mongo] Attempting connection...');
+      await client.connect();
+      
+      console.log('[mongo] Testing ping...');
+      await client.db(MONGODB_DB).command({ ping: 1 });
+      
+      console.log('[mongo] ✅ Successfully connected to MongoDB Atlas!');
+    }
+    
+    const db = client.db(MONGODB_DB);
+    console.log('[mongo] Using database:', db.databaseName);
+    return db;
+    
+  } catch (error) {
+    console.error('[mongo] ❌ Connection failed:', error);
+    
+    // Clean up failed client
+    if (client) {
+      try {
+        await client.close();
+      } catch (closeError) {
+        console.error('[mongo] Error closing failed client:', closeError);
+      }
+      client = null;
+    }
+    
+    // Re-throw the error instead of falling back to mock
+    // This ensures the error is visible in logs
+    throw error;
+  }
 }
 
 export async function getDb(): Promise<Db> {
   if (!dbPromise) {
     dbPromise = connectRealDb().catch((err) => {
-      console.error('[mongo] Failed to get database:', err);
+      console.error('[mongo] Failed to get database, falling back to mock:', err);
+      dbPromise = null; // Reset promise so it can retry on next call
       return makeMockDb();
     });
   }
@@ -150,8 +209,10 @@ export async function getDb(): Promise<Db> {
 // Optional: helper to close the client in tests or on shutdown
 export async function closeDb(): Promise<void> {
   if (client) {
+    console.log('[mongo] Closing database connection...');
     await client.close();
     client = null;
     dbPromise = null;
+    console.log('[mongo] Database connection closed');
   }
 }
