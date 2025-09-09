@@ -1,12 +1,13 @@
 // src/lib/server/books.ts
 import { getDb } from '$lib/server/db';
+import { buildBookCoverUrl } from '$lib/utils/firebase';
 import type { Book, BookDoc, BookStatus } from '$lib/types';
 
 // Re-export for convenience
 export type { BookDoc } from '$lib/types';
 
 function ensureCover(url?: string | null): string | null {
-  return url ?? null;
+  return url ? buildBookCoverUrl(url) : null;
 }
 
 function toIsoOrNull(d: unknown): string | null {
