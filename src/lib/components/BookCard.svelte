@@ -1,9 +1,14 @@
+<!-- BookCard.svelte - Verified for Central Firebase Utils -->
 <script lang="ts">
   import { createFallbackImage } from '$lib/utils/image';
   
   export let book: { title: string; cover?: string | null; [key: string]: any };
   
+  // ✅ book.cover should already be a complete Firebase URL from server
+  // Server uses: buildBookCoverUrl(filename) which includes books/ folder
+  
   function handleImageError(e: Event) {
+    console.warn('[BookCard] Image failed to load:', book.cover);
     const img = e.currentTarget as HTMLImageElement;
     img.src = createFallbackImage(book.title || 'Book', 'book');
   }
