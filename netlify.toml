@@ -1,8 +1,0 @@
-# netlify.toml
-[build]
-  command = "npm run build"
-  publish = "build"
-
-# Make sure serverless functions get proper node version as well
-[functions]
-  node_bundler = "esbuild"
