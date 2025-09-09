@@ -8,13 +8,9 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "dotenv -e .env.local -- vite dev --port 3000",
-    "build": "svelte-kit sync && dotenv -e .env.local -- vite build",
-    "preview": "dotenv -e .env.local -- vite preview --port 3000",
-    "start": "node .svelte-kit/output/server/index.js",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "format": "prettier --write .",
-    "test": "vitest"
+    "build": "svelte-kit sync && vite build",
+    "preview": "vite preview --port 3000",
+    "start": "node start.js"
   },
   "packageManager": "npm@11.6.0",
   "devDependencies": {
