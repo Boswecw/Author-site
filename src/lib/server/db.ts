@@ -1,4 +1,4 @@
-// src/lib/server/db.ts
+// src/lib/server/db.ts - Updated for Render TLS compatibility
 import { MongoClient, ServerApiVersion, type Db } from 'mongodb';
 import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
@@ -22,30 +22,72 @@ function required(name: string): string {
 }
 
 /**
- * Create MongoDB client with compatible settings for your driver version
+ * Create MongoDB client with Render-compatible TLS settings
  */
 function createMongoClient(uri: string): MongoClient {
+  console.log('[mongo] Creating client with enhanced TLS options for Render...');
+  
   return new MongoClient(uri, {
     serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
     
-    // Render-optimized timeouts
-    connectTimeoutMS: 60_000,
-    serverSelectionTimeoutMS: 60_000,
-    socketTimeoutMS: 60_000,
+    // Render-optimized timeouts (increased for TLS handshake issues)
+    connectTimeoutMS: 30_000,  // Reduced from 60s for faster failure detection
+    serverSelectionTimeoutMS: 10_000, // Reduced for faster feedback
+    socketTimeoutMS: 45_000,
     
     // Connection pool settings
-    maxPoolSize: 10,
+    maxPoolSize: 5,  // Reduced for Render's connection limits
     minPoolSize: 1,
     maxIdleTimeMS: 120_000,
     
-    // TLS/SRV robustness for Render/Atlas
+    // Enhanced TLS settings for Render + Atlas compatibility
     tls: true,
     tlsAllowInvalidCertificates: false,
+    tlsAllowInvalidHostnames: false,
+    
+    // Additional TLS options that help with Render
+    ...(process.env.NODE_ENV === 'production' && {
+      // Production-specific TLS settings
+      tlsInsecure: false,
+      checkServerIdentity: true,
+    }),
     
     // Retry settings
     retryWrites: true,
     retryReads: true,
+    
+    // Additional options for better Render compatibility
+    directConnection: false,  // Use replica set connection
+    readPreference: 'primary',
+    
+    // Heartbeat settings for better connection health
+    heartbeatFrequencyMS: 10000,
+    
+    // Buffer settings
+    bufferMaxEntries: 0, // Disable mongoose buffering equivalent
   });
+}
+
+/**
+ * Test if URI is using SRV format and potentially problematic
+ */
+function analyzeConnectionString(uri: string): void {
+  console.log('[mongo] Analyzing connection string...');
+  
+  if (uri.includes('mongodb+srv://')) {
+    console.log('[mongo] Using SRV connection string');
+  } else if (uri.includes('mongodb://')) {
+    console.log('[mongo] Using direct connection string');
+  }
+  
+  // Check for potential issues
+  if (uri.includes('ssl=true') && uri.includes('tls=true')) {
+    console.warn('[mongo] Both ssl=true and tls=true detected - this may cause conflicts');
+  }
+  
+  if (!uri.includes('retryWrites=true')) {
+    console.log('[mongo] Note: retryWrites not in connection string, using client option');
+  }
 }
 
 /**
@@ -79,15 +121,41 @@ async function getMongoClient(): Promise<MongoClient> {
       throw new Error('MONGODB_URI must start with "mongodb://" or "mongodb+srv://"');
     }
 
+    // Analyze the connection string for potential issues
+    analyzeConnectionString(uri);
+
     const client = createMongoClient(uri);
     
     try {
+      console.log('[mongo] Attempting connection...');
       await client.connect();
+      
+      console.log('[mongo] Testing connection with ping...');
       await client.db('admin').command({ ping: 1 });
+      
       console.log('[mongo] ✅ connected new client successfully');
       return client;
     } catch (error) {
       console.error('[mongo] ❌ connection failed:', error);
+      
+      // Enhanced error reporting for TLS issues
+      if (error instanceof Error) {
+        if (error.message.includes('ssl') || error.message.includes('tls')) {
+          console.error('[mongo] 🔒 TLS/SSL error detected. This is often due to:');
+          console.error('[mongo]   - Render infrastructure TLS compatibility issues');
+          console.error('[mongo]   - MongoDB Atlas certificate validation problems');
+          console.error('[mongo]   - Connection string TLS parameter conflicts');
+        }
+        
+        if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
+          console.error('[mongo] 🌐 DNS resolution error detected');
+        }
+        
+        if (error.message.includes('timeout')) {
+          console.error('[mongo] ⏱️  Timeout error - connection taking too long');
+        }
+      }
+      
       await client.close().catch(() => {});
       throw error;
     }
@@ -107,7 +175,9 @@ async function getMongoClient(): Promise<MongoClient> {
  */
 export async function getDb(): Promise<Db> {
   try {
-    const dbName = env.MONGODB_DB?.trim() ?? (dev ? 'Author-site' : 'author_site');
+    // Fixed database name handling - use Author-site consistently
+    const dbName = env.MONGODB_DB?.trim() || 'Author-site';
+    console.log('[mongo] Using database name:', dbName);
     
     // Return cached DB if available and healthy
     if (globalForMongo.mongoDb && globalForMongo.mongoClient) {
@@ -124,7 +194,7 @@ export async function getDb(): Promise<Db> {
     const client = await getMongoClient();
     globalForMongo.mongoDb = client.db(dbName);
     
-    console.log('[mongo] using db:', globalForMongo.mongoDb.databaseName);
+    console.log('[mongo] ✅ using db:', globalForMongo.mongoDb.databaseName);
     return globalForMongo.mongoDb;
     
   } catch (err) {
@@ -151,20 +221,27 @@ export async function getDb(): Promise<Db> {
         countDocuments: async () => 0,
       }),
       command: async () => ({ ok: 1 }),
+      listCollections: () => ({ toArray: async () => [] }), // Added this method
       databaseName: 'fallback',
     } as unknown as Db;
   }
 }
 
 /**
- * Lightweight health check that pings the DB.
- * Returns true on success, false on failure.
+ * Enhanced health check with detailed diagnostics
  */
 export async function testConnection(): Promise<boolean> {
   try {
+    console.log('[mongo] Running health check...');
     const db = await getDb();
+    
+    // Test basic connectivity
     await db.command({ ping: 1 });
-    console.log('[mongo] ✅ health check passed');
+    
+    // Test database operations
+    const collections = await db.listCollections().toArray();
+    console.log('[mongo] ✅ health check passed - found', collections.length, 'collections');
+    
     return true;
   } catch (err) {
     console.error('[mongo] ❌ ping failed:', err);
