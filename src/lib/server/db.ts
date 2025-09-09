@@ -138,18 +138,22 @@ export async function getDb(): Promise<Db> {
     // Only fallback in development
     console.warn('[mongo] Development fallback - returning mock database');
     const emptyResult = { toArray: async () => [] };
-    
+    const findResult = {
+      sort: () => findResult,
+      skip: () => findResult,
+      limit: () => emptyResult,
+      toArray: async () => []
+    };
+
     return {
       collection: () => ({
-        find: () => ({
-          sort: () => ({ limit: () => emptyResult, toArray: async () => [] }),
-          limit: () => emptyResult,
-          toArray: async () => []
-        }),
+        find: () => findResult,
         findOne: async () => null,
         insertOne: async () => ({ insertedId: null }),
         updateOne: async () => ({ modifiedCount: 0 }),
-        deleteOne: async () => ({ deletedCount: 0 })
+        deleteOne: async () => ({ deletedCount: 0 }),
+        countDocuments: async () => 0,
+        estimatedDocumentCount: async () => 0
       }),
       command: async () => ({ ok: 1 }),
       listCollections: () => ({ toArray: async () => [] }),
