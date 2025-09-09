@@ -1,84 +1,116 @@
-// Replace your src/routes/health/+server.ts with this to see the real error
+// src/routes/health/+server.ts - Enhanced health check for Render deployment
 
 import { json } from '@sveltejs/kit';
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { checkDbHealth } from '$lib/server/db';
 
 export async function GET() {
-  console.log('[health] Checking MongoDB connection...');
+  console.log('[health] 🏥 Starting health check...');
   
-  // Check environment variables first
+  // Environment validation
   const MONGODB_URI = process.env.MONGODB_URI;
   const MONGODB_DB = process.env.MONGODB_DB;
+  const NODE_ENV = process.env.NODE_ENV;
   
-  console.log('[health] Environment check:', {
+  console.log('[health] 🔧 Environment check:', {
     hasURI: !!MONGODB_URI,
     hasDB: !!MONGODB_DB,
+    nodeEnv: NODE_ENV,
     dbName: MONGODB_DB,
-    uriStart: MONGODB_URI?.substring(0, 50) + '...'
+    uriStart: MONGODB_URI?.substring(0, 60) + '...',
+    platform: process.platform,
+    nodeVersion: process.version,
+    workingDir: process.cwd()
   });
 
+  // Check for missing environment variables
   if (!MONGODB_URI || !MONGODB_DB) {
+    const missingVars = [];
+    if (!MONGODB_URI) missingVars.push('MONGODB_URI');
+    if (!MONGODB_DB) missingVars.push('MONGODB_DB');
+    
+    console.error('[health] ❌ Missing environment variables:', missingVars);
+    
     return json({
       status: 'error',
       healthy: false,
-      error: `Missing environment variables: ${!MONGODB_URI ? 'MONGODB_URI ' : ''}${!MONGODB_DB ? 'MONGODB_DB' : ''}`,
-      database: 'none',
-      timestamp: new Date().toISOString()
+      database: 'config_error',
+      error: `Missing required environment variables: ${missingVars.join(', ')}`,
+      timestamp: new Date().toISOString(),
+      environment: {
+        nodeEnv: NODE_ENV,
+        platform: process.platform,
+        nodeVersion: process.version
+      }
     }, { status: 500 });
   }
 
-  let client;
+  // Test MongoDB connection using our optimized health check
+  console.log('[health] 🔌 Testing MongoDB connection...');
+  
   try {
-    console.log('[health] Connecting to MongoDB...');
+    const startTime = Date.now();
+    const healthResult = await checkDbHealth();
+    const connectionTime = Date.now() - startTime;
     
-    client = new MongoClient(MONGODB_URI, { 
-      serverApi: ServerApiVersion.v1,
-      connectTimeoutMS: 10000,
-      socketTimeoutMS: 10000,
-      serverSelectionTimeoutMS: 10000,
-    });
-    
-    await client.connect();
-    console.log('[health] Connected! Getting database...');
-    
-    const db = client.db(MONGODB_DB);
-    console.log('[health] Database name:', db.databaseName);
-    
-    // Test the connection
-    await db.command({ ping: 1 });
-    console.log('[health] Ping successful!');
-    
-    const collections = await db.listCollections().toArray();
-    console.log('[health] Collections:', collections.map(c => c.name));
-    
-    await client.close();
-
-    return json({
-      status: 'ok',
-      database: db.databaseName,
-      cluster: 'cluster0.njrpul0.mongodb.net',
-      healthy: true,
-      collections: collections.map(c => c.name),
-      timestamp: new Date().toISOString()
-    });
+    if (healthResult.connected) {
+      console.log('[health] ✅ MongoDB connection successful!');
+      
+      return json({
+        status: 'ok',
+        healthy: true,
+        database: healthResult.database,
+        connectionTime: `${connectionTime}ms`,
+        environment: {
+          nodeEnv: NODE_ENV,
+          platform: process.platform,
+          nodeVersion: process.version,
+          workingDir: process.cwd()
+        },
+        mongodb: {
+          database: healthResult.database,
+          connected: true
+        },
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      console.error('[health] ❌ MongoDB connection failed:', healthResult.error);
+      
+      return json({
+        status: 'error',
+        healthy: false,
+        database: 'connection_failed',
+        error: healthResult.error,
+        connectionTime: `${connectionTime}ms`,
+        environment: {
+          nodeEnv: NODE_ENV,
+          platform: process.platform,
+          nodeVersion: process.version,
+          workingDir: process.cwd()
+        },
+        mongodb: {
+          connected: false,
+          database: MONGODB_DB,
+          errorDetails: healthResult.error
+        },
+        timestamp: new Date().toISOString()
+      }, { status: 500 });
+    }
     
   } catch (error) {
-    console.error('[health] MongoDB connection failed:', error);
+    console.error('[health] 💥 Unexpected error during health check:', error);
     
-    if (client) {
-      try {
-        await client.close();
-      } catch (closeError) {
-        console.error('[health] Error closing client:', closeError);
-      }
-    }
-
     return json({
       status: 'error',
       healthy: false,
-      database: 'failed',
+      database: 'health_check_failed',
       error: error instanceof Error ? error.message : String(error),
       errorName: error instanceof Error ? error.name : 'Unknown',
+      environment: {
+        nodeEnv: NODE_ENV,
+        platform: process.platform,
+        nodeVersion: process.version,
+        workingDir: process.cwd()
+      },
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }

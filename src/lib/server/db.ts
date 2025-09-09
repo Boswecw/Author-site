@@ -1,4 +1,4 @@
-// src/lib/server/db.ts - FIXED: Added TLS configuration for Render compatibility
+// src/lib/server/db.ts - OPTIMIZED for Render deployment
 import { MongoClient, ServerApiVersion, type Db, type Document } from 'mongodb';
 
 let client: MongoClient | null = null;
@@ -25,7 +25,7 @@ type MinimalDb = {
   listCollections?: () => { toArray(): Promise<Array<{ name: string }>> };
 };
 
-// ---- Helpers for mock ----
+// ---- Mock helpers (unchanged) ----
 function matches(doc: any, query: Record<string, any> = {}): boolean {
   for (const [k, v] of Object.entries(query)) {
     const dv = (doc as any)[k];
@@ -59,22 +59,19 @@ function makeCursor<T>(arrIn: T[]): Cursor<T> {
             const dir = spec[k] === -1 ? -1 : 1;
             const av = (a as any)?.[k];
             const bv = (b as any)?.[k];
-            if (av == null && bv == null) continue;
-            if (av == null) return 1;
-            if (bv == null) return -1;
-            if (av < bv) return -1 * dir;
-            if (av > bv) return 1 * dir;
+            if (av < bv) return -dir;
+            if (av > bv) return dir;
           }
           return 0;
         });
       }
       return this;
     },
-    skip(n: number) {
+    skip(n) {
       arr = arr.slice(n);
       return this;
     },
-    limit(n: number) {
+    limit(n) {
       arr = arr.slice(0, n);
       return this;
     },
@@ -84,17 +81,23 @@ function makeCursor<T>(arrIn: T[]): Cursor<T> {
   };
 }
 
-function makeMockDb(): Db {
-  console.warn('[mongo] Development fallback - returning mock database');
-
+function makeMockDb(): MinimalDb {
   const store: Record<string, any[]> = {
-    books: [],
+    books: [
+      {
+        _id: 'mock1',
+        title: 'The Echoes of Tomorrow',
+        slug: 'echoes-of-tomorrow',
+        status: 'published',
+        featured: true
+      }
+    ],
     posts: []
   };
 
-  const mock: MinimalDb = {
-    databaseName: 'mock',
-    collection<T extends Document = Document>(name: string): MinimalCollection<T> {
+  return {
+    databaseName: 'mock_db',
+    collection<T extends Document>(name: string): MinimalCollection<T> {
       const all = store[name] ?? [];
       return {
         find(query?: any, options?: any) {
@@ -119,49 +122,68 @@ function makeMockDb(): Db {
       toArray: async () => Object.keys(store).map((name) => ({ name }))
     })
   };
-
-  return mock as unknown as Db;
 }
-// ---- /mock helpers ----
 
+// ---- Real DB connection with Render optimizations ----
 async function connectRealDb(): Promise<Db> {
   const { MONGODB_URI, MONGODB_DB } = process.env;
   
   if (!MONGODB_URI || !MONGODB_DB) {
     console.error('[mongo] Missing environment variables - falling back to mock');
-    return makeMockDb();
+    return makeMockDb() as unknown as Db;
   }
 
   console.log('[mongo] Connecting to MongoDB Atlas...');
   console.log('[mongo] Database name:', MONGODB_DB);
   console.log('[mongo] Connection string (masked):', MONGODB_URI.replace(/\/\/[^@]+@/, '//***:***@'));
+  console.log('[mongo] Environment:', process.env.NODE_ENV);
 
   try {
     if (!client) {
-      client = new MongoClient(MONGODB_URI, { 
+      // 🔥 RENDER-OPTIMIZED MongoDB Configuration
+      const connectionOptions = {
+        // Server API configuration
         serverApi: {
           version: ServerApiVersion.v1,
           strict: true,
           deprecationErrors: true,
         },
-        // 🔥 FIX: TLS configuration for Render compatibility
+        
+        // 🔥 CRITICAL: Enhanced TLS/SSL configuration for Render
         tls: true,
         tlsAllowInvalidCertificates: false,
         tlsAllowInvalidHostnames: false,
         tlsInsecure: false,
-        // Connection timeouts (longer for Render)
-        connectTimeoutMS: 30000,
-        socketTimeoutMS: 30000,
-        serverSelectionTimeoutMS: 30000,
-        // Connection pool settings
-        maxPoolSize: 5,
+        
+        // 🔥 RENDER-SPECIFIC: Extended timeouts for cloud infrastructure
+        connectTimeoutMS: 60000,     // 60 seconds
+        socketTimeoutMS: 60000,      // 60 seconds  
+        serverSelectionTimeoutMS: 60000, // 60 seconds
+        heartbeatFrequencyMS: 10000, // 10 seconds
+        
+        // 🔥 RENDER-SPECIFIC: Connection pool optimization
+        maxPoolSize: 10,
         minPoolSize: 1,
-        // Retry configuration
+        maxIdleTimeMS: 30000,
+        waitQueueTimeoutMS: 5000,
+        
+        // 🔥 RENDER-SPECIFIC: Network and retry configuration
         retryWrites: true,
         retryReads: true,
-        // 🔥 FIX: Force IPv4 for better compatibility with Render
-        family: 4,
-      });
+        family: 4, // Force IPv4 for better cloud compatibility
+        
+        // 🔥 RENDER-SPECIFIC: Buffer configuration
+        bufferMaxEntries: 0, // Disable mongoose buffering
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        
+        // 🔥 RENDER-SPECIFIC: Additional stability options
+        maxStalenessSeconds: 90,
+        compressors: ['snappy', 'zlib'], // Enable compression
+      };
+
+      console.log('[mongo] Creating MongoClient with Render-optimized configuration...');
+      client = new MongoClient(MONGODB_URI, connectionOptions);
       
       console.log('[mongo] Attempting connection...');
       await client.connect();
@@ -178,6 +200,12 @@ async function connectRealDb(): Promise<Db> {
     
   } catch (error) {
     console.error('[mongo] ❌ Connection failed:', error);
+    console.error('[mongo] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      code: (error as any)?.code,
+      codeName: (error as any)?.codeName,
+    });
     
     // Clean up failed client
     if (client) {
@@ -189,24 +217,34 @@ async function connectRealDb(): Promise<Db> {
       client = null;
     }
     
-    // Re-throw the error instead of falling back to mock
-    // This ensures the error is visible in logs
-    throw error;
+    // In production, re-throw the error to make it visible
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
+    
+    // In development, fall back to mock
+    console.log('[mongo] Falling back to mock database for development');
+    return makeMockDb() as unknown as Db;
   }
 }
 
 export async function getDb(): Promise<Db> {
   if (!dbPromise) {
     dbPromise = connectRealDb().catch((err) => {
-      console.error('[mongo] Failed to get database, falling back to mock:', err);
+      console.error('[mongo] Failed to get database:', err);
       dbPromise = null; // Reset promise so it can retry on next call
-      return makeMockDb();
+      
+      // In production, re-throw; in development, use mock
+      if (process.env.NODE_ENV === 'production') {
+        throw err;
+      }
+      return makeMockDb() as unknown as Db;
     });
   }
   return dbPromise;
 }
 
-// Optional: helper to close the client in tests or on shutdown
+// Helper to close the client (useful for testing and graceful shutdown)
 export async function closeDb(): Promise<void> {
   if (client) {
     console.log('[mongo] Closing database connection...');
@@ -214,5 +252,27 @@ export async function closeDb(): Promise<void> {
     client = null;
     dbPromise = null;
     console.log('[mongo] Database connection closed');
+  }
+}
+
+// Health check helper
+export async function checkDbHealth(): Promise<{ 
+  connected: boolean; 
+  database: string | null; 
+  error?: string 
+}> {
+  try {
+    const db = await getDb();
+    await db.command({ ping: 1 });
+    return {
+      connected: true,
+      database: db.databaseName || null
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      database: null,
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 }

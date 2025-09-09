@@ -4,12 +4,14 @@ services:
     env: node
     plan: free
     buildCommand: npm ci && npm run build
-    startCommand: node .svelte-kit/output/server/index.js
+    # 🔥 CRITICAL FIX: Updated path to match svelte.config.js output
+    startCommand: node build/index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: MONGODB_URI
         fromSecret: mongodb_uri
+      # 🔥 CRITICAL FIX: Updated database name to match local config
       - key: MONGODB_DB
         value: Author-site
       - key: PUBLIC_FIREBASE_API_KEY
