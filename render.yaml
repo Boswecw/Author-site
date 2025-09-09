@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: charles-boswell-author-site
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node .svelte-kit/output/server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromSecret: mongodb_uri
+      - key: MONGODB_DB
+        value: Author-site
+      - key: PUBLIC_FIREBASE_API_KEY
+        fromSecret: firebase_api_key
+      - key: PUBLIC_FIREBASE_AUTH_DOMAIN
+        fromSecret: firebase_auth_domain
+      - key: PUBLIC_FIREBASE_PROJECT_ID
+        fromSecret: firebase_project_id
+      - key: PUBLIC_FIREBASE_STORAGE_BUCKET
+        fromSecret: firebase_storage_bucket
