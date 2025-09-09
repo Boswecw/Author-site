@@ -129,16 +129,18 @@ export async function getDb(): Promise<Db> {
     
   } catch (err) {
     console.error('[mongo] Failed to get database:', err);
-    
-    // ✅ CRITICAL: Don't return fallback in production
-    if (!dev) {
+
+    const message = err instanceof Error ? err.message : String(err);
+
+    // ✅ CRITICAL: Don't return fallback for missing/invalid URI or in production
+    if (!dev || message.includes('MONGODB_URI')) {
       throw err;
     }
-    
-    // Only fallback in development
+
+    // Only fallback in development for other errors
     console.warn('[mongo] Development fallback - returning mock database');
     const emptyResult = { toArray: async () => [] };
-    
+
     return {
       collection: () => ({
         find: () => ({
