@@ -2,6 +2,7 @@
 
 import { MongoClient, Db, ServerApiVersion } from 'mongodb';
 import { dev } from '$app/environment';
+import { ENV } from '$lib/config/env';
 
 // Global connection management
 const globalForMongo = globalThis as unknown as {
@@ -9,14 +10,6 @@ const globalForMongo = globalThis as unknown as {
   mongoDb?: Db;
   connecting?: Promise<MongoClient>;
 };
-
-function required(name: string): string {
-  const raw = process.env[name];
-  if (!raw) throw new Error(`${name} environment variable is not set`);
-  const val = raw.trim();
-  if (!val) throw new Error(`${name} is empty`);
-  return val;
-}
 
 // ✅ FIXED: Remove invalid checkServerIdentity option
 function createMongoClient(uri: string): MongoClient {
@@ -59,7 +52,7 @@ async function getMongoClient(): Promise<MongoClient> {
 
   // Start new connection
   globalForMongo.connecting = (async () => {
-    const uri = required('MONGODB_URI');
+    const uri = ENV.MONGODB_URI!;
     
     if (!/^mongodb(\+srv)?:\/\//.test(uri)) {
       throw new Error('MONGODB_URI must start with "mongodb://" or "mongodb+srv://"');
@@ -107,7 +100,7 @@ async function getMongoClient(): Promise<MongoClient> {
 
 export async function getDb(): Promise<Db> {
   try {
-    const dbName = process.env.MONGODB_DB?.trim() || 'author_site';
+    const dbName = ENV.MONGODB_DB!;
     console.log('[mongo] Using database:', dbName);
     
     // Return cached healthy database
