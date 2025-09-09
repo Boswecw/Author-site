@@ -1,6 +1,7 @@
 // src/lib/server/db.ts - FIXED VERSION
 
-import { MongoClient, Db, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion } from 'mongodb';
+import type { Db } from 'mongodb';
 import { dev } from '$app/environment';
 
 // Global connection management
@@ -9,6 +10,12 @@ const globalForMongo = globalThis as unknown as {
   mongoDb?: Db;
   connecting?: Promise<MongoClient>;
 };
+
+let mockDbInUse = false;
+
+export function isMockDbInUse(): boolean {
+  return mockDbInUse;
+}
 
 function required(name: string): string {
   const raw = process.env[name];
@@ -114,6 +121,7 @@ export async function getDb(): Promise<Db> {
     if (globalForMongo.mongoDb && globalForMongo.mongoClient) {
       try {
         await globalForMongo.mongoClient.db('admin').command({ ping: 1 });
+        mockDbInUse = false;
         return globalForMongo.mongoDb;
       } catch {
         console.warn('[mongo] cached DB unhealthy, reconnecting...');
@@ -123,6 +131,7 @@ export async function getDb(): Promise<Db> {
 
     const client = await getMongoClient();
     globalForMongo.mongoDb = client.db(dbName);
+    mockDbInUse = false;
     
     console.log('[mongo] ✅ Using database:', globalForMongo.mongoDb.databaseName);
     return globalForMongo.mongoDb;
@@ -138,7 +147,8 @@ export async function getDb(): Promise<Db> {
     // Only fallback in development
     console.warn('[mongo] Development fallback - returning mock database');
     const emptyResult = { toArray: async () => [] };
-    
+
+    mockDbInUse = true;
     return {
       collection: () => ({
         find: () => ({
@@ -161,9 +171,13 @@ export async function getDb(): Promise<Db> {
 export async function testConnection(): Promise<boolean> {
   try {
     const db = await getDb();
+    if (db.databaseName === 'fallback-db') {
+      console.warn('[mongo] ⚠️ Mock database in use - skipping connection test');
+      return false;
+    }
     await db.command({ ping: 1 });
     const collections = await db.listCollections().toArray();
-    console.log('[mongo] ✅ Connection healthy - found collections:', 
+    console.log('[mongo] ✅ Connection healthy - found collections:',
       collections.map(c => c.name));
     return true;
   } catch (err) {
