@@ -1,22 +1,8 @@
-// src/routes/blog/[slug]/+page.server.ts - UPDATED to use central Firebase utilities
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { mdToHtml } from '$lib/server/markdown';
-import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Use central utility
-
-/** ✅ SIMPLIFIED: Build post image URL using central utility */
-function buildPostImageUrl(heroImage: string | null | undefined): string | null {
-  if (!heroImage) return null;
-  
-  // If it's already a complete URL, return as-is
-  if (heroImage.startsWith('http')) {
-    return heroImage;
-  }
-  
-  // ✅ Use central utility with posts/ folder for blog post images
-  return buildImageUrl(heroImage, 'posts');
-}
+import { buildPostImageUrl } from '$lib/utils/firebase';
 
 interface PostDoc {
   _id?: any;
@@ -67,8 +53,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
     console.log(`[blog/slug] Found published post: ${doc.title}`);
 
-    // ✅ SIMPLIFIED: Use central utility for post images (posts/ folder)
-    const heroImageUrl = buildPostImageUrl(doc.heroImage);
+    // ✅ Use central utility for post images (posts/ folder)
+    const heroImageUrl = doc.heroImage ? buildPostImageUrl(doc.heroImage) : null;
 
     // Debug logging for heroImage processing
     if (doc.heroImage) {

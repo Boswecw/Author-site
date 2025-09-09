@@ -1,23 +1,9 @@
-// src/routes/blog/+page.server.ts - UPDATED to use central Firebase utilities
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { mdToHtml } from '$lib/server/markdown';
-import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Use central utility for post images
+import { buildPostImageUrl } from '$lib/utils/firebase';
 
 export const prerender = false;
-
-/** ✅ SIMPLIFIED: Build post image URL using central utility */
-function buildPostImageUrl(heroImage: string | null | undefined): string | null {
-  if (!heroImage) return null;
-  
-  // If it's already a complete URL, return as-is
-  if (heroImage.startsWith('http')) {
-    return heroImage;
-  }
-  
-  // ✅ Use central utility with posts/ folder for blog post images
-  return buildImageUrl(heroImage, 'posts');
-}
 
 interface PostDoc {
   slug: string;
@@ -76,9 +62,9 @@ export const load: PageServerLoad = async ({ url }) => {
 
     const posts = await Promise.all(
       docs.map(async (p) => {
-        // ✅ SIMPLIFIED: Use central utility for post images (posts/ folder)
-        const heroImageUrl = buildPostImageUrl(p.heroImage);
-        
+        // ✅ Use central utility for post images (posts/ folder)
+        const heroImageUrl = p.heroImage ? buildPostImageUrl(p.heroImage) : null;
+
         // Debug logging for heroImage processing
         if (p.heroImage) {
           console.log(`[blog] Post ${p.slug} heroImage processing:`, {
