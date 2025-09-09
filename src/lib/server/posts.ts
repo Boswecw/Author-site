@@ -1,6 +1,7 @@
 // src/lib/server/posts.ts
 import { ObjectId } from 'mongodb';
 import { getDb } from './db.js';
+import { buildPostImageUrl } from '$lib/utils/firebase';
 
 export type PostDoc = {
   _id: ObjectId;
@@ -33,8 +34,12 @@ const projection = {
 } as const;
 
 function serialize(post: PostDoc) {
-  const { _id, ...rest } = post;
-  return { id: _id.toString(), ...rest };
+  const { _id, heroImage, ...rest } = post;
+  return {
+    id: _id.toString(),
+    ...rest,
+    heroImage: heroImage ? buildPostImageUrl(heroImage) : heroImage
+  };
 }
 
 export async function getPostBySlug(slug: string) {
