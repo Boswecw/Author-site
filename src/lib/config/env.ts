@@ -1,9 +1,4 @@
-// src/lib/config/env.ts - Environment configuration helper
-/**
- * ✅ Safe environment variable access
- * Fallback to process.env if SvelteKit env imports fail
- */
-
+import 'dotenv/config';
 // Helper to get environment variable safely
 function getEnvVar(key: string, defaultValue?: string): string | undefined {
     // Try different ways to access environment variables
