@@ -23,7 +23,7 @@
   </script>
   
   <svelte:head>
-    <title>{book.title} by Charles W. Boswell</title>
+    <title>{book.title} by Charles Boswell</title>
     <meta name="description" content={book.description} />
   </svelte:head>
   
@@ -57,7 +57,7 @@
       <div class="space-y-6">
         <div>
           <h1 class="text-4xl font-bold text-gray-900 mb-2">{book.title}</h1>
-          <p class="text-xl text-gray-600">by Charles W. Boswell</p>
+          <p class="text-xl text-gray-600">by Charles Boswell</p>
         </div>
         
         <div class="flex items-center space-x-4">

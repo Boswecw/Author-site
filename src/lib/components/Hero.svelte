@@ -1,6 +1,7 @@
-<!-- src/lib/components/Hero.svelte -->
+<!-- src/lib/components/Hero.svelte - SIMPLIFIED VERSION -->
 <script lang="ts">
   import { createImageFallback } from '$lib/services/authorImages';
+  import { buildBookCoverUrl } from '$lib/utils/firebase'; // ✅ Use central util
 
   export let title: string = 'Epic Fantasy Born from Real Experience';
   export let subtitle: string = 'From Navy decks to wildfire frontlines—stories forged in grit.';
@@ -9,23 +10,12 @@
   export let genre: 'faith' | 'epic' | 'sci-fi' | null | undefined = null;
   export let bookCover: string | null | undefined = null; // filename OR path OR full URL
 
-  // Firebase URL builder (accepts full object path)
-  const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
-  const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
-  const buildImageUrl = (path: string) => `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
-
-  // Folder for book covers in your bucket
-  const COVERS_FOLDER = 'books';
-
-  // If it's a bare filename, prefix with books/; if it's already a path or full URL, use as-is.
-  const resolveCoverPath = (val: string) =>
-    val.startsWith('http') ? val : (val.includes('/') ? val : `${COVERS_FOLDER}/${val}`);
-
+  // ✅ SIMPLIFIED: Use central buildBookCoverUrl for all book covers
   $: coverUrl =
     typeof bookCover === 'string' && bookCover.trim()
       ? bookCover.startsWith('http')
-        ? bookCover.trim() // already a full URL
-        : buildImageUrl(resolveCoverPath(bookCover.trim()))
+        ? bookCover.trim() // Already a full URL
+        : buildBookCoverUrl(bookCover.trim()) // ✅ Uses books/ folder automatically
       : null;
 
   // Normalize genre so we always have a safe value

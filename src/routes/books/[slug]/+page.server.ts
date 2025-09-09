@@ -104,13 +104,16 @@ export const load: PageServerLoad = async ({ params }) => {
       return { book: placeholderBook };
     }
 
-    // Process the found book - build proper Firebase URLs
-    const coverPath = book.cover ? ensurePath(book.cover, COVERS_FOLDER) : null;
+    // ✅ FIXED: Check if cover is already a complete URL to prevent double-encoding
+    const isAlreadyUrl = book.cover?.startsWith('http');
+    const coverPath = book.cover && !isAlreadyUrl ? ensurePath(book.cover, COVERS_FOLDER) : null;
+    
     const processedBook = {
       id: book.id,
       title: book.title,
       description: book.description ?? '',
-      cover: coverPath ? buildImageUrl(coverPath) : null, // Build proper Firebase URL
+      // ✅ FIXED: Use existing URL if already complete, otherwise build new one
+      cover: isAlreadyUrl ? book.cover : (coverPath ? buildImageUrl(coverPath) : null),
       genre: book.genre ?? 'faith',
       status: book.status ?? 'draft',
       publishDate: book.publishDate

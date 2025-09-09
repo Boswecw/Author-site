@@ -1,9 +1,10 @@
-<!-- src/lib/components/Navigation.svelte -->
+<!-- src/lib/components/Navigation.svelte - FIXED VERSION -->
 <script lang="ts">
   import { page } from '$app/stores';
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
+  import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Import central util
 
   let mobileMenuOpen = false;
 
@@ -18,16 +19,12 @@
   // --- Logo handling (filename OR full URL) ---
   export let logo: string | null = 'Signaturelogo.png';
 
-  const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
-  const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
-  const buildImageUrl = (filename: string) =>
-    `${BASE_URL}/${encodeURIComponent(filename)}?alt=media`;
-
+  // ✅ FIXED: Use central buildImageUrl instead of local function
   $: logoSrc =
     typeof logo === 'string' && logo.trim()
       ? (logo.includes('/') || logo.startsWith('http'))
         ? logo.trim()
-        : buildImageUrl(logo.trim())
+        : buildImageUrl(logo.trim(), 'icons') // ✅ Use icons/ folder for logos
       : null;
 
   function closeMenu() {

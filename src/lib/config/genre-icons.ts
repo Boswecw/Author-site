@@ -1,12 +1,14 @@
+// src/lib/config/genre-icons.ts - FIXED VERSION
 import { FIREBASE_IMAGES } from '$lib/services/authorImages';
-import { normalizeFirebaseUrl } from '$lib/utils/urls';
+import { buildIconUrl } from '$lib/utils/firebase'; // ✅ Use central util
 
-const SCI_FI_ICON = normalizeFirebaseUrl('https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/sci-fi-icon.png?alt=media&token=b26abe91-c816-41e4-ab95-086080369bd1')!;
-const DEFAULT_ICON = normalizeFirebaseUrl('https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/default-icon.png?alt=media')!;
+// ✅ FIXED: Use central buildIconUrl for icons/ subfolder
+const SCI_FI_ICON = buildIconUrl('sci-fi-icon.png');   // → icons/sci-fi-icon.png
+const DEFAULT_ICON = buildIconUrl('default-icon.png'); // → icons/default-icon.png
 
 export const GENRE_ICON_URLS: Record<string, string> = {
-  faith: FIREBASE_IMAGES.ICONS.CHRISTIAN_FICTION,
-  epic: FIREBASE_IMAGES.ICONS.EPIC_FANTASY,
-  'sci-fi': SCI_FI_ICON,
-  default: DEFAULT_ICON
+  faith: FIREBASE_IMAGES.ICONS.CHRISTIAN_FICTION,    // Already has icons/ path
+  epic: FIREBASE_IMAGES.ICONS.EPIC_FANTASY,          // Already has icons/ path  
+  'sci-fi': SCI_FI_ICON,                            // ✅ Now uses icons/ folder
+  default: DEFAULT_ICON                              // ✅ Now uses icons/ folder
 };
