@@ -85,7 +85,13 @@ Open the site at **[http://localhost:5173](http://localhost:5173)**
 
 ## 🔑 Environment Variables
 
-Create a `.env` file in the project root:
+Copy the example environment file into the project root:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` as needed. A typical configuration looks like:
 
 ```bash
 # MongoDB Atlas
@@ -99,7 +105,17 @@ PUBLIC_FIREBASE_PROJECT_ID="..."
 PUBLIC_FIREBASE_STORAGE_BUCKET="..."
 ```
 
-Copy `.env.example` to `.env` and fill in the values for your environment.
+Verify the MongoDB URI:
+
+```bash
+node -e "console.log(process.env.MONGODB_URI)"
+```
+
+Run the development server:
+
+```bash
+npm run dev
+```
 
 ### Resolving Covers
 
