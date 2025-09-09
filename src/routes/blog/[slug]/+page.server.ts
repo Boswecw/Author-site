@@ -1,8 +1,22 @@
-// src/routes/blog/[slug]/+page.server.ts
+// src/routes/blog/[slug]/+page.server.ts - UPDATED to use central Firebase utilities
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { mdToHtml } from '$lib/server/markdown';
+import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Use central utility
+
+/** ✅ SIMPLIFIED: Build post image URL using central utility */
+function buildPostImageUrl(heroImage: string | null | undefined): string | null {
+  if (!heroImage) return null;
+  
+  // If it's already a complete URL, return as-is
+  if (heroImage.startsWith('http')) {
+    return heroImage;
+  }
+  
+  // ✅ Use central utility with posts/ folder for blog post images
+  return buildImageUrl(heroImage, 'posts');
+}
 
 interface PostDoc {
   _id?: any;
@@ -10,7 +24,7 @@ interface PostDoc {
   title: string;
   excerpt?: string | null;
   contentMarkdown?: string | null;
-  heroImage?: string | null;
+  heroImage?: string | null; // Can be filename OR full URL
   publishDate?: Date | string | null;
   publishedAt?: Date | string | null;
   tags?: string[] | null;
@@ -25,24 +39,21 @@ export const load: PageServerLoad = async ({ params }) => {
     const db = await getDb();
     const col = db.collection<PostDoc>('posts');
 
-    const doc = await col.findOne(
-      { slug: params.slug },
-      {
-        projection: {
-          _id: 0,              // Exclude _id for cleaner serialization
-          slug: 1,
-          title: 1,
-          excerpt: 1,
-          contentMarkdown: 1,
-          heroImage: 1,        // Pass through unchanged - already full URLs with tokens
-          publishDate: 1,
-          publishedAt: 1,
-          tags: 1,
-          genre: 1,
-          status: 1
-        }
-      }
-    );
+    const projection = {
+      _id: 0,
+      slug: 1,
+      title: 1,
+      excerpt: 1,
+      contentMarkdown: 1,
+      heroImage: 1, // Can be filename or full URL
+      publishDate: 1,
+      publishedAt: 1,
+      tags: 1,
+      genre: 1,
+      status: 1
+    } as const;
+
+    const doc = await col.findOne({ slug: params.slug }, { projection });
 
     if (!doc) {
       console.log(`[blog/slug] Post not found: ${params.slug}`);
@@ -56,16 +67,22 @@ export const load: PageServerLoad = async ({ params }) => {
 
     console.log(`[blog/slug] Found published post: ${doc.title}`);
 
-    // Debug logging for heroImage
+    // ✅ SIMPLIFIED: Use central utility for post images (posts/ folder)
+    const heroImageUrl = buildPostImageUrl(doc.heroImage);
+
+    // Debug logging for heroImage processing
     if (doc.heroImage) {
-      console.log(`[blog/slug] Post ${params.slug} heroImage:`, doc.heroImage.substring(0, 80) + '...');
+      console.log(`[blog/slug] Post ${params.slug} heroImage processing:`, {
+        original: doc.heroImage.substring(0, 60) + '...',
+        processed: heroImageUrl?.substring(0, 80) + '...'
+      });
     }
 
     const post = {
       slug: doc.slug,
       title: doc.title,
       excerpt: doc.excerpt ?? null,
-      heroImage: doc.heroImage ?? null, // Pass through - MongoDB has full URLs with tokens
+      heroImage: heroImageUrl, // ✅ Uses posts/ folder via central utility
       publishDate: doc.publishDate ?? doc.publishedAt ?? null,
       tags: Array.isArray(doc.tags) ? doc.tags : [],
       genre: doc.genre ?? null,

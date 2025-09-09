@@ -1,21 +1,31 @@
-// src/routes/books/[slug]/+page.server.ts
+// src/routes/books/[slug]/+page.server.ts - UPDATED to use central Firebase utilities
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import type { BookDoc } from '$lib/types';
+import { buildBookCoverUrl } from '$lib/utils/firebase'; // ✅ Use central utility
 
-// Firebase URL builder - consistent with other server files
-const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
-const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
-const buildImageUrl = (path: string) =>
-  `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
-
-// Folders in your bucket
-const COVERS_FOLDER = 'books';
-
-// Ensure we include the folder when a bare filename is provided
-const ensurePath = (nameOrPath: string, folder: string) =>
-  nameOrPath.includes('/') ? nameOrPath : `${folder}/${nameOrPath}`;
+/** ✅ SIMPLIFIED: Use central utility for book cover URLs */
+function normalizeBook(book: BookDoc) {
+  return {
+    id: book.id,
+    title: book.title,
+    description: book.description ?? '',
+    cover: book.cover ? buildBookCoverUrl(book.cover) : null, // ✅ Automatically includes books/ folder
+    genre: book.genre ?? 'faith',
+    status: book.status ?? 'draft',
+    publishDate: book.publishDate
+      ? book.publishDate instanceof Date
+        ? book.publishDate.toISOString()
+        : String(book.publishDate)
+      : null,
+    isbn: book.isbn ?? null,
+    format: book.format ?? 'EPUB',
+    pages: book.pages ?? null,
+    buyLinks: book.buyLinks ?? {},
+    featured: !!book.featured
+  };
+}
 
 export const load: PageServerLoad = async ({ params }) => {
   try {
@@ -24,37 +34,34 @@ export const load: PageServerLoad = async ({ params }) => {
 
     console.log(`[books/slug] Looking for book: ${params.slug}`);
 
-    const book = await coll.findOne(
-      { id: params.slug },
-      {
-        projection: {
-          _id: 0,
-          id: 1,
-          title: 1,
-          description: 1,
-          cover: 1,
-          genre: 1,
-          status: 1,
-          publishDate: 1,
-          isbn: 1,
-          format: 1,
-          pages: 1,
-          buyLinks: 1, // Fixed: use buyLinks instead of links
-          featured: 1   // Added: include featured field
-        }
-      }
-    );
+    const projection = {
+      _id: 0,
+      id: 1,
+      title: 1,
+      description: 1,
+      cover: 1,
+      genre: 1,
+      status: 1,
+      publishDate: 1,
+      isbn: 1,
+      format: 1,
+      pages: 1,
+      buyLinks: 1,
+      featured: 1
+    } as const;
+
+    const book = await coll.findOne({ id: params.slug }, { projection });
 
     if (!book) {
       console.log(`[books/slug] Book not found in database: ${params.slug}`);
       
-      // Enhanced placeholder books with proper Firebase URLs
+      // ✅ Placeholder books - store as filenames, normalize with central utility
       const placeholderBooks: Record<string, any> = {
         'faith-in-a-firestorm': {
           id: 'faith-in-a-firestorm',
           title: 'Faith in a Firestorm',
           description: 'A faith-forward wildfire drama inspired by 16 years on the line—courage, family, and grace when everything burns.',
-          cover: buildImageUrl('books/Faith_in_a_FireStorm.png'), // Build proper URL
+          cover: 'Faith_in_a_FireStorm.png', // Will be normalized to include books/ folder
           genre: 'faith',
           status: 'upcoming',
           publishDate: '2025-09-01',
@@ -63,33 +70,50 @@ export const load: PageServerLoad = async ({ params }) => {
           pages: 320,
           buyLinks: {
             amazon: 'https://amazon.com/dp/B0CQJ2XYZ1'
-          }
+          },
+          featured: false
         },
         'conviction-in-a-flood': {
           id: 'conviction-in-a-flood',
           title: 'Conviction in a Flood',
           description: 'When disaster strikes, faith and determination are the only things standing between hope and despair.',
-          cover: buildImageUrl('books/Conviction_in_a_Flood.png'), // Build proper URL
+          cover: 'Conviction_in_a_Flood.png', // Will be normalized to include books/ folder
           genre: 'faith',
           status: 'upcoming',
           publishDate: '2025-12-01',
           isbn: null,
           format: 'EPUB',
           pages: 300,
-          buyLinks: {}
+          buyLinks: {},
+          featured: false
         },
         'hurricane-eve': {
           id: 'hurricane-eve',
           title: 'Hurricane Eve',
           description: 'A gripping tale of survival and faith during one of nature\'s most powerful storms.',
-          cover: buildImageUrl('books/Hurricane_Eve.png'), // Correct spelling with proper URL
+          cover: 'Hurricane_Eve.png', // Will be normalized to include books/ folder (corrected spelling)
           genre: 'faith',
           status: 'upcoming',
           publishDate: '2025-11-01',
           isbn: null,
           format: 'EPUB',
           pages: null,
-          buyLinks: {}
+          buyLinks: {},
+          featured: false
+        },
+        'symbiogenesis': {
+          id: 'symbiogenesis',
+          title: 'Symbiogenesis',
+          description: 'A sci-fi exploration of biological cooperation and evolution on an alien world.',
+          cover: 'Symbiogenesis.png', // Will be normalized to include books/ folder
+          genre: 'sci-fi',
+          status: 'upcoming',
+          publishDate: '2026-03-01',
+          isbn: null,
+          format: 'EPUB',
+          pages: null,
+          buyLinks: {},
+          featured: false
         }
       };
 
@@ -100,40 +124,28 @@ export const load: PageServerLoad = async ({ params }) => {
         throw error(404, `Book "${params.slug}" not found`);
       }
 
+      // ✅ SIMPLIFIED: Normalize using central utility
+      const normalizedPlaceholder = normalizeBook(placeholderBook);
       console.log(`[books/slug] Using placeholder for: ${params.slug}`);
-      return { book: placeholderBook };
+      
+      return { book: normalizedPlaceholder };
     }
 
-    // ✅ FIXED: Check if cover is already a complete URL to prevent double-encoding
-    const isAlreadyUrl = book.cover?.startsWith('http');
-    const coverPath = book.cover && !isAlreadyUrl ? ensurePath(book.cover, COVERS_FOLDER) : null;
-    
-    const processedBook = {
-      id: book.id,
-      title: book.title,
-      description: book.description ?? '',
-      // ✅ FIXED: Use existing URL if already complete, otherwise build new one
-      cover: isAlreadyUrl ? book.cover : (coverPath ? buildImageUrl(coverPath) : null),
-      genre: book.genre ?? 'faith',
-      status: book.status ?? 'draft',
-      publishDate: book.publishDate
-        ? book.publishDate instanceof Date
-          ? book.publishDate.toISOString()
-          : String(book.publishDate)
-        : null,
-      isbn: book.isbn ?? null,
-      format: book.format ?? 'EPUB',
-      pages: book.pages ?? null,
-      buyLinks: book.buyLinks ?? {},
-      featured: (book as any).featured ?? false // Handle missing featured field
-    };
+    // ✅ SIMPLIFIED: Process database book using central utility
+    const processedBook = normalizeBook(book);
 
     console.log(`[books/slug] Found book in database: ${book.title}`);
+    
+    // Debug logging for Hurricane Eve specifically
     if (book.id === 'hurricane-eve') {
-      console.log(`[books/slug] Hurricane Eve cover: ${book.cover} -> ${processedBook.cover}`);
+      console.log(`[books/slug] Hurricane Eve cover processing:`, {
+        originalCover: book.cover,
+        processedCover: processedBook.cover?.substring(0, 100) + '...'
+      });
     }
 
     return { book: processedBook };
+    
   } catch (err) {
     console.error('[books/slug] Load error:', params.slug, err);
     

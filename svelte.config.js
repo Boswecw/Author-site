@@ -1,13 +1,18 @@
-// svelte.config.js - Updated for Render
-import adapter from '@sveltejs/adapter-node';
+// svelte.config.js
+import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
+/** @type {import('@sveltejs/kit').Config} */
 const config = {
   preprocess: vitePreprocess(),
-  kit: { 
-    adapter: adapter({
-      out: 'build'
-    })
+  kit: {
+    adapter: adapter(),
+    
+    // Add explicit alias configuration
+    alias: {
+      '$lib': './src/lib',
+      '$lib/*': './src/lib/*'
+    }
   }
 };
 

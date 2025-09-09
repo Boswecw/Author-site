@@ -1,7 +1,5 @@
-// src/lib/server/db.ts - Updated for Render TLS compatibility
+// src/lib/server/db.ts - UPDATED with TypeScript fixes
 import { MongoClient, ServerApiVersion, type Db } from 'mongodb';
-import { env } from '$env/dynamic/private';
-import { dev } from '$app/environment';
 
 const globalForMongo = globalThis as unknown as {
   mongoClient?: MongoClient;
@@ -14,7 +12,7 @@ const globalForMongo = globalThis as unknown as {
  * Trims whitespace to avoid issues on Render.
  */
 function required(name: string): string {
-  const raw = env[name];
+  const raw = process.env[name]; // ✅ Fixed: use process.env directly
   if (!raw) throw new Error(`${name} environment variable is not set`);
   const val = raw.trim();
   if (!val) throw new Error(`${name} is empty`);
@@ -22,54 +20,41 @@ function required(name: string): string {
 }
 
 /**
- * Create MongoDB client with Render-compatible TLS settings
+ * Create MongoDB client optimized for cluster0.njrpul0.mongodb.net
  */
+// Fix the MongoDB client creation - remove invalid checkServerIdentity
 function createMongoClient(uri: string): MongoClient {
-  console.log('[mongo] Creating client with enhanced TLS options for Render...');
+  console.log('[mongo] Creating client for cluster0.njrpul0.mongodb.net...');
   
   return new MongoClient(uri, {
-    serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
-    
-    // Render-optimized timeouts (increased for TLS handshake issues)
-    connectTimeoutMS: 30_000,  // Reduced from 60s for faster failure detection
-    serverSelectionTimeoutMS: 10_000, // Reduced for faster feedback
+    serverApi: { 
+      version: ServerApiVersion.v1, 
+      strict: true, 
+      deprecationErrors: true 
+    },
+    connectTimeoutMS: 30_000,
+    serverSelectionTimeoutMS: 15_000,
     socketTimeoutMS: 45_000,
-    
-    // Connection pool settings
-    maxPoolSize: 5,  // Reduced for Render's connection limits
-    minPoolSize: 1,
+    maxPoolSize: 10,
+    minPoolSize: 2,
     maxIdleTimeMS: 120_000,
-    
-    // Enhanced TLS settings for Render + Atlas compatibility
     tls: true,
     tlsAllowInvalidCertificates: false,
     tlsAllowInvalidHostnames: false,
     
-    // Additional TLS options that help with Render
-    ...(process.env.NODE_ENV === 'production' && {
-      // Production-specific TLS settings
-      tlsInsecure: false,
-      checkServerIdentity: true,
-    }),
+    // ✅ REMOVE this invalid option:
+    // checkServerIdentity: true, // This is invalid - remove it
     
-    // Retry settings
+    directConnection: false,
+    readPreference: 'primary',
     retryWrites: true,
     retryReads: true,
-    
-    // Additional options for better Render compatibility
-    directConnection: false,  // Use replica set connection
-    readPreference: 'primary',
-    
-    // Heartbeat settings for better connection health
-    heartbeatFrequencyMS: 10000,
-    
-    // Buffer settings
-    bufferMaxEntries: 0, // Disable mongoose buffering equivalent
+    heartbeatFrequencyMS: 10_000,
   });
 }
 
 /**
- * Test if URI is using SRV format and potentially problematic
+ * Test if URI is using SRV format and analyze for potential issues
  */
 function analyzeConnectionString(uri: string): void {
   console.log('[mongo] Analyzing connection string...');
@@ -91,32 +76,33 @@ function analyzeConnectionString(uri: string): void {
 }
 
 /**
- * Get or create MongoDB client with proper connection reuse
+ * Get or create MongoDB client with connection reuse
  */
 async function getMongoClient(): Promise<MongoClient> {
-  // Return existing client if it's healthy
+  // Return existing healthy client
   if (globalForMongo.mongoClient) {
     try {
       await globalForMongo.mongoClient.db('admin').command({ ping: 1 });
       return globalForMongo.mongoClient;
     } catch (error) {
-      console.warn('[mongo] existing client unhealthy, reconnecting...', error);
+      console.warn('[mongo] existing client unhealthy, reconnecting...');
       await globalForMongo.mongoClient.close().catch(() => {});
       globalForMongo.mongoClient = undefined;
       globalForMongo.mongoDb = undefined;
     }
   }
 
-  // If already connecting, wait for that connection
+  // Wait for existing connection attempt
   if (globalForMongo.connecting) {
-    console.log('[mongo] waiting for existing connection...');
     return await globalForMongo.connecting;
   }
 
   // Start new connection
-  console.log('[mongo] creating new MongoDB connection...');
+  console.log('[mongo] connecting to cluster0.njrpul0.mongodb.net...');
   globalForMongo.connecting = (async () => {
     const uri = required('MONGODB_URI');
+    
+    // Validate URI format
     if (!/^mongodb(\+srv)?:\/\//.test(uri)) {
       throw new Error('MONGODB_URI must start with "mongodb://" or "mongodb+srv://"');
     }
@@ -133,17 +119,16 @@ async function getMongoClient(): Promise<MongoClient> {
       console.log('[mongo] Testing connection with ping...');
       await client.db('admin').command({ ping: 1 });
       
-      console.log('[mongo] ✅ connected new client successfully');
+      console.log('[mongo] ✅ connected to cluster0.njrpul0.mongodb.net');
       return client;
     } catch (error) {
       console.error('[mongo] ❌ connection failed:', error);
       
-      // Enhanced error reporting for TLS issues
+      // Enhanced error reporting for common issues
       if (error instanceof Error) {
         if (error.message.includes('ssl') || error.message.includes('tls')) {
-          console.error('[mongo] 🔒 TLS/SSL error detected. This is often due to:');
-          console.error('[mongo]   - Render infrastructure TLS compatibility issues');
-          console.error('[mongo]   - MongoDB Atlas certificate validation problems');
+          console.error('[mongo] 🔒 TLS/SSL error detected');
+          console.error('[mongo]   - Atlas certificate validation problems');
           console.error('[mongo]   - Connection string TLS parameter conflicts');
         }
         
@@ -170,47 +155,42 @@ async function getMongoClient(): Promise<MongoClient> {
 }
 
 /**
- * Return a connected Db instance.
- * Reuses the same client across hot reloads with improved error handling.
+ * Get connected database instance
  */
 export async function getDb(): Promise<Db> {
   try {
-    // Fixed database name handling - use Author-site consistently
-    const dbName = env.MONGODB_DB?.trim() || 'Author-site';
-    console.log('[mongo] Using database name:', dbName);
+    // ✅ Fixed: Use process.env directly instead of env variable
+    const dbName = process.env.MONGODB_DB?.trim() || 'Author-site';
+    console.log('[mongo] Using database:', dbName);
     
-    // Return cached DB if available and healthy
+    // Return cached healthy database
     if (globalForMongo.mongoDb && globalForMongo.mongoClient) {
       try {
         await globalForMongo.mongoClient.db('admin').command({ ping: 1 });
         return globalForMongo.mongoDb;
-      } catch (error) {
+      } catch {
         console.warn('[mongo] cached DB unhealthy, reconnecting...');
         globalForMongo.mongoDb = undefined;
       }
     }
 
-    // Get fresh client and database
     const client = await getMongoClient();
     globalForMongo.mongoDb = client.db(dbName);
     
-    console.log('[mongo] ✅ using db:', globalForMongo.mongoDb.databaseName);
+    console.log('[mongo] ✅ using database:', globalForMongo.mongoDb.databaseName);
     return globalForMongo.mongoDb;
     
   } catch (err) {
     console.error('[mongo] failed to connect:', err);
-
-    // Enhanced fallback DB with all required methods
-    console.warn('[mongo] returning fallback database interface');
+    
+    // Return fallback for development
+    console.warn('[mongo] returning fallback database');
     const emptyResult = { toArray: async () => [] };
     
     return {
       collection: () => ({
         find: () => ({
-          sort: () => ({
-            limit: () => emptyResult,
-            toArray: async () => []
-          }),
+          sort: () => ({ limit: () => emptyResult, toArray: async () => [] }),
           limit: () => emptyResult,
           toArray: async () => []
         }),
@@ -219,46 +199,46 @@ export async function getDb(): Promise<Db> {
         updateOne: async () => ({ modifiedCount: 0 }),
         deleteOne: async () => ({ deletedCount: 0 }),
         countDocuments: async () => 0,
+        estimatedDocumentCount: async () => 0
       }),
       command: async () => ({ ok: 1 }),
-      listCollections: () => ({ toArray: async () => [] }), // Added this method
-      databaseName: 'fallback',
+      listCollections: () => ({ toArray: async () => [] }),
+      databaseName: 'fallback-db'
     } as unknown as Db;
   }
 }
 
 /**
- * Enhanced health check with detailed diagnostics
+ * Test database connection to cluster0.njrpul0.mongodb.net
  */
 export async function testConnection(): Promise<boolean> {
   try {
-    console.log('[mongo] Running health check...');
+    console.log('[mongo] Testing connection to cluster0.njrpul0.mongodb.net...');
     const db = await getDb();
     
-    // Test basic connectivity
     await db.command({ ping: 1 });
     
-    // Test database operations
     const collections = await db.listCollections().toArray();
-    console.log('[mongo] ✅ health check passed - found', collections.length, 'collections');
+    console.log('[mongo] ✅ Connection healthy - found collections:', 
+      collections.map(c => c.name));
     
     return true;
   } catch (err) {
-    console.error('[mongo] ❌ ping failed:', err);
+    console.error('[mongo] ❌ Connection test failed:', err);
     return false;
   }
 }
 
 /**
- * Gracefully close MongoDB connection
+ * Close database connection
  */
 export async function closeConnection(): Promise<void> {
   if (globalForMongo.mongoClient) {
     try {
       await globalForMongo.mongoClient.close();
-      console.log('[mongo] connection closed gracefully');
+      console.log('[mongo] Connection closed');
     } catch (error) {
-      console.error('[mongo] error closing connection:', error);
+      console.error('[mongo] Error closing connection:', error);
     } finally {
       globalForMongo.mongoClient = undefined;
       globalForMongo.mongoDb = undefined;
@@ -266,8 +246,8 @@ export async function closeConnection(): Promise<void> {
   }
 }
 
-// Clean up on process exit
-if (typeof process !== 'undefined') {
+// Cleanup on exit (only in Node.js environment)
+if (typeof global !== 'undefined' && typeof process !== 'undefined') {
   process.on('SIGINT', closeConnection);
   process.on('SIGTERM', closeConnection);
 }

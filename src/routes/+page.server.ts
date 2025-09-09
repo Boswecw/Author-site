@@ -1,14 +1,14 @@
-// src/routes/+page.server.ts - UPDATED for books/ subfolder
+// src/routes/+page.server.ts - FIXED: Normalize placeholder books too
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { placeholderBooks } from '$lib/data/books';
-import { env as publicEnv } from '$env/dynamic/public';
+import { buildBookCoverUrl } from '$lib/utils/firebase'; // ✅ Use central utility
 
 type BookDoc = {
   id: string;
   title: string;
   description?: string | null;
-  cover?: string | null; // filename or path stored in Mongo (e.g., "Symbiogenesis.png" or "books/Symbiogenesis.png")
+  cover?: string | null; // filename or path stored in Mongo
   genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
   status?: 'draft' | 'upcoming' | 'published' | 'coming-soon' | string | null;
   publishDate?: string | Date | null;
@@ -19,46 +19,13 @@ type BookDoc = {
   featured?: boolean;
 };
 
-// ───────────────────────────── Firebase URL helpers ─────────────────────────────
-
-/**
- * Normalize a Firebase Storage bucket value so that it is the canonical bucket ID:
- * <project-id>.appspot.com
- * (Dev data may contain *.firebasestorage.app; convert to appspot.com for the REST endpoint.)
- */
-function normalizeBucketId(input?: string | null): string {
-  const fallback = 'endless-fire-467204-n2.appspot.com';
-  if (!input) return fallback;
-  // strip protocol/host if someone pasted a URL by mistake
-  const raw = input.replace(/^https?:\/\/[^/]+\/?/i, '').trim();
-  if (raw.endsWith('.firebasestorage.app')) {
-    return raw.replace(/\.firebasestorage\.app$/, '.appspot.com');
-  }
-  return raw;
-}
-
-const BUCKET_ID = normalizeBucketId(publicEnv.PUBLIC_FIREBASE_STORAGE_BUCKET);
-const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_ID}/o`;
-
-/** Builds a public download URL from an object path in the bucket. */
-const buildImageUrl = (path: string) => `${BASE_URL}/${encodeURIComponent(path)}?alt=media`;
-
-// Folder for covers in your bucket
-const COVERS_FOLDER = 'books';
-
-/** If a bare filename is provided, prefix with books/; if it's already a path, keep it. */
-const ensureCoverPath = (nameOrPath: string) =>
-  nameOrPath.includes('/') ? nameOrPath : `${COVERS_FOLDER}/${nameOrPath}`;
-
-/** Normalize a BookDoc -> returned shape for the UI, with proper cover URL. */
+/** ✅ SIMPLIFIED: Use central utility - automatically handles books/ folder */
 function normalizeBook(book: BookDoc) {
-  const coverPath = book.cover ? ensureCoverPath(book.cover) : null;
-
   return {
     id: book.id,
     title: book.title,
     description: book.description ?? '',
-    cover: coverPath ? buildImageUrl(coverPath) : null, // filename -> books/<file> -> URL
+    cover: book.cover ? buildBookCoverUrl(book.cover) : null, // ✅ Always includes books/ folder
     genre: book.genre ?? 'faith',
     status: book.status ?? 'draft',
     publishDate: book.publishDate
@@ -111,6 +78,8 @@ export const load: PageServerLoad = async () => {
   };
 
   try {
+    console.log('[+page.server] Loading homepage data...');
+
     // 1) Featured (if explicitly set)
     const featuredDoc =
       (await coll.findOne({ featured: true }, { projection })) ?? null;
@@ -135,20 +104,41 @@ export const load: PageServerLoad = async () => {
     ).slice(0, 12);
 
     if (!featured && upcomingRaw.length === 0) {
-      // Fallback to placeholders (leave as-is; they may already include URLs)
+      // ✅ FIXED: Normalize placeholder books too so they get proper Firebase URLs
       console.warn('[+page.server] No books found, using placeholderBooks');
       const [phFeatured, ...phRest] = placeholderBooks;
-      return { featured: phFeatured, upcoming: phRest };
+      
+      return { 
+        featured: phFeatured ? normalizeBook(phFeatured as BookDoc) : null, // ✅ Normalize placeholders
+        upcoming: phRest.map(book => normalizeBook(book as BookDoc)) // ✅ Normalize placeholders
+      };
     }
 
-    // 4) Normalize + build image URLs (with books/ prefix)
+    // 4) ✅ SIMPLIFIED: Normalize using central utility (includes books/ prefix automatically)
     const featuredOut = featured ? normalizeBook(featured) : null;
     const upcoming = upcomingRaw.map(normalizeBook);
+
+    // Debug logging
+    console.log('[+page.server] Featured:', featuredOut ? featuredOut.title : 'None');
+    console.log('[+page.server] Upcoming:', upcoming.length);
+    
+    // ✅ FIXED: Add more detailed debug logging
+    if (featuredOut && featuredOut.cover) {
+      console.log('[+page.server] Featured cover URL:', featuredOut.cover.substring(0, 100) + '...');
+    }
+    if (upcoming.length > 0 && upcoming[0].cover) {
+      console.log('[+page.server] First upcoming cover URL:', upcoming[0].cover.substring(0, 100) + '...');
+    }
 
     return { featured: featuredOut, upcoming };
   } catch (error) {
     console.error('[+page.server] Database error:', error);
+    
+    // ✅ FIXED: Normalize placeholder books in catch block too
     const [phFeatured, ...phRest] = placeholderBooks;
-    return { featured: phFeatured, upcoming: phRest };
+    return { 
+      featured: phFeatured ? normalizeBook(phFeatured as BookDoc) : null, // ✅ Normalize placeholders  
+      upcoming: phRest.map(book => normalizeBook(book as BookDoc)) // ✅ Normalize placeholders
+    };
   }
 };

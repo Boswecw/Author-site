@@ -2,12 +2,15 @@
 	"name": "charles-boswell-author-site",
 	"version": "1.0.0",
 	"type": "module",
-	"engines": { "node": "20.x" },
+	"engines": {
+		"node": ">=20.0.0",
+		"npm": ">=9.0.0"
+	},
 	"scripts": {
-	  "dev": "vite dev --port 3000",
-	  "build": "svelte-kit sync && vite build",
-	  "preview": "vite preview",
-	  "start": "node build" 
+		"dev": "vite dev --port 3000",
+		"build": "svelte-kit sync && vite build",
+		"preview": "vite preview",
+		"start": "node build"
 	},
 	"packageManager": "yarn@1.22.22",
 	"devDependencies": {

@@ -1,23 +1,39 @@
-<!-- src/routes/books/+page.svelte -->
+<!-- src/routes/books/+page.svelte - UPDATED with TypeScript fixes -->
 <script lang="ts">
   import type { PageData } from './$types';
   import { createImageFallback } from '$lib/services/authorImages';
+  import { dev } from '$app/environment'; // ✅ Use SvelteKit's dev instead of import.meta.env
 
   export let data: PageData;
-  const IS_DEV = import.meta.env.DEV;
+
+  // ✅ Fix: Use SvelteKit's dev variable instead of import.meta.env.DEV
+  const IS_DEV = dev;
 
   const norm = (g?: string | null) => (g ?? '').trim().toLowerCase().replace(/\s+/g, '-');
-  const coverSrc = (book: any) => book.cover ?? createImageFallback(book.title, 'book');
+  
+  // ✅ Fix: Add proper typing for book parameter
+  interface Book {
+    id: string;
+    title: string;
+    description: string;
+    cover: string | null;
+    genre: string;
+    status: string;
+  }
+  
+  const coverSrc = (book: Book) => book.cover ?? createImageFallback(book.title, 'book');
 
   $: books = Array.isArray(data?.books) ? data.books : [];
-  $: faithBooks = books.filter((b) => norm(b.genre) === 'faith');
-  $: epicBooks  = books.filter((b) => norm(b.genre) === 'epic');
-  $: sciFiBooks = books.filter((b) => ['sci-fi','scifi'].includes(norm(b.genre)));
+  // ✅ Fix: Add explicit typing for book parameter to avoid implicit 'any'
+  $: faithBooks = books.filter((b: Book) => norm(b.genre) === 'faith');
+  $: epicBooks = books.filter((b: Book) => norm(b.genre) === 'epic');
+  $: sciFiBooks = books.filter((b: Book) => ['sci-fi','scifi'].includes(norm(b.genre)));
 </script>
 
-{#if import.meta.env.DEV}
+<!-- ✅ Fix: Use SvelteKit's dev variable -->
+{#if dev}
   <pre class="hidden">
-    {JSON.stringify(data?.books?.map(b => ({ id:b.id, genre:b.genre })), null, 2)}
+    {JSON.stringify(data?.books?.map((b: Book) => ({ id: b.id, genre: b.genre })), null, 2)}
   </pre>
 {/if}
 
@@ -35,35 +51,47 @@
     </p>
   </div>
 
-  <!-- Faith -->
+  <!-- Faith Fiction Section -->
   {#if faithBooks.length}
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.faith}
-          <img src={data.genreIcons.faith} alt="Faith icon" class="h-36 w-36 mr-2" />
+          <img src={data.genreIcons.faith} alt="Faith icon" class="h-8 w-8 mr-3" />
         {:else}
-          <span class="mr-2">✝️</span>
+          <span class="mr-3">✝️</span>
         {/if}
         Faith Fiction
       </h2>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each faithBooks as book}
-          <a href={`/books/${book.id}`} class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow block">
-            <!-- ✅ FIXED: Use proper book aspect ratio and object-contain -->
-            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center">
+          <a 
+            href={`/books/${book.id}`} 
+            class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 block group"
+          >
+            <!-- Book Cover with proper aspect ratio -->
+            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center overflow-hidden">
               <img 
                 src={coverSrc(book)} 
                 alt={`${book.title} - Book cover`} 
-                class="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" 
+                class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
                 loading="lazy" 
               />
             </div>
+            <!-- Book Details -->
             <div class="p-6">
-              <h3 class="text-xl font-bold text-gray-900 mb-2">{book.title}</h3>
-              <p class="text-gray-600 mb-4">{book.description}</p>
+              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                {book.title}
+              </h3>
+              {#if book.description}
+                <p class="text-gray-600 mb-4 line-clamp-3">{book.description}</p>
+              {/if}
               <div class="flex items-center justify-between">
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{book.genre}</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">{book.status || 'Upcoming'}</span>
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium capitalize">
+                  {book.genre}
+                </span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium capitalize">
+                  {book.status || 'Upcoming'}
+                </span>
               </div>
             </div>
           </a>
@@ -72,35 +100,47 @@
     </section>
   {/if}
 
-  <!-- Epic -->
+  <!-- Epic Fantasy Section -->
   {#if epicBooks.length}
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.epic}
-          <img src={data.genreIcons.epic} alt="Epic icon" class="h-36 w-36 mr-2" />
+          <img src={data.genreIcons.epic} alt="Epic icon" class="h-8 w-8 mr-3" />
         {:else}
-          <span class="mr-2">🗡️</span>
+          <span class="mr-3">🗡️</span>
         {/if}
         Epic Fantasy
       </h2>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each epicBooks as book}
-          <a href={`/books/${book.id}`} class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow block">
-            <!-- ✅ FIXED: Use proper book aspect ratio and object-contain -->
-            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center">
+          <a 
+            href={`/books/${book.id}`} 
+            class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 block group"
+          >
+            <!-- Book Cover with proper aspect ratio -->
+            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center overflow-hidden">
               <img 
                 src={coverSrc(book)} 
                 alt={`${book.title} - Book cover`} 
-                class="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" 
+                class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
                 loading="lazy" 
               />
             </div>
+            <!-- Book Details -->
             <div class="p-6">
-              <h3 class="text-xl font-bold text-gray-900 mb-2">{book.title}</h3>
-              <p class="text-gray-600 mb-4">{book.description}</p>
+              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
+                {book.title}
+              </h3>
+              {#if book.description}
+                <p class="text-gray-600 mb-4 line-clamp-3">{book.description}</p>
+              {/if}
               <div class="flex items-center justify-between">
-                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">{book.genre}</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">{book.status || 'Upcoming'}</span>
+                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium capitalize">
+                  {book.genre}
+                </span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium capitalize">
+                  {book.status || 'Upcoming'}
+                </span>
               </div>
             </div>
           </a>
@@ -109,35 +149,47 @@
     </section>
   {/if}
 
-  <!-- Sci-Fi -->
+  <!-- Sci-Fi Section -->
   {#if sciFiBooks.length}
     <section>
       <h2 class="flex items-center text-2xl font-bold text-gray-900 mb-6">
         {#if data?.genreIcons?.['sci-fi']}
-          <img src={data.genreIcons['sci-fi']} alt="Sci-Fi icon" class="h-36 w-36 mr-2" />
+          <img src={data.genreIcons['sci-fi']} alt="Sci-Fi icon" class="h-8 w-8 mr-3" />
         {:else}
-          <span class="mr-2">🚀</span>
+          <span class="mr-3">🚀</span>
         {/if}
         Sci-Fi
       </h2>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {#each sciFiBooks as book}
-          <a href={`/books/${book.id}`} class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow block">
-            <!-- ✅ FIXED: Use proper book aspect ratio and object-contain -->
-            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center">
+          <a 
+            href={`/books/${book.id}`} 
+            class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 block group"
+          >
+            <!-- Book Cover with proper aspect ratio -->
+            <div class="aspect-[2/3] bg-gray-50 flex items-center justify-center overflow-hidden">
               <img 
                 src={coverSrc(book)} 
                 alt={`${book.title} - Book cover`} 
-                class="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300" 
+                class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
                 loading="lazy" 
               />
             </div>
+            <!-- Book Details -->
             <div class="p-6">
-              <h3 class="text-xl font-bold text-gray-900 mb-2">{book.title}</h3>
-              <p class="text-gray-600 mb-4">{book.description}</p>
+              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
+                {book.title}
+              </h3>
+              {#if book.description}
+                <p class="text-gray-600 mb-4 line-clamp-3">{book.description}</p>
+              {/if}
               <div class="flex items-center justify-between">
-                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">{book.genre}</span>
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">{book.status || 'Upcoming'}</span>
+                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium capitalize">
+                  {book.genre}
+                </span>
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium capitalize">
+                  {book.status || 'Upcoming'}
+                </span>
               </div>
             </div>
           </a>
@@ -146,10 +198,32 @@
     </section>
   {/if}
 
+  <!-- Empty State -->
   {#if !faithBooks.length && !epicBooks.length && !sciFiBooks.length}
     <div class="text-center py-12">
-      <p class="text-xl text-gray-600">Books coming soon! Check back for updates.</p>
-      <a href="/contact" class="mt-4 inline-block text-blue-600 hover:underline">Contact me for updates →</a>
+      <div class="max-w-md mx-auto">
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">Books Coming Soon!</h3>
+        <p class="text-lg text-gray-600 mb-6">
+          I'm working on bringing you compelling stories of faith, adventure, and imagination.
+        </p>
+        <a 
+          href="/contact" 
+          class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+        >
+          Get Updates →
+        </a>
+      </div>
     </div>
   {/if}
 </div>
+
+<style>
+  /* Custom line-clamp utility for description truncation */
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 3;
+  }
+</style>

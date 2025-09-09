@@ -1,22 +1,21 @@
 // src/app.d.ts
-
-/// <reference types="@sveltejs/kit" />
+import type { User } from 'firebase/auth';
 
 declare global {
-	namespace App {
-	  // interface Error {}
-	  // interface Locals {}
-	  // interface Platform {}
-  
-	  interface PageData {
-		featured?: import('$lib/types').Book;
-		upcoming?: import('$lib/types').Book[];
-		books?: import('$lib/types').Book[];
-		posts?: import('$lib/types').Post[];   // ✅ use Post (singular)
-		drafts?: import('$lib/types').Book[];  // optional draft list
-	  }
-	}
+  namespace App {
+    // interface Error {}
+    // interface Locals {}
+    // interface PageData {}
+    // interface PageState {}
+    // interface Platform {}
   }
   
-  export {};
+  // Global type extensions
+  var process: NodeJS.Process;
   
+  // MongoDB connection globals
+  var _mongoClientPromise: Promise<import('mongodb').MongoClient> | undefined;
+  var _mongoClient: import('mongodb').MongoClient | undefined;
+}
+
+export {};

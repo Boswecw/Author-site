@@ -1,30 +1,23 @@
-<!-- src/routes/blog/[slug]/+page.svelte -->
 <script lang="ts">
   import type { PageData } from './$types';
-  import { resolveCover } from '$lib/services/imageService';
   import { createImageFallback } from '$lib/utils/image';
 
   export let data: PageData;
   const { post } = data;
 
-  // resolved hero URL for this single post
-  let heroUrl: string | null = null;
-
-  // Resolve when post changes
-  $: if (post?.heroImage) {
-    (async () => {
-      const url = await resolveCover(post.heroImage as string);
-      heroUrl = url || createImageFallback(post.title ?? 'POST', 'book');
-    })();
-  } else {
-    heroUrl = createImageFallback(post?.title ?? 'POST', 'book');
+  // ✅ SIMPLIFIED: Server already built complete URL, just use it with fallback
+  function getImageUrl(heroImage: string | null | undefined, title: string): string {
+    if (heroImage && typeof heroImage === 'string' && heroImage.trim()) {
+      return heroImage.trim();
+    }
+    return createImageFallback(title.substring(0, 10), 'book');
   }
 
   function handleImageError(event: Event) {
     const img = event.currentTarget as HTMLImageElement;
     img.style.opacity = '0.6';
-    img.src = createImageFallback(post?.title ?? 'POST', 'book');
-    console.warn('[Blog/slug] Failed to load image:', img.src);
+    img.src = createImageFallback(post?.title?.substring(0, 10) ?? 'POST', 'book');
+    console.warn('[Blog/slug] Failed to load image:', img.dataset.originalSrc || 'unknown');
   }
 </script>
 
@@ -46,14 +39,15 @@
     {/if}
 
     {#if post.heroImage}
-      <!-- ✅ match list page: 16:9 box + object-contain -->
+      <!-- ✅ SIMPLIFIED: Use server-built URL directly -->
       <div class="aspect-[16/9] bg-gray-50 flex items-center justify-center overflow-hidden rounded-xl mb-8">
         <img
-          src={heroUrl}
+          src={getImageUrl(post.heroImage, post.title)}
           alt={post.title}
           class="max-w-full max-h-full object-contain transition-opacity duration-300"
           loading="lazy"
           decoding="async"
+          data-original-src={post.heroImage}
           on:error={handleImageError}
         />
       </div>

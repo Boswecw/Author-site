@@ -1,32 +1,24 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { resolveCover } from '$lib/services/imageService';
   import { createImageFallback } from '$lib/utils/image';
 
   // ✅ SvelteKit passes this in
   export let data: PageData;
 
-  // Map each post.slug → resolved image URL (or fallback)
-  let heroUrls: Record<string, string> = {};
-
-  // Resolve all post images whenever the list changes
-  $: if (Array.isArray(data?.posts)) {
-    (async () => {
-      const next: Record<string, string> = {};
-      for (const post of data.posts) {
-        const url = post.heroImage ? await resolveCover(post.heroImage) : null;
-        next[post.slug] = url || createImageFallback('POST', 'book');
-      }
-      heroUrls = next;
-    })();
+  // ✅ SIMPLIFIED: Server already built complete URLs, just use them with fallback
+  function getImageUrl(heroImage: string | null | undefined, title: string): string {
+    if (heroImage && typeof heroImage === 'string' && heroImage.trim()) {
+      return heroImage.trim();
+    }
+    return createImageFallback(title.substring(0, 10), 'book');
   }
 
-  // Error handler: dim and swap to fallback to avoid TS-in-template noise
+  // Error handler: dim and swap to fallback
   function handleImageError(event: Event, title = 'POST') {
     const img = event.currentTarget as HTMLImageElement;
     img.style.opacity = '0.6';
-    img.src = createImageFallback(title, 'book');
-    console.warn('[Blog] Failed to load image:', img.src);
+    img.src = createImageFallback(title.substring(0, 10), 'book');
+    console.warn('[Blog] Failed to load image:', img.dataset.originalSrc || 'unknown');
   }
 </script>
 
@@ -54,14 +46,15 @@
           <article class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
             {#if post.heroImage}
               <a href="/blog/{post.slug}" class="block">
-                <!-- ✅ FIXED: Use proper aspect ratio and object-contain -->
+                <!-- ✅ SIMPLIFIED: Use server-built URL directly -->
                 <div class="aspect-[16/9] bg-gray-50 flex items-center justify-center overflow-hidden">
                   <img
-                    src={heroUrls[post.slug]}
+                    src={getImageUrl(post.heroImage, post.title)}
                     alt={post.title}
                     class="max-w-full max-h-full object-contain transition-opacity duration-300"
                     loading="lazy"
                     decoding="async"
+                    data-original-src={post.heroImage}
                     on:error={(e) => handleImageError(e, post.title)}
                   />
                 </div>
@@ -71,10 +64,10 @@
             <div class="p-6 lg:p-8">
               <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-3">
                 {#if post.publishDate}
-                  <time datetime={post.publishDate}>
-                    {new Date(post.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </time>
-                {/if}
+                <time datetime={typeof post.publishDate === 'string' ? post.publishDate : new Date(post.publishDate).toISOString()}>
+                  {new Date(post.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </time>
+              {/if}
 
                 {#if post.tags?.length}
                   <span>•</span>

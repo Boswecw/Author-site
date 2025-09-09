@@ -1,44 +1,56 @@
-// src/lib/types/index.ts - CLEANED UP AND CONSISTENT
+// src/lib/types/index.ts - COMPLETE FIX
 import type { ObjectId } from 'mongodb';
 
-/**
- * Type definitions for consistent use across interfaces
- */
-export type BookStatus = 'published' | 'writing' | 'coming-soon' | 'draft' | 'featured';
+export type BookStatus = 'published' | 'writing' | 'coming-soon' | 'draft' | 'featured' | 'upcoming';
 export type PostStatus = 'published' | 'draft';
 export type BookGenre = 'faith' | 'epic' | 'sci-fi';
 
-/**
- * Buy links structure for books
- */
 export interface BuyLinks {
   amazon?: string | null;
   barnes?: string | null;
   other?: string | null;
 }
 
-/**
- * MongoDB document type for books collection
- */
+// ✅ FIXED: Add missing featured property to BookDoc
 export interface BookDoc {
-  _id?: ObjectId;
   id: string;
   title: string;
   description?: string | null;
   cover?: string | null;
-  genre?: BookGenre | null;
-  status?: BookStatus | null;
+  genre?: 'faith' | 'epic' | 'sci-fi' | string | null;
+  status?: 'draft' | 'upcoming' | 'published' | 'coming-soon' | string | null;
   publishDate?: string | Date | null;
   isbn?: string | null;
   format?: string | null;
   pages?: number | null;
-  buyLinks?: BuyLinks | null;
-  featured?: boolean;
+  buyLinks?: Record<string, string | null>;
+  featured?: boolean;  // ✅ ADD THIS to fix the TypeScript errors
 }
 
-/**
- * Client-side book type (clean, no MongoDB-specific fields)
- */
+// ✅ ADD MISSING EXPORT - fixes NewsletterSignup.svelte error
+export interface NewsletterSignupData {
+  email: string;
+  firstName?: string;
+  interests?: string[];
+}
+
+// ✅ ADD MISSING EXPORT - fixes RSS error
+export interface PostDoc {
+  _id?: ObjectId;
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  contentMarkdown?: string | null;
+  contentHtml?: string | null;
+  heroImage?: string | null;
+  publishDate?: Date | string | null;
+  publishedAt?: Date | string | null;
+  tags?: string[] | null;
+  genre?: string | null;
+  status: PostStatus;
+}
+
+// Client-side types
 export interface Book {
   id: string;
   title: string;
@@ -54,27 +66,6 @@ export interface Book {
   featured?: boolean;
 }
 
-/**
- * Blog post MongoDB document
- */
-export interface PostDoc {
-  _id?: ObjectId;
-  slug: string;
-  title: string;
-  excerpt?: string | null;
-  contentMarkdown?: string | null;
-  contentHtml?: string | null;
-  heroImage?: string | null;
-  publishDate?: Date | string | null;
-  publishedAt?: Date | string | null;
-  tags?: string[] | null;
-  status: PostStatus;
-  genre?: string | null;
-}
-
-/**
- * Client-side post type (clean, no MongoDB-specific fields)
- */
 export interface Post {
   slug: string;
   title: string;
@@ -86,15 +77,6 @@ export interface Post {
   genre?: string | null;
 }
 
-/**
- * Form data types
- */
-export interface NewsletterSignupData {
-  email: string;
-  firstName?: string;
-  interests?: string[];
-}
-
 export interface ContactFormData {
   name: string;
   email: string;
@@ -102,19 +84,8 @@ export interface ContactFormData {
   subject?: string;
 }
 
-/**
- * Image-related types
- */
 export type ImageType = 'book' | 'avatar' | 'logo';
 
-export interface ImageConfig {
-  width: number;
-  height: number;
-}
-
-/**
- * API response types
- */
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -122,9 +93,6 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-/**
- * Page data types for SvelteKit
- */
 export interface PageData {
   featured?: Book;
   upcoming?: Book[];
@@ -132,11 +100,3 @@ export interface PageData {
   posts?: Post[];
   drafts?: Book[];
 }
-
-/**
- * Utility types for database operations
- */
-export type CreateBookData = Omit<BookDoc, '_id' | 'featured'>;
-export type UpdateBookData = Partial<CreateBookData>;
-export type CreatePostData = Omit<PostDoc, '_id'>;
-export type UpdatePostData = Partial<CreatePostData>;

@@ -1,16 +1,30 @@
-// src/routes/blog/+page.server.ts
+// src/routes/blog/+page.server.ts - UPDATED to use central Firebase utilities
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { mdToHtml } from '$lib/server/markdown';
+import { buildImageUrl } from '$lib/utils/firebase'; // ✅ Use central utility for post images
 
-export const prerender = false; // Moved: should be after imports
+export const prerender = false;
+
+/** ✅ SIMPLIFIED: Build post image URL using central utility */
+function buildPostImageUrl(heroImage: string | null | undefined): string | null {
+  if (!heroImage) return null;
+  
+  // If it's already a complete URL, return as-is
+  if (heroImage.startsWith('http')) {
+    return heroImage;
+  }
+  
+  // ✅ Use central utility with posts/ folder for blog post images
+  return buildImageUrl(heroImage, 'posts');
+}
 
 interface PostDoc {
   slug: string;
   title: string;
   excerpt?: string | null;
   contentMarkdown?: string | null;
-  heroImage?: string | null;
+  heroImage?: string | null; // Can be filename OR full URL
   publishDate?: Date | string | null;
   publishedAt?: Date | string | null;
   tags?: string[] | null;
@@ -41,12 +55,12 @@ export const load: PageServerLoad = async ({ url }) => {
     const docs = await col
       .find(match, {
         projection: {
-          _id: 0,              // Keep _id out for serializability
+          _id: 0,
           slug: 1,
           title: 1,
           excerpt: 1,
           contentMarkdown: 1,
-          heroImage: 1,        // Pass through - already full URLs with tokens
+          heroImage: 1, // Can be filename or full URL
           publishDate: 1,
           publishedAt: 1,
           tags: 1,
@@ -62,17 +76,22 @@ export const load: PageServerLoad = async ({ url }) => {
 
     const posts = await Promise.all(
       docs.map(async (p) => {
+        // ✅ SIMPLIFIED: Use central utility for post images (posts/ folder)
+        const heroImageUrl = buildPostImageUrl(p.heroImage);
+        
         // Debug logging for heroImage processing
         if (p.heroImage) {
-          console.log(`[blog] Post ${p.slug} heroImage:`, p.heroImage.substring(0, 80) + '...');
+          console.log(`[blog] Post ${p.slug} heroImage processing:`, {
+            original: p.heroImage.substring(0, 60) + '...',
+            processed: heroImageUrl?.substring(0, 80) + '...'
+          });
         }
 
         return {
           slug: p.slug,
           title: p.title,
           excerpt: p.excerpt ?? null,
-          // Pass through heroImage as-is - your MongoDB already has full URLs with tokens
-          heroImage: p.heroImage ?? null,
+          heroImage: heroImageUrl, // ✅ Uses posts/ folder via central utility
           publishDate: p.publishDate ?? p.publishedAt ?? null,
           tags: Array.isArray(p.tags) ? p.tags : [],
           genre: p.genre ?? null,

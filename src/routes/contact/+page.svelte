@@ -1,108 +1,98 @@
+<!-- src/routes/contact/+page.svelte - FIXED: Proper state variable declarations -->
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { onMount } from 'svelte';
+ 
+  export let form: ActionData;
 
-  export let form:
-    | {
-        success?: boolean;
-        message?: string;
-        errors?: Record<string, string>;
-        values?: Record<string, string>;
-      }
-    | undefined;
+  // ✅ FIXED: Declare form state variables properly for Svelte 5
+  let name = '';
+  let email = '';
+  let subject = '';
+  let message = '';
 
-  // Bound inputs (preserve on failed submit)
-  let name = form?.values?.name ?? '';
-  let email = form?.values?.email ?? '';
-  let subject = form?.values?.subject ?? '';
-  let message = form?.values?.message ?? '';
-
-  // Toast
-  let showToast = false;
-  let toastTimer: ReturnType<typeof setTimeout> | null = null;
-  function openToast() {
-    showToast = true;
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (showToast = false), 4000);
+  // Email validation
+  let emailHint = '';
+  $: if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    emailHint = emailRegex.test(email) ? '' : 'Please enter a valid email address';
+  } else {
+    emailHint = '';
   }
 
-  // Simple client email hint
-  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  $: emailHint = email && !emailRe.test(email) ? 'Enter a valid email address.' : '';
+  // Success message handling
+  let showToast = false;
+  let submitMessage = '';
 
-  // If this page is rendered with a success already present (non-JS or full reload)
-  onMount(() => {
-    if (form?.success) openToast();
-  });
-
-  // ✅ Correct enhance signature
   const enhanceSubmit = (node: HTMLFormElement) =>
-    enhance(node, ({ form: _f, submit }) => {
-      // Use default submit behavior but intercept the result afterwards
+    enhance(node, ({ formData, cancel }) => {
+      // Show loading state if needed
       return async ({ result, update }) => {
         if (result.type === 'success') {
-          openToast();
-          update({ reset: true }); // clears native form
-          // clear bound values too
+          showToast = true;
+          submitMessage = 'Message sent successfully!';
+          
+          // Clear form
           name = '';
           email = '';
           subject = '';
           message = '';
+          
+          // Hide toast after 5 seconds
+          setTimeout(() => {
+            showToast = false;
+          }, 5000);
+        } else if (result.type === 'failure') {
+          submitMessage = result.data?.error || 'Failed to send message';
         }
-        // On failure, SvelteKit injects new `form` data; bound values remain as-typed
+        await update();
       };
     });
 </script>
 
 <svelte:head>
   <title>Contact — Charles W. Boswell</title>
-  <meta name="description" content="Get in touch with author Charles W. Boswell." />
+  <meta name="description" content="Get in touch with Charles Boswell and subscribe to his newsletter for updates on new releases and adventures." />
 </svelte:head>
 
+<!-- Toast notification -->
 {#if showToast}
   <div
-    class="fixed inset-x-0 top-4 z-[200] mx-auto w-fit rounded-lg px-4 py-3 text-white shadow-lg"
-    style="background: var(--accent-600)"
-    role="status"
-    aria-live="polite"
+    class="fixed top-4 right-4 z-50 max-w-md bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out"
+    role="alert"
   >
     <span class="font-semibold">Message sent.</span>
     <span class="ml-2 opacity-90">{form?.message ?? 'Thanks for reaching out!'}</span>
   </div>
 {/if}
 
-<section class="pt-28 pb-20 bg-white scroll-mt-28">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-    <header class="text-center mb-10">
-      <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-3">Contact</h1>
-      <p class="text-lg text-gray-600">
-        Questions, speaking requests, media inquiries — I read every message.
-      </p>
-    </header>
+<section class="pt-28 pb-16 bg-white">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
     {#if form?.success}
       <div class="rounded-xl border border-green-200 bg-green-50 p-6 mb-10">
-        <h2 class="text-xl font-semibold text-green-800 mb-1">Message sent</h2>
+        <h2 class="text-lg font-semibold text-green-800 mb-2">Message Sent Successfully!</h2>
         <p class="text-green-800/90">
           {form.message ?? "Thanks for reaching out. I'll get back to you soon."}
         </p>
       </div>
     {/if}
 
-    <form
-      method="POST"
-      class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 p-6 md:p-8 space-y-6"
-      use:enhanceSubmit
-    >
-      <!-- Honeypot -->
-      <div class="hidden">
-        <label for="website">Website (leave this blank)</label>
-        <input id="website" name="website" type="text" autocomplete="off" tabindex="-1" />
-      </div>
+    <header class="text-center mb-12">
+      <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Get in Touch</h1>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        Have questions about my books, want to discuss a project, or just want to say hello? 
+        I'd love to hear from you.
+      </p>
+    </header>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-8">
+      <form method="POST" use:enhanceSubmit class="space-y-6">
+        
+        <!-- Name Field -->
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">Your name</label>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+            Name *
+          </label>
           <input
             id="name"
             name="name"
@@ -118,8 +108,11 @@
           {/if}
         </div>
 
+        <!-- Email Field -->
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            Email *
+          </label>
           <input
             id="email"
             name="email"
@@ -137,61 +130,81 @@
             <p id="email-error" class="mt-1 text-sm text-red-600">{form.errors.email}</p>
           {/if}
         </div>
-      </div>
 
-      <div>
-        <label for="subject" class="block text-sm font-medium text-gray-700">Subject</label>
-        <input
-          id="subject"
-          name="subject"
-          type="text"
-          required
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
-          bind:value={subject}
-          aria-invalid={form?.errors?.subject ? 'true' : 'false'}
-          aria-describedby={form?.errors?.subject ? 'subject-error' : undefined}
-        />
-        {#if form?.errors?.subject}
-          <p id="subject-error" class="mt-1 text-sm text-red-600">{form.errors.subject}</p>
-        {/if}
-      </div>
+        <!-- Subject Field -->
+        <div>
+          <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">
+            Subject
+          </label>
+          <input
+            id="subject"
+            name="subject"
+            type="text"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+            bind:value={subject}
+            aria-invalid={form?.errors?.subject ? 'true' : 'false'}
+            aria-describedby={form?.errors?.subject ? 'subject-error' : undefined}
+          />
+          {#if form?.errors?.subject}
+            <p id="subject-error" class="mt-1 text-sm text-red-600">{form.errors.subject}</p>
+          {/if}
+        </div>
 
-      <div>
-        <label for="message" class="block text-sm font-medium text-gray-700">Message</label>
-        <textarea
-          id="message"
-          name="message"
-          rows="6"
-          required
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
-          bind:value={message}
-          aria-invalid={form?.errors?.message ? 'true' : 'false'}
-          aria-describedby={form?.errors?.message ? 'message-error' : undefined}
-        ></textarea>
-        {#if form?.errors?.message}
-          <p id="message-error" class="mt-1 text-sm text-red-600">{form.errors.message}</p>
-        {/if}
-      </div>
+        <!-- Message Field -->
+        <div>
+          <label for="message" class="block text-sm font-medium text-gray-700 mb-2">
+            Message *
+          </label>
+          <textarea
+            id="message"
+            name="message"
+            rows="5"
+            required
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+            bind:value={message}
+            aria-invalid={form?.errors?.message ? 'true' : 'false'}
+            aria-describedby={form?.errors?.message ? 'message-error' : undefined}
+          ></textarea>
+          {#if form?.errors?.message}
+            <p id="message-error" class="mt-1 text-sm text-red-600">{form.errors.message}</p>
+          {/if}
+        </div>
 
-      <div class="flex items-center justify-between gap-4">
         <button
           type="submit"
-          class="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-600"
+          class="w-full bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
         >
-          Send message
+          Send Message
         </button>
+      </form>
+    </div>
 
-        <a
-          href="mailto:charlesboswell@boswellwebdevelopment.com"
-          class="text-sm font-semibold text-gray-600 hover:text-gray-800"
-        >
-          or email me directly
-        </a>
+    <!-- Contact Info -->
+    <div class="mt-16 text-center">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Other Ways to Connect</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+        
+        <div class="bg-gray-50 rounded-xl p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Newsletter</h3>
+          <p class="text-gray-600 mb-4">
+            Stay updated on new releases, writing process insights, and exclusive content.
+          </p>
+          <a href="#newsletter" class="text-red-600 font-medium hover:text-red-700 transition-colors">
+            Subscribe →
+          </a>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Professional Inquiries</h3>
+          <p class="text-gray-600 mb-4">
+            For speaking engagements, interviews, or collaboration opportunities.
+          </p>
+          <p class="text-red-600 font-medium">
+            Use the form above
+          </p>
+        </div>
+
       </div>
-    </form>
-
-    <div class="mt-10 text-sm text-gray-500">
-      <p>By submitting, you agree your information will be stored to contact you regarding your inquiry.</p>
     </div>
   </div>
 </section>

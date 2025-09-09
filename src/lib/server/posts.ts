@@ -49,7 +49,7 @@ export async function getPublishedPosts(page = 1, pageSize = 10) {
   const db = await getDb();
   const coll = db.collection<PostDoc>(COLLECTION);
 
-  const match = { status: 'published' };
+  const match = { status: 'published' as const };
   const total = await coll.countDocuments(match);
 
   const docs = await coll

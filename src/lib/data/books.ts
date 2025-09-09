@@ -1,4 +1,4 @@
-// src/lib/data/placeholderBooks.ts
+// src/lib/data/placeholderBooks.ts - FIXED: Corrected Hurricane Eve filename
 import type { BookDoc } from '$lib/types/index';
 
 export const placeholderBooks: BookDoc[] = [
@@ -37,7 +37,7 @@ export const placeholderBooks: BookDoc[] = [
     title: 'Hurricane Eve',
     description:
       "They said nothing could be worse than Katrina. They were wrong. In the third installment of the Faith & Calamity series, Jake Allen faces a storm that shatters records—and faith itself. As levees break and communities drown, survival demands both courage and unshakable belief.",
-    cover: 'Hurrican_Eve.png',
+    cover: 'Hurricane_Eve.png', // ✅ FIXED: Added missing 'e' in Hurricane
     genre: 'faith',
     status: 'draft',
     publishDate: '2026-09-15',
