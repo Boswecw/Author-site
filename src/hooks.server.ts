@@ -1,5 +1,8 @@
 // src/hooks.server.ts
 import type { Handle } from '@sveltejs/kit';
+import validateEnv from './lib/config/env';
+
+validateEnv();
 
 export const handle: Handle = async ({ event, resolve }) => {
   try {
@@ -13,3 +16,4 @@ export const handle: Handle = async ({ event, resolve }) => {
 export function handleError({ error }) {
   console.error('[HOOK] handleError:', error);
 }
+
