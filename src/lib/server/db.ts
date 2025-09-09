@@ -18,10 +18,9 @@ function required(name: string): string {
   return val;
 }
 
-// ✅ FIXED: Remove invalid checkServerIdentity option
 function createMongoClient(uri: string): MongoClient {
   console.log('[mongo] Creating client for Atlas cluster...');
-  
+
   return new MongoClient(uri, {
     serverApi: { 
       version: ServerApiVersion.v1, 
@@ -33,8 +32,7 @@ function createMongoClient(uri: string): MongoClient {
     socketTimeoutMS: 45_000,
     tls: true,
     retryWrites: true,
-    retryReads: true,
-    // ❌ REMOVED: checkServerIdentity: true, // This was invalid
+    retryReads: true
   });
 }
 
