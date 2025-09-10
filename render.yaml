@@ -14,6 +14,12 @@ services:
       - key: NPM_CONFIG_PRODUCTION
         value: false
 
+      # 🔥 TLS TROUBLESHOOTING: Force compatible TLS behavior
+      - key: NODE_TLS_REJECT_UNAUTHORIZED
+        value: "1"  # Keep TLS verification enabled (secure)
+      - key: OPENSSL_CONF
+        value: ""   # Clear any OpenSSL config conflicts
+
       # MongoDB Atlas Configuration
       - key: MONGODB_URI
         fromSecret: mongodb_uri
