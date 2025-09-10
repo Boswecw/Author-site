@@ -171,15 +171,6 @@ async function connectRealDb(): Promise<Db> {
         retryWrites: true,
         retryReads: true,
         family: 4, // Force IPv4 for better cloud compatibility
-        
-        // 🔥 RENDER-SPECIFIC: Buffer configuration
-        bufferMaxEntries: 0, // Disable mongoose buffering
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        
-        // 🔥 RENDER-SPECIFIC: Additional stability options
-        maxStalenessSeconds: 90,
-        compressors: ['snappy', 'zlib'], // Enable compression
       };
 
       console.log('[mongo] Creating MongoClient with Render-optimized configuration...');
