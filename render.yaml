@@ -4,21 +4,52 @@ services:
     env: node
     plan: free
     buildCommand: npm ci && npm run build
-    # 🔥 CRITICAL FIX: Updated path to match svelte.config.js output
     startCommand: node build/index.js
     envVars:
+      # Application Environment
       - key: NODE_ENV
         value: production
+      - key: NODE_OPTIONS
+        value: --dns-result-order=ipv4first
+      - key: NPM_CONFIG_PRODUCTION
+        value: false
+
+      # MongoDB Atlas Configuration
       - key: MONGODB_URI
         fromSecret: mongodb_uri
-      # 🔥 CRITICAL FIX: Updated database name to match local config
       - key: MONGODB_DB
         value: Author-site
+
+      # Email Configuration
+      - key: FROM_EMAIL
+        value: Charles Boswell <charlesboswell@boswellwebdevelopment.com>
+      - key: CONTACT_EMAIL
+        value: charlesboswell@boswellwebdevelopment.com
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: charlesboswell@boswellwebdevelopment.com
+      - key: SMTP_PASS
+        fromSecret: smtp_password
+      - key: SMTP_SECURE
+        value: "false"
+
+      # Public Site Configuration
+      - key: PUBLIC_BASE_URL
+        value: https://author-site-w26m.onrender.com
+      - key: PUBLIC_SITE_URL
+        value: https://author-site-w26m.onrender.com
+      - key: PUBLIC_SITE_NAME
+        value: Charles W. Boswell — Author
+
+      # Firebase Configuration (Public)
       - key: PUBLIC_FIREBASE_API_KEY
         fromSecret: firebase_api_key
       - key: PUBLIC_FIREBASE_AUTH_DOMAIN
-        fromSecret: firebase_auth_domain
+        value: endless-fire-467204-n2.firebaseapp.com
       - key: PUBLIC_FIREBASE_PROJECT_ID
-        fromSecret: firebase_project_id
+        value: endless-fire-467204-n2
       - key: PUBLIC_FIREBASE_STORAGE_BUCKET
-        fromSecret: firebase_storage_bucket
+        value: endless-fire-467204-n2.firebasestorage.app
