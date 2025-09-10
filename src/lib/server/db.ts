@@ -1,104 +1,93 @@
-// src/lib/server/db.ts - OPTIMIZED for Render deployment
-import { MongoClient, ServerApiVersion, type Db, type Document } from 'mongodb';
+// src/lib/server/db.ts - Complete fixed MongoDB connection file
 
+import { MongoClient, Db, ServerApiVersion } from 'mongodb';
+
+// Singleton client and database promise
 let client: MongoClient | null = null;
 let dbPromise: Promise<Db> | null = null;
 
-// ---- Minimal types for our mock + usage ----
-type Cursor<T> = {
-  sort(spec?: Record<string, 1 | -1>): Cursor<T>;
-  skip(n: number): Cursor<T>;
-  limit(n: number): Cursor<T>;
-  toArray(): Promise<T[]>;
-};
-
-type MinimalCollection<T extends Document> = {
-  find(query?: any, options?: any): Cursor<T>;
-  findOne(query?: any, options?: any): Promise<T | null>;
-  countDocuments?(query?: any): Promise<number>;
-  estimatedDocumentCount?(): Promise<number>;
-};
-
-type MinimalDb = {
-  databaseName?: string;
-  collection<T extends Document = Document>(name: string): MinimalCollection<T>;
-  listCollections?: () => { toArray(): Promise<Array<{ name: string }>> };
-};
-
-// ---- Mock helpers (unchanged) ----
-function matches(doc: any, query: Record<string, any> = {}): boolean {
-  for (const [k, v] of Object.entries(query)) {
-    const dv = (doc as any)[k];
-    if (v && typeof v === 'object' && '$in' in v) {
-      const set = (v as any).$in;
-      if (!Array.isArray(set) || !set.includes(dv)) return false;
-    } else if (dv !== v) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function projectDoc<T extends Record<string, any>>(doc: T, projection?: Record<string, number>): T {
-  if (!projection) return doc;
-  const keys = Object.keys(projection).filter((k) => projection[k]);
-  if (!keys.length) return doc;
-  const out: Record<string, any> = {};
-  for (const k of keys) out[k] = (doc as any)[k];
-  return out as T;
-}
-
-function makeCursor<T>(arrIn: T[]): Cursor<T> {
-  let arr = [...arrIn];
-  return {
-    sort(spec?: Record<string, 1 | -1>) {
-      if (spec && Object.keys(spec).length) {
-        const keys = Object.keys(spec);
-        arr.sort((a: any, b: any) => {
-          for (const k of keys) {
-            const dir = spec[k] === -1 ? -1 : 1;
-            const av = (a as any)?.[k];
-            const bv = (b as any)?.[k];
-            if (av < bv) return -dir;
-            if (av > bv) return dir;
-          }
-          return 0;
-        });
-      }
-      return this;
-    },
-    skip(n) {
-      arr = arr.slice(n);
-      return this;
-    },
-    limit(n) {
-      arr = arr.slice(0, n);
-      return this;
-    },
-    async toArray() {
-      return arr;
-    }
-  };
-}
-
-function makeMockDb(): MinimalDb {
+// ---- Mock DB for development/fallback ----
+function makeMockDb() {
   const store: Record<string, any[]> = {
-    books: [
-      {
-        _id: 'mock1',
-        title: 'The Echoes of Tomorrow',
-        slug: 'echoes-of-tomorrow',
-        status: 'published',
-        featured: true
-      }
-    ],
-    posts: []
+    books: [],
+    posts: [],
   };
 
+  function matches(doc: any, query: Record<string, unknown>): boolean {
+    return Object.entries(query).every(([key, value]) => {
+      if (key === '_id' && typeof value === 'string') {
+        return doc._id?.toString() === value || doc.id === value;
+      }
+      return doc[key] === value;
+    });
+  }
+
+  function projectDoc(doc: any, projection?: Record<string, 0 | 1>): any {
+    if (!projection) return doc;
+    const result: any = {};
+    const include = Object.values(projection).some(v => v === 1);
+    
+    if (include) {
+      Object.entries(projection).forEach(([key, val]) => {
+        if (val === 1) result[key] = doc[key];
+      });
+    } else {
+      Object.assign(result, doc);
+      Object.entries(projection).forEach(([key, val]) => {
+        if (val === 0) delete result[key];
+      });
+    }
+    return result;
+  }
+
+  function makeCursor<T>(items: T[]) {
+    let sortBy: Record<string, 1 | -1> = {};
+    let skipCount = 0;
+    let limitCount = 0;
+
+    return {
+      sort(sort: Record<string, 1 | -1>) {
+        sortBy = sort;
+        return this;
+      },
+      skip(count: number) {
+        skipCount = count;
+        return this;
+      },
+      limit(count: number) {
+        limitCount = count;
+        return this;
+      },
+      async toArray(): Promise<T[]> {
+        let result = [...items];
+        
+        if (Object.keys(sortBy).length > 0) {
+          result.sort((a, b) => {
+            for (const [key, order] of Object.entries(sortBy)) {
+              const aVal = (a as any)[key];
+              const bVal = (b as any)[key];
+              if (aVal < bVal) return order === 1 ? -1 : 1;
+              if (aVal > bVal) return order === 1 ? 1 : -1;
+            }
+            return 0;
+          });
+        }
+        
+        if (skipCount > 0) result = result.slice(skipCount);
+        if (limitCount > 0) result = result.slice(0, limitCount);
+        
+        return result;
+      }
+    };
+  }
+
   return {
-    databaseName: 'mock_db',
-    collection<T extends Document>(name: string): MinimalCollection<T> {
-      const all = store[name] ?? [];
+    databaseName: 'mock-db',
+    command: async () => ({ ok: 1 }),
+    collection<T = any>(name: string) {
+      if (!(name in store)) store[name] = [];
+      const all = store[name];
+      
       return {
         find(query?: any, options?: any) {
           const filtered = all
@@ -124,7 +113,7 @@ function makeMockDb(): MinimalDb {
   };
 }
 
-// ---- Real DB connection with Render optimizations ----
+// ---- Real DB connection with fixed TLS configuration ----
 async function connectRealDb(): Promise<Db> {
   const { MONGODB_URI, MONGODB_DB } = process.env;
   
@@ -140,7 +129,7 @@ async function connectRealDb(): Promise<Db> {
 
   try {
     if (!client) {
-      // 🔥 RENDER-OPTIMIZED MongoDB Configuration
+      // 🔥 FIXED: MongoDB Configuration for Render with proper TLS settings
       const connectionOptions = {
         // Server API configuration
         serverApi: {
@@ -149,11 +138,9 @@ async function connectRealDb(): Promise<Db> {
           deprecationErrors: true,
         },
         
-        // 🔥 CRITICAL: Enhanced TLS/SSL configuration for Render
+        // 🔥 FIXED: Simplified TLS configuration for MongoDB Atlas
+        // MongoDB Atlas handles TLS automatically, minimal config needed
         tls: true,
-        tlsAllowInvalidCertificates: false,
-        tlsAllowInvalidHostnames: false,
-        tlsInsecure: false,
         
         // 🔥 RENDER-SPECIFIC: Extended timeouts for cloud infrastructure
         connectTimeoutMS: 60000,     // 60 seconds
@@ -173,7 +160,7 @@ async function connectRealDb(): Promise<Db> {
         family: 4, // Force IPv4 for better cloud compatibility
       };
 
-      console.log('[mongo] Creating MongoClient with Render-optimized configuration...');
+      console.log('[mongo] Creating MongoClient with fixed TLS configuration...');
       client = new MongoClient(MONGODB_URI, connectionOptions);
       
       console.log('[mongo] Attempting connection...');
