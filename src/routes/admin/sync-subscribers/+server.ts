@@ -1,6 +1,4 @@
-// src/routes/admin/sync-subscribers/+server.ts
-// One-time migration utility to sync Google Sheets data to MongoDB
-
+// src/routes/admin/sync-subscribers/+server.ts - CORRECTED EMAIL ADDRESSES
 import { json } from '@sveltejs/kit';
 import { upsertSubscriber } from '$lib/server/subscribers';
 
@@ -17,10 +15,10 @@ export async function POST() {
   console.log('[sync] 🔄 Starting Google Sheets → MongoDB sync...');
   
   try {
-    // Your existing Google Sheets data (from the screenshot)
+    // ✅ CORRECTED: Using exact email addresses from your Google Sheets
     const googleSheetsData: GoogleSheetsSubscriber[] = [
       {
-        email: 'charlieboswell@gmail.com',
+        email: 'charlieboswell@gmail',  // ✅ NO .com (as in your sheets)
         name: 'Charles Boswell', 
         status: 'confirmed',
         createdAt: '2025-09-12T09:48:41.591Z',
@@ -28,7 +26,7 @@ export async function POST() {
         source: 'browser-test'
       },
       {
-        email: 'charlieboswell@gmail.com', // Duplicate - will be merged
+        email: 'charlieboswell@gmail',  // ✅ NO .com (duplicate entry)
         name: 'Charles Boswell',
         status: 'confirmed', 
         createdAt: '2025-09-12T10:15:42.623Z',
@@ -36,7 +34,7 @@ export async function POST() {
         source: 'contact-modal'
       },
       {
-        email: 'bosweov@gmail.com', 
+        email: 'bosweov@gmail',  // ✅ NO .com (as in your sheets)
         name: 'Charles Boswell',
         status: 'confirmed',
         createdAt: '2025-09-12T10:58:34.059Z', 
@@ -45,7 +43,7 @@ export async function POST() {
       }
     ];
 
-    console.log(`[sync] Processing ${googleSheetsData.length} records...`);
+    console.log(`[sync] Processing ${googleSheetsData.length} records with CORRECT emails...`);
     
     const results = {
       processed: 0,
@@ -68,22 +66,18 @@ export async function POST() {
           updatedAt: new Date(subscriber.updatedAt),
           confirmedAt: subscriber.status === 'confirmed' ? new Date(subscriber.updatedAt) : undefined,
           lastSyncedAt: new Date(),
-          googleSheetsRowId: results.processed + 2 // Row number in sheets (assuming header row)
+          googleSheetsRowId: results.processed + 2
         });
 
         results.processed++;
-     // Fix for the logging error in src/routes/admin/sync-subscribers/+server.ts
-// Replace this part in the migration loop:
-
         results.details.push({
           email: subscriber.email,
           status: 'success',
-          action: mongoSubscriber ? 'upserted' : 'created',
-          mongoId: mongoSubscriber?._id // <- Add optional chaining
+          action: 'upserted',
+          mongoId: mongoSubscriber?._id?.toString()
         });
         
-        console.log(`[sync] ✅ ${subscriber.email} → MongoDB ID: ${mongoSubscriber?._id || 'processed'}`);
-        // <- Add optional chaining and fallback
+        console.log(`[sync] ✅ ${subscriber.email} → MongoDB ID: ${mongoSubscriber?._id}`);
         
       } catch (error) {
         results.errors++;
@@ -97,14 +91,14 @@ export async function POST() {
       }
     }
 
-    console.log('[sync] ✅ Sync completed!', {
+    console.log('[sync] ✅ Sync completed with corrected emails!', {
       processed: results.processed,
       errors: results.errors
     });
 
     return json({
       success: true,
-      message: `Sync completed: ${results.processed} processed, ${results.errors} errors`,
+      message: `Sync completed with corrected emails: ${results.processed} processed, ${results.errors} errors`,
       results
     });
 
@@ -118,15 +112,10 @@ export async function POST() {
   }
 }
 
-// Alternative: Get status info
 export async function GET() {
   return json({ 
-    message: 'Use POST to trigger sync',
-    instructions: 'Send POST request to sync Google Sheets data to MongoDB',
-    endpoints: {
-      sync: 'POST /admin/sync-subscribers',
-      diagnostics: 'GET /admin/diagnostics', 
-      migration_ui: 'GET /admin/migration'
-    }
+    message: 'Use POST to trigger sync with corrected email addresses',
+    note: 'This version uses the exact email addresses from Google Sheets (without .com)',
+    emails: ['charlieboswell@gmail', 'bosweov@gmail']
   });
 }

@@ -1,5 +1,5 @@
 // src/routes/admin/migration/+page.svelte
-<!-- Admin page for data a migration and system diagnostics -->
+<!-- Admin page for data migration and system diagnostics -->
 
 <script lang="ts">
   import { onMount } from 'svelte';
@@ -78,6 +78,26 @@
           <div class="ml-3">
             <h3 class="text-sm font-medium text-red-800">Error</h3>
             <p class="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Email Mismatch Warning -->
+    {#if diagnostics?.subscribers?.stats?.total > 0}
+      <div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div class="flex">
+          <svg class="h-5 w-5 text-yellow-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800">Email Address Mismatch Detected</h3>
+            <div class="mt-2 text-sm text-yellow-700">
+              <p>Your admin page may show emails ending in ".com" while your Google Sheets shows emails without ".com".</p>
+              <p class="mt-1"><strong>Google Sheets:</strong> charlieboswell@gmail, bosweov@gmail</p>
+              <p><strong>Admin page:</strong> charlieboswell@gmail.com, bosweov@gmail.com</p>
+              <p class="mt-2">Click "Fix Email Addresses" to correct this and match your Google Sheets exactly.</p>
+            </div>
           </div>
         </div>
       </div>
