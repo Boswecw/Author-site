@@ -1,19 +1,22 @@
 // src/routes/newsletter/resend/+page.server.ts
-import type { Actions } from './$types';
+import type { Actions, RequestEvent } from '@sveltejs/kit';
 import { fail } from '@sveltejs/kit';
 
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL!; // ends with /exec
-
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL!;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 export const actions: Actions = {
-  default: async ({ request }) => {
-    const form = await request.formData();
+  default: async (event: RequestEvent) => {
+    const form = await event.request.formData();
     const email = String(form.get('email') || '').trim().toLowerCase();
     const name = String(form.get('name') || '').trim();
 
     if (!EMAIL_RE.test(email)) {
       return fail(400, { error: 'Enter a valid email address.', values: { email, name } });
+    }
+    if (!APPS_SCRIPT_URL) {
+      console.error('APPS_SCRIPT_URL missing');
+      return fail(500, { error: 'Server misconfigured. Try again later.', values: { email, name } });
     }
 
     try {
@@ -23,9 +26,12 @@ export const actions: Actions = {
         body: new URLSearchParams({ email, name })
       });
 
-      const data = await res.json();
-      if (!data.ok) {
-        return fail(429, { error: data.error || 'Too many requests. Try again later.', values: { email, name } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        return fail(res.status === 429 ? 429 : 500, {
+          error: data?.error || 'Too many requests. Try again later.',
+          values: { email, name }
+        });
       }
 
       return { success: true, message: data.message || 'New confirmation link sent.', values: { email, name } };

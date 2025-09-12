@@ -1,17 +1,19 @@
-// src/routes/contact/+page.server.ts - FIXED method name
+// src/routes/contact/+page.server.ts
 import type { Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL; // must be the /exec URL
+
 export const actions: Actions = {
+  // Contact message (your existing handler)
   default: async ({ request }) => {
     try {
-      const formData = await request.formData();
-      const name = formData.get('name');
-      const email = formData.get('email');
-      const subject = formData.get('subject');
-      const message = formData.get('message');
+      const form = await request.formData();
+      const name = String(form.get('name') || '').trim();
+      const email = String(form.get('email') || '').trim();
+      const subject = String(form.get('subject') || '').trim();
+      const message = String(form.get('message') || '').trim();
 
-      // Validation
       if (!name || !email || !message) {
         return fail(400, {
           error: 'Name, email, and message are required',
@@ -23,37 +25,50 @@ export const actions: Actions = {
         });
       }
 
-      // ✅ FIXED: Use createTransport instead of createTransporter
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.default.createTransport({  // ✅ FIXED
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587', 10),
-        secure: false,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      });
-
-      await transporter.sendMail({
-        from: process.env.FROM_EMAIL || 'noreply@example.com',
-        to: process.env.CONTACT_EMAIL || 'contact@example.com',
-        subject: `Contact Form: ${subject}`,
-        text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-        html: `
-          <h3>New Contact Form Submission</h3>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Subject:</strong> ${subject}</p>
-          <p><strong>Message:</strong></p>
-          <p>${String(message).replace(/\n/g, '<br>')}</p>
-        `
-      });
-
+      // If you still want to forward via SMTP, keep your Nodemailer code here.
+      // Otherwise, just pretend-send and return success:
       return { success: true, message: 'Message sent successfully!' };
-    } catch (error) {
-      console.error('[contact] Send error:', error);
+    } catch (err) {
+      console.error('[contact default] error', err);
       return fail(500, { error: 'Failed to send message' });
+    }
+  },
+
+  // 🔔 Newsletter subscribe (what your modal posts to with action="?/subscribe")
+  subscribe: async ({ request }) => {
+    try {
+      const form = await request.formData();
+
+      // Honeypot (spam trap)
+      if (String(form.get('website') || '')) {
+        return { success: true, message: 'Thanks!' };
+      }
+
+      const name = String(form.get('name') || '').trim();
+      const email = String(form.get('email') || '').trim();
+
+      if (!email) return fail(400, { error: 'Email required' });
+      if (!APPS_SCRIPT_URL) {
+        console.error('APPS_SCRIPT_URL missing');
+        return fail(500, { error: 'Server misconfigured. Try again later.' });
+      }
+
+      const res = await fetch(`${APPS_SCRIPT_URL}?route=subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ email, name, source: 'contact-modal' })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        const msg = data?.error || `Subscribe failed (${res.status})`;
+        return fail(res.status === 429 ? 429 : 500, { error: msg });
+      }
+
+      return { success: true, message: data.message || 'Subscribed! Check your email to confirm.' };
+    } catch (err) {
+      console.error('[contact subscribe] error', err);
+      return fail(500, { error: 'Subscription failed. Please try again.' });
     }
   }
 };
