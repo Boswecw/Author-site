@@ -1,10 +1,14 @@
 services:
   - type: web
     name: charles-boswell-author-site
-    env: node
+    runtime: node
     plan: free
     buildCommand: npm ci && npm run build
     startCommand: node build/index.js
+    
+    # Health check endpoint
+    healthCheckPath: /health
+    
     envVars:
       # Application Environment
       - key: NODE_ENV
@@ -12,21 +16,21 @@ services:
       - key: NODE_OPTIONS
         value: --dns-result-order=ipv4first
       - key: NPM_CONFIG_PRODUCTION
-        value: false
+        value: "false"
 
-      # 🔥 TLS TROUBLESHOOTING: Force compatible TLS behavior
+      # TLS Configuration for MongoDB Atlas
       - key: NODE_TLS_REJECT_UNAUTHORIZED
-        value: "1"  # Keep TLS verification enabled (secure)
+        value: "1"
       - key: OPENSSL_CONF
-        value: ""   # Clear any OpenSSL config conflicts
+        value: ""
 
       # MongoDB Atlas Configuration
       - key: MONGODB_URI
-        fromSecret: mongodb_uri
+        sync: false
       - key: MONGODB_DB
         value: Author-site
 
-      # Email Configuration
+      # Email Configuration (Gmail SMTP)
       - key: FROM_EMAIL
         value: Charles Boswell <charlesboswell@boswellwebdevelopment.com>
       - key: CONTACT_EMAIL
@@ -38,7 +42,7 @@ services:
       - key: SMTP_USER
         value: charlesboswell@boswellwebdevelopment.com
       - key: SMTP_PASS
-        fromSecret: smtp_password
+        sync: false
       - key: SMTP_SECURE
         value: "false"
 
@@ -52,10 +56,14 @@ services:
 
       # Firebase Configuration (Public)
       - key: PUBLIC_FIREBASE_API_KEY
-        fromSecret: firebase_api_key
+        sync: false
       - key: PUBLIC_FIREBASE_AUTH_DOMAIN
         value: endless-fire-467204-n2.firebaseapp.com
       - key: PUBLIC_FIREBASE_PROJECT_ID
         value: endless-fire-467204-n2
       - key: PUBLIC_FIREBASE_STORAGE_BUCKET
         value: endless-fire-467204-n2.firebasestorage.app
+
+      # Google Apps Script for Newsletter Backup
+      - key: APPS_SCRIPT_URL
+        sync: false
