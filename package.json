@@ -7,10 +7,11 @@
     "node": ">=20.0.0",
     "npm": ">=9.0.0"
   },
-  "scripts": {
-    "build": "svelte-kit sync && vite build",
-    "preview": "vite preview --port 3000",
-    "start": "node start.js"
+"scripts": {
+  "dev": "vite dev",
+  "build": "vite build",
+  "preview": "vite preview",
+  "start": "node build" 
   },
   "packageManager": "npm@11.6.0",
   "devDependencies": {

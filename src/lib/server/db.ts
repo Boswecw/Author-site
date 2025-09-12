@@ -1,79 +1,72 @@
 // src/lib/server/db.ts - Optimized for Render + MongoDB Atlas
-
 import { MongoClient, Db, ServerApiVersion } from 'mongodb';
+import { env } from '$env/dynamic/private';
 
 let client: MongoClient | null = null;
 let dbPromise: Promise<Db> | null = null;
 
-// CRITICAL: Render-optimized connection options
+/* ---------------- Render-optimized connection options ---------------- */
+
 function getRenderOptimizedOptions() {
   return {
-    // ✅ Use MongoDB Driver's latest TLS defaults
     serverApi: {
       version: ServerApiVersion.v1,
-      strict: false, // ← CRITICAL: Allow flexible operations
+      strict: false,
       deprecationErrors: false
     },
-    
-    // ✅ Render-specific network settings
-    family: 4, // Force IPv4 (Render compatibility)
-    connectTimeoutMS: 30000, // Longer timeout for Render
-    socketTimeoutMS: 30000,
-    serverSelectionTimeoutMS: 30000,
-    heartbeatFrequencyMS: 30000, // Less aggressive heartbeat
-    
-    // ✅ TLS Configuration for Atlas
+    // Render networking
+    family: 4,
+    connectTimeoutMS: 30_000,
+    socketTimeoutMS: 30_000,
+    serverSelectionTimeoutMS: 30_000,
+    heartbeatFrequencyMS: 30_000,
+    // TLS for Atlas
     tls: true,
     tlsAllowInvalidHostnames: false,
     tlsAllowInvalidCertificates: false,
-    // Let MongoDB driver handle TLS versions
-    
-    // ✅ Connection pool optimization for free tier
-    maxPoolSize: 5, // Reduced for free tier
+    // Pooling for free tier
+    maxPoolSize: 5,
     minPoolSize: 1,
-    maxIdleTimeMS: 60000,
-    waitQueueTimeoutMS: 10000,
-    
-    // ✅ Retry configuration
+    maxIdleTimeMS: 60_000,
+    waitQueueTimeoutMS: 10_000,
+    // Reliability
     retryWrites: true,
     retryReads: true,
-    
-    // ✅ Compression (reduces bandwidth)
+    // Compression
     compressors: ['zstd', 'snappy', 'zlib'],
-    
-    // ✅ Monitoring
+    // Debugging
     monitorCommands: process.env.NODE_ENV === 'development'
-  };
+  } as const;
 }
 
-// Generate optimized connection string for Atlas
+/* ---------------------- Atlas connection string ---------------------- */
+
 function getAtlasConnectionString(baseUri: string, dbName: string): string {
-  // Clean the base URI and ensure proper format
-  const cleanUri = baseUri.includes('?') 
-    ? baseUri.split('?')[0] 
-    : baseUri;
-  
-  // Add database name if not present
-  const uriWithDb = cleanUri.endsWith('/') 
-    ? `${cleanUri}${dbName}` 
-    : cleanUri.includes(`/${dbName}`) 
-      ? cleanUri 
+  const cleanUri = baseUri.includes('?') ? baseUri.split('?')[0] : baseUri;
+
+  const uriWithDb = cleanUri.endsWith('/')
+    ? `${cleanUri}${dbName}`
+    : cleanUri.includes(`/${dbName}`)
+      ? cleanUri
       : `${cleanUri}/${dbName}`;
-  
-  // Add optimized parameters for Render
+
   const params = [
     'authSource=admin',
     'retryWrites=true',
     'w=majority',
     'appName=CharlesBoswellAuthorSite'
   ].join('&');
-  
+
   return `${uriWithDb}?${params}`;
 }
 
+/* -------------------------- Real connection -------------------------- */
+
 async function connectToMongoDB(): Promise<Db> {
-  const { MONGODB_URI, MONGODB_DB } = process.env;
-  
+  // ✅ Read from SvelteKit env (works with .env.local)
+  const MONGODB_URI = env.MONGODB_URI;
+  const MONGODB_DB = env.MONGODB_DB;
+
   if (!MONGODB_URI || !MONGODB_DB) {
     throw new Error('Missing MONGODB_URI or MONGODB_DB environment variables');
   }
@@ -83,14 +76,14 @@ async function connectToMongoDB(): Promise<Db> {
   console.log('[mongo] Environment:', process.env.NODE_ENV);
   console.log('[mongo] Node.js:', process.version);
   console.log('[mongo] Platform:', process.platform);
-  
+
   try {
-    // Generate optimized connection string
     const connectionString = getAtlasConnectionString(MONGODB_URI, MONGODB_DB);
-    console.log('[mongo] Connection string (masked):', 
-      connectionString.replace(/\/\/[^@]+@/, '//***:***@'));
-    
-    // Create client with optimized options
+    console.log(
+      '[mongo] Connection string (masked):',
+      connectionString.replace(/\/\/[^@]+@/, '//***:***@')
+    );
+
     const options = getRenderOptimizedOptions();
     console.log('[mongo] Using connection options:', {
       serverApi: options.serverApi.version,
@@ -100,117 +93,151 @@ async function connectToMongoDB(): Promise<Db> {
         socket: options.socketTimeoutMS,
         serverSelection: options.serverSelectionTimeoutMS
       },
-      pool: {
-        max: options.maxPoolSize,
-        min: options.minPoolSize
-      }
+      pool: { max: options.maxPoolSize, min: options.minPoolSize }
     });
-    
+
     client = new MongoClient(connectionString, options);
-    
-    // Connect with timing
+
     const startTime = Date.now();
     await client.connect();
     const connectTime = Date.now() - startTime;
-    
     console.log(`[mongo] ✅ Connected successfully in ${connectTime}ms`);
-    
-    // Test the connection
+
     const db = client.db(MONGODB_DB);
     const pingStart = Date.now();
     await db.command({ ping: 1 });
     const pingTime = Date.now() - pingStart;
-    
     console.log(`[mongo] 🏓 Ping successful in ${pingTime}ms`);
-    
-    // Log collection info
+
     try {
       const collections = await db.listCollections().toArray();
-      console.log('[mongo] 📚 Collections:', collections.map(c => c.name).join(', ') || 'none');
-    } catch (listError) {
+      console.log(
+        '[mongo] 📚 Collections:',
+        collections.map((c) => c.name).join(', ') || 'none'
+      );
+    } catch {
       console.log('[mongo] ⚠️ Could not list collections (but connection works)');
     }
-    
+
     return db;
-    
   } catch (error) {
     console.error('[mongo] ❌ Connection failed:', error);
-    
-    // Enhanced error reporting
     if (error instanceof Error) {
-      if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
-        console.error('[mongo] 🌐 Network error - check MongoDB Atlas network access list');
+      if (/\b(ENOTFOUND|ECONNREFUSED)\b/.test(error.message)) {
+        console.error('[mongo] 🌐 Network error - check Atlas network access list');
       } else if (error.message.includes('authentication failed')) {
         console.error('[mongo] 🔐 Authentication error - check username/password');
-      } else if (error.message.includes('SSL') || error.message.includes('TLS')) {
-        console.error('[mongo] 🔒 TLS error - this may be a Render platform issue');
+      } else if (error.message.match(/\bSSL|TLS\b/)) {
+        console.error('[mongo] 🔒 TLS error - may be a platform/network issue');
       }
     }
-    
     throw error;
   }
 }
 
-// Mock database for fallback
+/* ------------------------------ Mock DB ------------------------------ */
+
 function createMockDatabase(): Db {
   const store: Record<string, any[]> = {};
-  
+
+  function matches(doc: any, query: any): boolean {
+    if (!query || typeof query !== 'object') return true;
+
+    // minimal operator support used in your queries
+    if (query.$or && Array.isArray(query.$or)) {
+      return query.$or.some((cond: any) => matches(doc, cond));
+    }
+
+    return Object.entries(query).every(([key, val]) => {
+      const v = (doc as any)[key];
+      if (val && typeof val === 'object') {
+        if ('$in' in val) return (val as any).$in.includes(v);
+        if ('$ne' in val) return v !== (val as any).$ne;
+        if ('$exists' in val) return (key in doc) === (val as any).$exists;
+        if ('$gte' in val) return new Date(v).getTime() >= new Date((val as any).$gte).getTime();
+        return matches(v, val);
+      }
+      return v === val;
+    });
+  }
+
+  function makeCursor(items: any[]) {
+    let _items = [...items];
+
+    return {
+      sort(spec?: Record<string, 1 | -1>) {
+        if (spec && Object.keys(spec).length) {
+          // apply only the first sort key (good enough for dev)
+          const [field, dir] = Object.entries(spec)[0] as [string, 1 | -1];
+          _items.sort((a: any, b: any) => {
+            const av = a?.[field];
+            const bv = b?.[field];
+            if (av === bv) return 0;
+            return (av > bv ? 1 : -1) * (dir as number);
+          });
+        }
+        return this;
+    },
+      limit(n?: number) {
+        if (typeof n === 'number') _items = _items.slice(0, n);
+        return this;
+      },
+      async toArray() {
+        return _items;
+      }
+    };
+  }
+
   return {
     collection<T = any>(name: string) {
       if (!(name in store)) store[name] = [];
       const docs = store[name];
-      
+
       return {
-        find: (query?: any) => ({
-          toArray: async () => docs.filter(d => !query || matches(d, query)) as T[]
-        }),
-        findOne: async (query?: any) => 
-          docs.find(d => !query || matches(d, query)) as T | null,
-        countDocuments: async (query?: any) => 
-          docs.filter(d => !query || matches(d, query)).length,
-        estimatedDocumentCount: async () => docs.length
+        find(query?: any /*, options?: { projection?: any } */) {
+          const filtered = docs.filter((d) => matches(d, query));
+          return makeCursor(filtered);
+        },
+        async findOne(query?: any) {
+          return docs.find((d) => matches(d, query)) ?? null;
+        },
+        async countDocuments(query?: any) {
+          return docs.filter((d) => matches(d, query)).length;
+        },
+        async estimatedDocumentCount() {
+          return docs.length;
+        }
       };
     },
-    command: async (cmd: any) => ({ ok: 1 }),
-    listCollections: () => ({
-      toArray: async () => Object.keys(store).map(name => ({ name }))
-    })
-  } as any;
-}
-
-// Simple query matching for mock
-function matches(doc: any, query: any): boolean {
-  if (!query || typeof query !== 'object') return true;
-  
-  return Object.entries(query).every(([key, value]) => {
-    if (typeof value === 'object' && value !== null) {
-      // Handle simple operators
-      if ('$in' in value) return (value as any).$in.includes(doc[key]);
-      if ('$ne' in value) return doc[key] !== (value as any).$ne;
-      if ('$exists' in value) return (key in doc) === (value as any).$exists;
+    async command(_: any) {
+      return { ok: 1 };
+    },
+    listCollections() {
+      return {
+        async toArray() {
+          return Object.keys(store).map((name) => ({ name }));
+        }
+      };
     }
-    return doc[key] === value;
-  });
+  } as any as Db;
 }
 
-// Main database getter with fallback
+/* ------------------------- Public DB interface ------------------------ */
+
 export async function getDb(): Promise<Db> {
   if (!dbPromise) {
     dbPromise = connectToMongoDB().catch(async (error) => {
       console.error('[mongo] 🚨 Database connection failed, using mock database');
-      console.error('[mongo] Error details:', error.message);
-      
-      // Reset promise for retry
-      dbPromise = null;
-      
+      console.error('[mongo] Error details:', (error as any)?.message ?? String(error));
+      // Do NOT reset to null here; keep mock cached for the process lifetime
       return createMockDatabase();
     });
   }
-  
   return dbPromise;
 }
 
-// Graceful shutdown
+/* ---------------------------- Graceful close -------------------------- */
+
 export async function closeDb(): Promise<void> {
   if (client) {
     console.log('[mongo] 🔌 Closing database connection...');
@@ -226,7 +253,8 @@ export async function closeDb(): Promise<void> {
   }
 }
 
-// Health check
+/* ------------------------------ Healthcheck -------------------------- */
+
 export async function checkDbHealth(): Promise<{
   connected: boolean;
   database?: string;
@@ -238,16 +266,8 @@ export async function checkDbHealth(): Promise<{
     const db = await getDb();
     await db.command({ ping: 1 });
     const timing = Date.now() - start;
-    
-    return {
-      connected: true,
-      database: db.databaseName || 'unknown',
-      timing
-    };
+    return { connected: true, database: (db as any).databaseName ?? 'unknown', timing };
   } catch (error) {
-    return {
-      connected: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
+    return { connected: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

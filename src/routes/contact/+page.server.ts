@@ -1,12 +1,12 @@
-// src/routes/contact/+page.server.ts - Complete file with URL cleanup
+// src/routes/contact/+page.server.ts - Updated with MongoDB integration
 import type { Actions, RequestEvent } from '@sveltejs/kit';
 import { fail } from '@sveltejs/kit';
+import { upsertSubscriber, getSubscriberByEmail } from '$lib/server/subscribers';
 
 // Clean up the environment variable (remove any extra text)
 function cleanAppsScriptUrl(rawUrl: string | undefined): string | undefined {
   if (!rawUrl) return undefined;
   
-  // Remove any "APPS_SCRIPT_URL = " prefix and trim whitespace/newlines
   const cleaned = rawUrl
     .replace(/^APPS_SCRIPT_URL\s*=\s*/, '') // Remove "APPS_SCRIPT_URL = "
     .replace(/[\r\n]+/g, '') // Remove newlines
@@ -15,7 +15,6 @@ function cleanAppsScriptUrl(rawUrl: string | undefined): string | undefined {
   return cleaned || undefined;
 }
 
-// Use the cleaned URL
 const APPS_SCRIPT_URL = cleanAppsScriptUrl(process.env.APPS_SCRIPT_URL);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -48,19 +47,12 @@ export const actions: Actions = {
     }
   },
 
-  // Newsletter subscribe action
+  // Newsletter subscribe action with dual write
   subscribe: async (event: RequestEvent) => {
     console.log('[subscribe] Starting newsletter subscription...');
     
     try {
       const form = await event.request.formData();
-
-      console.log('[subscribe] Form data:', {
-        email: form.get('email'),
-        name: form.get('name'),
-        website: form.get('website'),
-        source: form.get('source')
-      });
 
       // Honeypot spam protection
       if (String(form.get('website') || '')) {
@@ -70,8 +62,9 @@ export const actions: Actions = {
 
       const name = String(form.get('name') || '').trim();
       const email = String(form.get('email') || '').trim().toLowerCase();
+      const source = String(form.get('source') || 'contact-modal').trim();
 
-      console.log('[subscribe] Processing:', { email: email.substring(0, 3) + '***', name });
+      console.log('[subscribe] Processing:', { email: email.substring(0, 3) + '***', name, source });
 
       // Validation
       if (!EMAIL_RE.test(email)) {
@@ -79,24 +72,43 @@ export const actions: Actions = {
         return fail(400, { error: 'Enter a valid email address.' });
       }
 
-      // Environment check (now using cleaned URL)
-      console.log('[subscribe] Environment check:', {
-        hasAppsScriptUrl: !!APPS_SCRIPT_URL,
-        urlLength: APPS_SCRIPT_URL?.length || 0,
-        cleanedUrl: APPS_SCRIPT_URL?.substring(0, 50) + '...', // Show first 50 chars
-        nodeEnv: process.env.NODE_ENV
-      });
+      // Check if already subscribed in MongoDB
+      const existingSubscriber = await getSubscriberByEmail(email);
+      if (existingSubscriber?.status === 'confirmed') {
+        console.log('[subscribe] Already confirmed in MongoDB');
+        // Still sync with Google Apps Script to keep both systems in sync
+      }
 
+      // 1. Write to MongoDB first
+      console.log('[subscribe] Saving to MongoDB...');
+      try {
+        const mongoSubscriber = await upsertSubscriber(email, {
+          name,
+          status: 'pending',
+          source,
+          // Add request metadata if available
+          ipAddress: event.request.headers.get('cf-connecting-ip') || 
+                    event.request.headers.get('x-forwarded-for') || 
+                    undefined,
+          userAgent: event.request.headers.get('user-agent') || undefined
+        });
+        
+        console.log('[subscribe] ✅ Saved to MongoDB:', mongoSubscriber._id);
+      } catch (mongoError) {
+        console.error('[subscribe] ⚠️ MongoDB write failed:', mongoError);
+        // Continue to Google Apps Script even if MongoDB fails
+        // This prevents MongoDB issues from breaking the newsletter signup
+      }
+
+      // 2. Write to Google Apps Script (existing system)
       if (!APPS_SCRIPT_URL) {
-        console.error('[subscribe] APPS_SCRIPT_URL missing or invalid after cleanup');
+        console.error('[subscribe] APPS_SCRIPT_URL missing');
         return fail(500, { error: 'Newsletter service unavailable.' });
       }
 
-      // Call Google Apps Script with cleaned URL
+      console.log('[subscribe] Calling Google Apps Script...');
       const requestUrl = `${APPS_SCRIPT_URL}?route=subscribe`;
-      const requestBody = new URLSearchParams({ email, name, source: 'contact-modal' });
-
-      console.log('[subscribe] Calling Apps Script:', requestUrl);
+      const requestBody = new URLSearchParams({ email, name, source });
 
       const response = await fetch(requestUrl, {
         method: 'POST',
@@ -109,7 +121,7 @@ export const actions: Actions = {
         ok: response.ok
       });
 
-      // Handle response
+      // Handle Apps Script response
       let data: any = null;
       try {
         const rawText = await response.text();
@@ -127,8 +139,13 @@ export const actions: Actions = {
         return fail(500, { error: 'Subscription failed. Please try again.' });
       }
 
-      console.log('[subscribe] Success!', data.message);
-      return { success: true, message: data.message || 'Subscribed! Check your email to confirm.' };
+      console.log('[subscribe] ✅ Both systems updated successfully');
+      
+      // Return the message from Google Apps Script (handles "already subscribed" cases)
+      return { 
+        success: true, 
+        message: data.message || 'Subscribed! Check your email to confirm.' 
+      };
 
     } catch (err) {
       console.error('[subscribe] Unexpected error:', err);
