@@ -113,7 +113,8 @@
     </header>
 
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-8">
-      <form method="POST" use:enhanceSubmit class="space-y-6">
+      <!-- ✅ FIXED: Added action="?/contact" to use the named action -->
+      <form method="POST" action="?/contact" use:enhanceSubmit class="space-y-6">
         <!-- Name -->
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
