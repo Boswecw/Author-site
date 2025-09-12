@@ -1,12 +1,26 @@
-// src/routes/contact/+page.server.ts - FIXED VERSION
+// src/routes/contact/+page.server.ts - Complete file with URL cleanup
 import type { Actions, RequestEvent } from '@sveltejs/kit';
 import { fail } from '@sveltejs/kit';
 
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
+// Clean up the environment variable (remove any extra text)
+function cleanAppsScriptUrl(rawUrl: string | undefined): string | undefined {
+  if (!rawUrl) return undefined;
+  
+  // Remove any "APPS_SCRIPT_URL = " prefix and trim whitespace/newlines
+  const cleaned = rawUrl
+    .replace(/^APPS_SCRIPT_URL\s*=\s*/, '') // Remove "APPS_SCRIPT_URL = "
+    .replace(/[\r\n]+/g, '') // Remove newlines
+    .trim(); // Remove surrounding whitespace
+  
+  return cleaned || undefined;
+}
+
+// Use the cleaned URL
+const APPS_SCRIPT_URL = cleanAppsScriptUrl(process.env.APPS_SCRIPT_URL);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 export const actions: Actions = {
-  // ✅ FIXED: Changed from 'default' to 'contact' (named action)
+  // Contact form action
   contact: async (event: RequestEvent) => {
     try {
       const form = await event.request.formData();
@@ -26,7 +40,6 @@ export const actions: Actions = {
         });
       }
 
-      // TODO: Replace with actual email sending logic (nodemailer, etc.)
       console.log('[contact] Message received:', { name, email, subject });
       return { success: true, message: 'Message sent successfully!' };
     } catch (err) {
@@ -35,22 +48,21 @@ export const actions: Actions = {
     }
   },
 
-  // Newsletter subscribe (modal posts to action="?/subscribe")
+  // Newsletter subscribe action
   subscribe: async (event: RequestEvent) => {
     console.log('[subscribe] Starting newsletter subscription...');
     
     try {
       const form = await event.request.formData();
 
-      // Debug: Log form data
       console.log('[subscribe] Form data:', {
         email: form.get('email'),
         name: form.get('name'),
-        website: form.get('website'), // honeypot
+        website: form.get('website'),
         source: form.get('source')
       });
 
-      // Honeypot (spam protection)
+      // Honeypot spam protection
       if (String(form.get('website') || '')) {
         console.warn('[subscribe] Honeypot triggered - likely spam');
         return { success: true, message: 'Thanks!' };
@@ -67,19 +79,20 @@ export const actions: Actions = {
         return fail(400, { error: 'Enter a valid email address.' });
       }
 
-      // Environment check
+      // Environment check (now using cleaned URL)
       console.log('[subscribe] Environment check:', {
         hasAppsScriptUrl: !!APPS_SCRIPT_URL,
         urlLength: APPS_SCRIPT_URL?.length || 0,
+        cleanedUrl: APPS_SCRIPT_URL?.substring(0, 50) + '...', // Show first 50 chars
         nodeEnv: process.env.NODE_ENV
       });
 
       if (!APPS_SCRIPT_URL) {
-        console.error('[subscribe] APPS_SCRIPT_URL missing from environment');
+        console.error('[subscribe] APPS_SCRIPT_URL missing or invalid after cleanup');
         return fail(500, { error: 'Newsletter service unavailable.' });
       }
 
-      // Call Google Apps Script
+      // Call Google Apps Script with cleaned URL
       const requestUrl = `${APPS_SCRIPT_URL}?route=subscribe`;
       const requestBody = new URLSearchParams({ email, name, source: 'contact-modal' });
 
