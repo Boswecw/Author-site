@@ -1,5 +1,5 @@
 // src/routes/admin/migration/+page.svelte
-<!-- Admin page for data migration and system diagnostics -->
+<!-- Admin page for data a migration and system diagnostics -->
 
 <script lang="ts">
   import { onMount } from 'svelte';
