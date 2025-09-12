@@ -89,7 +89,7 @@
               bind:value={searchQuery}
               placeholder="Search by email or name..."
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+              onkeydown={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
           <button
