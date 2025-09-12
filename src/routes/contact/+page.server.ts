@@ -1,14 +1,15 @@
 // src/routes/contact/+page.server.ts
-import type { Actions } from './$types';
+import type { Actions, RequestEvent } from '@sveltejs/kit';
 import { fail } from '@sveltejs/kit';
 
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL; // must be the /exec URL
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL; // must be full /exec URL
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 export const actions: Actions = {
-  // Contact message (your existing handler)
-  default: async ({ request }) => {
+  // Contact message (kept minimal here; keep your nodemailer if you want)
+  default: async (event: RequestEvent) => {
     try {
-      const form = await request.formData();
+      const form = await event.request.formData();
       const name = String(form.get('name') || '').trim();
       const email = String(form.get('email') || '').trim();
       const subject = String(form.get('subject') || '').trim();
@@ -25,8 +26,7 @@ export const actions: Actions = {
         });
       }
 
-      // If you still want to forward via SMTP, keep your Nodemailer code here.
-      // Otherwise, just pretend-send and return success:
+      // stub success (replace with nodemailer if you want)
       return { success: true, message: 'Message sent successfully!' };
     } catch (err) {
       console.error('[contact default] error', err);
@@ -34,34 +34,48 @@ export const actions: Actions = {
     }
   },
 
-  // 🔔 Newsletter subscribe (what your modal posts to with action="?/subscribe")
-  subscribe: async ({ request }) => {
+  // Newsletter subscribe (modal posts to action="?/subscribe")
+  subscribe: async (event: RequestEvent) => {
     try {
-      const form = await request.formData();
+      const form = await event.request.formData();
 
-      // Honeypot (spam trap)
+      // Honeypot (spam)
       if (String(form.get('website') || '')) {
+        console.warn('[subscribe] Honeypot hit; ignoring');
         return { success: true, message: 'Thanks!' };
       }
 
       const name = String(form.get('name') || '').trim();
-      const email = String(form.get('email') || '').trim();
+      const email = String(form.get('email') || '').trim().toLowerCase();
 
-      if (!email) return fail(400, { error: 'Email required' });
+      if (!EMAIL_RE.test(email)) return fail(400, { error: 'Enter a valid email address.' });
       if (!APPS_SCRIPT_URL) {
-        console.error('APPS_SCRIPT_URL missing');
+        console.error('[subscribe] APPS_SCRIPT_URL missing');
         return fail(500, { error: 'Server misconfigured. Try again later.' });
       }
 
-      const res = await fetch(`${APPS_SCRIPT_URL}?route=subscribe`, {
+      const body = new URLSearchParams({ email, name, source: 'contact-modal' });
+
+      const url = `${APPS_SCRIPT_URL}?route=subscribe`;
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ email, name, source: 'contact-modal' })
+        body
       });
 
-      const data = await res.json().catch(() => ({}));
+      // Try JSON first; if that fails, grab text for debugging
+      let data: any = null;
+      let rawText = '';
+      try {
+        data = await res.json();
+      } catch {
+        rawText = await res.text();
+        console.error('[subscribe] Non-JSON response from Apps Script:', rawText.slice(0, 500));
+      }
+
       if (!res.ok || !data?.ok) {
-        const msg = data?.error || `Subscribe failed (${res.status})`;
+        const msg = data?.error || rawText || `Subscribe failed (${res.status})`;
+        console.error('[subscribe] Apps Script error', { status: res.status, msg });
         return fail(res.status === 429 ? 429 : 500, { error: msg });
       }
 
