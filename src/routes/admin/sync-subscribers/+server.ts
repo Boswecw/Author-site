@@ -72,14 +72,18 @@ export async function POST() {
         });
 
         results.processed++;
+     // Fix for the logging error in src/routes/admin/sync-subscribers/+server.ts
+// Replace this part in the migration loop:
+
         results.details.push({
           email: subscriber.email,
           status: 'success',
           action: mongoSubscriber ? 'upserted' : 'created',
-          mongoId: mongoSubscriber._id
+          mongoId: mongoSubscriber?._id // <- Add optional chaining
         });
         
-        console.log(`[sync] ✅ ${subscriber.email} → MongoDB ID: ${mongoSubscriber._id}`);
+        console.log(`[sync] ✅ ${subscriber.email} → MongoDB ID: ${mongoSubscriber?._id || 'processed'}`);
+        // <- Add optional chaining and fallback
         
       } catch (error) {
         results.errors++;
