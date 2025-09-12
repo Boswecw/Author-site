@@ -20,7 +20,7 @@ function getEnvVar(key: string, defaultValue?: string): string | undefined {
 export const ENV = {
   // MongoDB Configuration
   MONGODB_URI: getEnvVar('MONGODB_URI'),
-  MONGODB_DB: getEnvVar('MONGODB_DB', 'author_site'), // ← Fixed: consistent naming
+  MONGODB_DB: getEnvVar('MONGODB_DB', 'Author-site'), // ← Fixed: consistent naming
   
   // Firebase Configuration  
   FIREBASE_BUCKET: getEnvVar('PUBLIC_FIREBASE_STORAGE_BUCKET', 'endless-fire-467204-n2.firebasestorage.app'),

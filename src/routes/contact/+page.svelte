@@ -1,7 +1,12 @@
-<!-- src/routes/contact/+page.svelte - FIXED: Proper state variable declarations -->
+<!-- src/routes/contact/+page.svelte - FIXED: Proper state variable declarations + Newsletter modal -->
 <script lang="ts">
   import { enhance } from '$app/forms';
- 
+  import { onMount } from 'svelte';
+  import type { ActionData } from './$types';
+
+  // 📨 Newsletter modal (from previous step)
+  import NewsletterModal from '$lib/components/NewsletterModal.svelte';
+
   export let form: ActionData;
 
   // ✅ FIXED: Declare form state variables properly for Svelte 5
@@ -19,10 +24,11 @@
     emailHint = '';
   }
 
-  // Success message handling
+  // Success message handling (shared by contact + newsletter)
   let showToast = false;
   let submitMessage = '';
 
+  // Contact form enhance
   const enhanceSubmit = (node: HTMLFormElement) =>
     enhance(node, ({ formData, cancel }) => {
       // Show loading state if needed
@@ -30,23 +36,74 @@
         if (result.type === 'success') {
           showToast = true;
           submitMessage = 'Message sent successfully!';
-          
+
           // Clear form
           name = '';
           email = '';
           subject = '';
           message = '';
-          
+
           // Hide toast after 5 seconds
           setTimeout(() => {
             showToast = false;
           }, 5000);
         } else if (result.type === 'failure') {
           submitMessage = result.data?.error || 'Failed to send message';
+          showToast = true;
+          setTimeout(() => (showToast = false), 5000);
         }
         await update();
       };
     });
+
+  // 🔔 Toast helper for newsletter success
+  function toast(msg: string) {
+    submitMessage = msg;
+    showToast = true;
+    setTimeout(() => (showToast = false), 5000);
+  }
+
+  // 🔳 Newsletter modal control
+  let modalRef: {
+    show: (initialEmail?: string) => void;
+    close?: () => void;
+  } | null = null;
+
+  function openSubscribeModal() {
+    modalRef?.show?.('');
+  }
+
+  // ✨ Enhance newsletter forms inside the modal to use the same toast UX
+  onMount(() => {
+    // Delegate enhancement for any form posting to the subscribe action
+    const handler = (e: Event) => {
+      const target = e.target as HTMLFormElement | null;
+      if (!target) return;
+      const action = target.getAttribute('action') || '';
+      if (!action.includes('?/subscribe')) return;
+
+      // Only enhance once
+      if ((target as any).__enhanced) return;
+      (target as any).__enhanced = true;
+
+      enhance(target, () => {
+        return async ({ result, update }) => {
+          if (result.type === 'success' && (result.data as any)?.success) {
+            toast('Subscribed! Check your email to confirm.');
+            // Attempt to close modal if it exposes close()
+            modalRef?.close?.();
+          } else if (result.type === 'failure') {
+            const err = (result.data as any)?.error || 'Subscription failed. Please try again.';
+            toast(err);
+          }
+          await update();
+        };
+      });
+    };
+
+    document.addEventListener('submit', handler, true);
+    return () => document.removeEventListener('submit', handler, true);
+  });
 </script>
 
 <svelte:head>
@@ -60,8 +117,7 @@
     class="fixed top-4 right-4 z-50 max-w-md bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out"
     role="alert"
   >
-    <span class="font-semibold">Message sent.</span>
-    <span class="ml-2 opacity-90">{form?.message ?? 'Thanks for reaching out!'}</span>
+    <span class="font-semibold">{submitMessage || 'Action completed.'}</span>
   </div>
 {/if}
 
@@ -80,7 +136,7 @@
     <header class="text-center mb-12">
       <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Get in Touch</h1>
       <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-        Have questions about my books, want to discuss a project, or just want to say hello? 
+        Have questions about my books, want to discuss a project, or just want to say hello?
         I'd love to hear from you.
       </p>
     </header>
@@ -189,9 +245,16 @@
           <p class="text-gray-600 mb-4">
             Stay updated on new releases, writing process insights, and exclusive content.
           </p>
-          <a href="#newsletter" class="text-red-600 font-medium hover:text-red-700 transition-colors">
+
+          <!-- ⬇️ Button opens modal (styled like a link) -->
+          <button
+            type="button"
+            class="text-red-600 font-medium hover:text-red-700 transition-colors underline underline-offset-4 decoration-red-300"
+            on:click={openSubscribeModal}
+            aria-haspopup="dialog"
+          >
             Subscribe →
-          </a>
+          </button>
         </div>
 
         <div class="bg-gray-50 rounded-xl p-6">
@@ -208,3 +271,6 @@
     </div>
   </div>
 </section>
+
+<!-- 📨 Newsletter modal lives at the root so it can overlay -->
+<NewsletterModal bind:this={modalRef} />
