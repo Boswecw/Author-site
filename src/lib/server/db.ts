@@ -1,5 +1,5 @@
-// src/lib/server/db.ts - Optimized for Render + MongoDB Atlas
-import { MongoClient, Db, ServerApiVersion } from 'mongodb';
+// src/lib/server/db.ts - Optimized for Render + MongoDB Atlas (with SvelteKit env + cursor-like mock)
+import { MongoClient, type MongoClientOptions, Db, ServerApiVersion } from 'mongodb';
 import { env } from '$env/dynamic/private';
 
 let client: MongoClient | null = null;
@@ -7,36 +7,42 @@ let dbPromise: Promise<Db> | null = null;
 
 /* ---------------- Render-optimized connection options ---------------- */
 
-function getRenderOptimizedOptions() {
+function getRenderOptimizedOptions(): MongoClientOptions {
   return {
     serverApi: {
       version: ServerApiVersion.v1,
       strict: false,
       deprecationErrors: false
     },
+
     // Render networking
     family: 4,
     connectTimeoutMS: 30_000,
     socketTimeoutMS: 30_000,
     serverSelectionTimeoutMS: 30_000,
     heartbeatFrequencyMS: 30_000,
+
     // TLS for Atlas
     tls: true,
     tlsAllowInvalidHostnames: false,
     tlsAllowInvalidCertificates: false,
+
     // Pooling for free tier
     maxPoolSize: 5,
     minPoolSize: 1,
     maxIdleTimeMS: 60_000,
     waitQueueTimeoutMS: 10_000,
+
     // Reliability
     retryWrites: true,
     retryReads: true,
-    // Compression
+
+    // Compression (MUTABLE array, not readonly tuple)
     compressors: ['zstd', 'snappy', 'zlib'],
+
     // Debugging
     monitorCommands: process.env.NODE_ENV === 'development'
-  } as const;
+  };
 }
 
 /* ---------------------- Atlas connection string ---------------------- */
@@ -63,7 +69,7 @@ function getAtlasConnectionString(baseUri: string, dbName: string): string {
 /* -------------------------- Real connection -------------------------- */
 
 async function connectToMongoDB(): Promise<Db> {
-  // ✅ Read from SvelteKit env (works with .env.local)
+  // ✅ Use SvelteKit env API so .env.local works
   const MONGODB_URI = env.MONGODB_URI;
   const MONGODB_DB = env.MONGODB_DB;
 
@@ -79,15 +85,12 @@ async function connectToMongoDB(): Promise<Db> {
 
   try {
     const connectionString = getAtlasConnectionString(MONGODB_URI, MONGODB_DB);
-    console.log(
-      '[mongo] Connection string (masked):',
-      connectionString.replace(/\/\/[^@]+@/, '//***:***@')
-    );
+    console.log('[mongo] Connection string (masked):', connectionString.replace(/\/\/[^@]+@/, '//***:***@'));
 
     const options = getRenderOptimizedOptions();
     console.log('[mongo] Using connection options:', {
-      serverApi: options.serverApi.version,
-      tls: options.tls,
+      serverApi: options.serverApi && (options.serverApi as any).version,
+      tls: (options as any).tls,
       timeouts: {
         connect: options.connectTimeoutMS,
         socket: options.socketTimeoutMS,
@@ -104,6 +107,7 @@ async function connectToMongoDB(): Promise<Db> {
     console.log(`[mongo] ✅ Connected successfully in ${connectTime}ms`);
 
     const db = client.db(MONGODB_DB);
+
     const pingStart = Date.now();
     await db.command({ ping: 1 });
     const pingTime = Date.now() - pingStart;
@@ -111,10 +115,7 @@ async function connectToMongoDB(): Promise<Db> {
 
     try {
       const collections = await db.listCollections().toArray();
-      console.log(
-        '[mongo] 📚 Collections:',
-        collections.map((c) => c.name).join(', ') || 'none'
-      );
+      console.log('[mongo] 📚 Collections:', collections.map((c) => c.name).join(', ') || 'none');
     } catch {
       console.log('[mongo] ⚠️ Could not list collections (but connection works)');
     }
@@ -126,9 +127,9 @@ async function connectToMongoDB(): Promise<Db> {
       if (/\b(ENOTFOUND|ECONNREFUSED)\b/.test(error.message)) {
         console.error('[mongo] 🌐 Network error - check Atlas network access list');
       } else if (error.message.includes('authentication failed')) {
-        console.error('[mongo] 🔐 Authentication error - check username/password');
-      } else if (error.message.match(/\bSSL|TLS\b/)) {
-        console.error('[mongo] 🔒 TLS error - may be a platform/network issue');
+        console.error('[mongo] 🔐 Auth error - check username/password');
+      } else if (/\b(SSL|TLS)\b/.test(error.message)) {
+        console.error('[mongo] 🔒 TLS error - platform/network issue possible');
       }
     }
     throw error;
@@ -143,7 +144,7 @@ function createMockDatabase(): Db {
   function matches(doc: any, query: any): boolean {
     if (!query || typeof query !== 'object') return true;
 
-    // minimal operator support used in your queries
+    // support $or used in featured query
     if (query.$or && Array.isArray(query.$or)) {
       return query.$or.some((cond: any) => matches(doc, cond));
     }
@@ -155,7 +156,7 @@ function createMockDatabase(): Db {
         if ('$ne' in val) return v !== (val as any).$ne;
         if ('$exists' in val) return (key in doc) === (val as any).$exists;
         if ('$gte' in val) return new Date(v).getTime() >= new Date((val as any).$gte).getTime();
-        return matches(v, val);
+        return matches(v, val); // nested match
       }
       return v === val;
     });
@@ -167,7 +168,7 @@ function createMockDatabase(): Db {
     return {
       sort(spec?: Record<string, 1 | -1>) {
         if (spec && Object.keys(spec).length) {
-          // apply only the first sort key (good enough for dev)
+          // apply first key only (sufficient for dev)
           const [field, dir] = Object.entries(spec)[0] as [string, 1 | -1];
           _items.sort((a: any, b: any) => {
             const av = a?.[field];
@@ -177,7 +178,7 @@ function createMockDatabase(): Db {
           });
         }
         return this;
-    },
+      },
       limit(n?: number) {
         if (typeof n === 'number') _items = _items.slice(0, n);
         return this;
@@ -188,7 +189,7 @@ function createMockDatabase(): Db {
     };
   }
 
-  return {
+  const mock = {
     collection<T = any>(name: string) {
       if (!(name in store)) store[name] = [];
       const docs = store[name];
@@ -219,7 +220,9 @@ function createMockDatabase(): Db {
         }
       };
     }
-  } as any as Db;
+  };
+
+  return mock as unknown as Db;
 }
 
 /* ------------------------- Public DB interface ------------------------ */
@@ -229,7 +232,7 @@ export async function getDb(): Promise<Db> {
     dbPromise = connectToMongoDB().catch(async (error) => {
       console.error('[mongo] 🚨 Database connection failed, using mock database');
       console.error('[mongo] Error details:', (error as any)?.message ?? String(error));
-      // Do NOT reset to null here; keep mock cached for the process lifetime
+      // keep mock cached for process lifetime so we don't thrash
       return createMockDatabase();
     });
   }
