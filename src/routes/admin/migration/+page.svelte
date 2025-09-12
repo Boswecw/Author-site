@@ -124,11 +124,47 @@
       </button>
     </div>
 
+    <!-- Quick Status -->
+    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="flex items-center">
+          <div class="h-3 w-3 rounded-full {diagnostics?.connection?.healthy ? 'bg-green-500' : 'bg-red-500'} mr-3"></div>
+          <span class="text-sm font-medium">MongoDB Connection</span>
+        </div>
+        <p class="text-xs text-gray-600 mt-1">
+          {diagnostics?.connection?.status || 'Not tested'}
+          {#if diagnostics?.connection?.connectionTime}
+            ({diagnostics.connection.connectionTime}ms)
+          {/if}
+        </p>
+      </div>
+      
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="flex items-center">
+          <div class="h-3 w-3 rounded-full {(diagnostics?.subscribers?.stats?.total || 0) > 0 ? 'bg-green-500' : 'bg-yellow-500'} mr-3"></div>
+          <span class="text-sm font-medium">Subscriber Data</span>
+        </div>
+        <p class="text-xs text-gray-600 mt-1">
+          {diagnostics?.subscribers?.stats?.total || 0} total subscribers
+        </p>
+      </div>
+      
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="flex items-center">
+          <div class="h-3 w-3 rounded-full {diagnostics?.summary?.overallHealth === 'good' ? 'bg-green-500' : 'bg-yellow-500'} mr-3"></div>
+          <span class="text-sm font-medium">Overall Health</span>
+        </div>
+        <p class="text-xs text-gray-600 mt-1">
+          {diagnostics?.summary?.overallHealth?.replace('-', ' ') || 'Unknown'}
+        </p>
+      </div>
+    </div>
+
     <!-- Migration Results -->
     {#if migrationResult}
       <div class="mb-8 bg-green-50 border border-green-200 rounded-lg p-6">
-        <h3 class="text-lg font-medium text-green-800 mb-4">Migration Completed</h3>
-        <p class="text-green-700 mb-4">{migrationResult.message}</p>
+        <h3 class="text-lg font-medium text-green-800 mb-4">🎉 Migration Completed!</h3>
+        <p class="text-green-700 mb-4 font-medium">{migrationResult.message}</p>
         
         {#if migrationResult.results?.details}
           <div class="space-y-2">
@@ -152,99 +188,11 @@
               </div>
             {/each}
           </div>
-        {/if}
-      </div>
-    {/if}
-
-    <!-- Diagnostics Results -->
-    {#if diagnostics}
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <!-- System Status -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">System Status</h3>
-          <div class="space-y-3">
-            <div class="flex items-center">
-              <div class="h-3 w-3 rounded-full {diagnostics.connection.healthy ? 'bg-green-500' : 'bg-red-500'} mr-3"></div>
-              <span class="text-sm">
-                MongoDB Connection: 
-                <span class="font-medium">{diagnostics.connection.status}</span>
-                {#if diagnostics.connection.connectionTime}
-                  <span class="text-gray-500">({diagnostics.connection.connectionTime}ms)</span>
-                {/if}
-              </span>
-            </div>
-            
-            <div class="flex items-center">
-              <div class="h-3 w-3 rounded-full {diagnostics.subscribers.stats?.total > 0 ? 'bg-green-500' : 'bg-yellow-500'} mr-3"></div>
-              <span class="text-sm">
-                Subscriber Data: 
-                <span class="font-medium">{diagnostics.subscribers.stats?.total || 0} records</span>
-              </span>
-            </div>
-            
-            <div class="flex items-center">
-              <div class="h-3 w-3 rounded-full {diagnostics.summary.overallHealth === 'good' ? 'bg-green-500' : 'bg-yellow-500'} mr-3"></div>
-              <span class="text-sm">
-                Overall Health: 
-                <span class="font-medium capitalize">{diagnostics.summary.overallHealth.replace('-', ' ')}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Database Collections -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Database Collections</h3>
-          <div class="space-y-2">
-            {#each Object.entries(diagnostics.database.collectionCounts) as [name, count]}
-              <div class="flex justify-between text-sm">
-                <span class="font-medium">{name}</span>
-                <span class="text-gray-600">{count} documents</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-
-        <!-- Subscriber Statistics -->
-        {#if diagnostics.subscribers.stats}
-          <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Subscriber Statistics</h3>
-            <div class="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div class="text-2xl font-bold text-gray-900">{diagnostics.subscribers.stats.total}</div>
-                <div class="text-sm text-gray-500">Total</div>
-              </div>
-              <div>
-                <div class="text-2xl font-bold text-green-600">{diagnostics.subscribers.stats.confirmed}</div>
-                <div class="text-sm text-gray-500">Confirmed</div>
-              </div>
-              <div>
-                <div class="text-2xl font-bold text-yellow-600">{diagnostics.subscribers.stats.pending}</div>
-                <div class="text-sm text-gray-500">Pending</div>
-              </div>
-              <div>
-                <div class="text-2xl font-bold text-red-600">{diagnostics.subscribers.stats.unsubscribed}</div>
-                <div class="text-sm text-gray-500">Unsubscribed</div>
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Data Issues -->
-        {#if diagnostics.subscribers.dataIssues.length > 0}
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h3 class="text-lg font-medium text-yellow-800 mb-4">Data Issues Found</h3>
-            <ul class="space-y-2">
-              {#each diagnostics.subscribers.dataIssues as issue}
-                <li class="text-sm text-yellow-700 flex items-start">
-                  <svg class="h-4 w-4 text-yellow-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                  </svg>
-                  {issue}
-                </li>
-              {/each}
-            </ul>
+          
+          <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p class="text-sm text-blue-800">
+              ✅ Migration successful! Now check your <a href="/admin/subscribers" class="underline hover:text-blue-900">subscriber admin page</a> - it should show your subscribers instead of 0!
+            </p>
           </div>
         {/if}
       </div>

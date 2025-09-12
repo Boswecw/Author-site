@@ -20,7 +20,7 @@ export async function POST() {
     // Your existing Google Sheets data (from the screenshot)
     const googleSheetsData: GoogleSheetsSubscriber[] = [
       {
-        email: 'charlieboswell@gmail',
+        email: 'charlieboswell@gmail.com',
         name: 'Charles Boswell', 
         status: 'confirmed',
         createdAt: '2025-09-12T09:48:41.591Z',
@@ -28,7 +28,7 @@ export async function POST() {
         source: 'browser-test'
       },
       {
-        email: 'charlieboswell@gmail', // Duplicate - will be merged
+        email: 'charlieboswell@gmail.com', // Duplicate - will be merged
         name: 'Charles Boswell',
         status: 'confirmed', 
         createdAt: '2025-09-12T10:15:42.623Z',
@@ -36,7 +36,7 @@ export async function POST() {
         source: 'contact-modal'
       },
       {
-        email: 'bosweov@gmail', 
+        email: 'bosweov@gmail.com', 
         name: 'Charles Boswell',
         status: 'confirmed',
         createdAt: '2025-09-12T10:58:34.059Z', 
@@ -114,10 +114,15 @@ export async function POST() {
   }
 }
 
-// Alternative: Fetch from Google Sheets API instead of hardcoded data
+// Alternative: Get status info
 export async function GET() {
   return json({ 
     message: 'Use POST to trigger sync',
-    instructions: 'Send POST request to sync Google Sheets data to MongoDB'
+    instructions: 'Send POST request to sync Google Sheets data to MongoDB',
+    endpoints: {
+      sync: 'POST /admin/sync-subscribers',
+      diagnostics: 'GET /admin/diagnostics', 
+      migration_ui: 'GET /admin/migration'
+    }
   });
 }
