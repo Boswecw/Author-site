@@ -1,4 +1,4 @@
-// src/routes/books/+page.server.ts - UPDATED to use central Firebase utilities
+// src/routes/books/+page.server.ts - UPDATED to use central Firebase utilities and fix TypeScript issues
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import type { BookDoc } from '$lib/types';
@@ -21,10 +21,10 @@ function getGenreIcons() {
   ) as Record<'faith' | 'epic' | 'sci-fi', string>;
 }
 
-/** ✅ SIMPLIFIED: Normalize book using central utility */
+/** ✅ FIXED: Normalize book using correct _id/id handling */
 function normalizeBook(book: BookDoc) {
   return {
-    id: book.id,
+    id: book._id?.toString() || book.id || '', // ✅ FIX: Handle both _id and id properties
     title: book.title,
     description: book.description ?? '',
     cover: book.cover ? buildBookCoverUrl(book.cover) : null, // ✅ Automatically includes books/ folder
@@ -38,8 +38,8 @@ function normalizeBook(book: BookDoc) {
     isbn: book.isbn ?? null,
     format: book.format ?? 'EPUB',
     pages: book.pages ?? null,
-    buyLinks: book.buyLinks ?? null,
-    featured: !!book.featured
+    buyLinks: book.buyLinks ?? {},
+    featured: book.featured ?? false // ✅ FIX: Provide default boolean value
   };
 }
 
@@ -48,9 +48,9 @@ export const load: PageServerLoad = async () => {
     const db = await getDb();
     const coll = db.collection<BookDoc>('books');
 
+    // ✅ FIX: Remove id from projection since BookDoc uses _id
     const projection = {
-      _id: 0,
-      id: 1,
+      _id: 1, // ✅ FIX: Include _id instead of id
       title: 1,
       description: 1,
       cover: 1,
@@ -76,8 +76,9 @@ export const load: PageServerLoad = async () => {
     const books = docs.map((book) => {
       const normalized = normalizeBook(book);
       
-      // Debug logging for Hurricane Eve specifically  
-      if (book.id === 'hurricane-eve') {
+      // ✅ FIX: Debug logging using correct property access
+      const bookIdentifier = book._id?.toString() || book.id;
+      if (bookIdentifier === 'hurricane-eve') {
         console.log(`[books/page.server] Hurricane Eve cover processing:`, {
           originalCover: book.cover,
           normalizedCover: normalized.cover?.substring(0, 100) + '...'

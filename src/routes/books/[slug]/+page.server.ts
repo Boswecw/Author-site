@@ -1,14 +1,14 @@
-// src/routes/books/[slug]/+page.server.ts - UPDATED to use central Firebase utilities
+// src/routes/books/[slug]/+page.server.ts - UPDATED to use central Firebase utilities and fix TypeScript issues
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import type { BookDoc } from '$lib/types';
 import { buildBookCoverUrl } from '$lib/utils/firebase'; // ✅ Use central utility
 
-/** ✅ SIMPLIFIED: Use central utility for book cover URLs */
+/** ✅ FIXED: Use central utility for book cover URLs and handle _id/id properly */
 function normalizeBook(book: BookDoc) {
   return {
-    id: book.id,
+    id: book._id?.toString() || book.id || '', // ✅ FIX: Handle both _id and id properties
     title: book.title,
     description: book.description ?? '',
     cover: book.cover ? buildBookCoverUrl(book.cover) : null, // ✅ Automatically includes books/ folder
@@ -23,7 +23,7 @@ function normalizeBook(book: BookDoc) {
     format: book.format ?? 'EPUB',
     pages: book.pages ?? null,
     buyLinks: book.buyLinks ?? {},
-    featured: !!book.featured
+    featured: book.featured ?? false // ✅ FIX: Provide default boolean value
   };
 }
 
@@ -34,9 +34,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
     console.log(`[books/slug] Looking for book: ${params.slug}`);
 
+    // ✅ FIX: Include _id in projection and handle both _id and id fields
     const projection = {
-      _id: 0,
-      id: 1,
+      _id: 1, // ✅ FIX: Include _id instead of excluding it
       title: 1,
       description: 1,
       cover: 1,
@@ -50,7 +50,20 @@ export const load: PageServerLoad = async ({ params }) => {
       featured: 1
     } as const;
 
-    const book = await coll.findOne({ id: params.slug }, { projection });
+    // ✅ FIX: Try multiple query strategies to find the book
+    let book = await coll.findOne({ id: params.slug }, { projection });
+    
+    // If not found by id field, try by _id if it's a valid ObjectId format
+    if (!book) {
+      try {
+        const { ObjectId } = await import('mongodb');
+        if (ObjectId.isValid(params.slug)) {
+          book = await coll.findOne({ _id: new ObjectId(params.slug) }, { projection });
+        }
+      } catch {
+        // Continue to placeholder check
+      }
+    }
 
     if (!book) {
       console.log(`[books/slug] Book not found in database: ${params.slug}`);
@@ -136,8 +149,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
     console.log(`[books/slug] Found book in database: ${book.title}`);
     
-    // Debug logging for Hurricane Eve specifically
-    if (book.id === 'hurricane-eve') {
+    // ✅ FIX: Debug logging using correct property access
+    const bookIdentifier = book._id?.toString() || book.id;
+    if (bookIdentifier === 'hurricane-eve') {
       console.log(`[books/slug] Hurricane Eve cover processing:`, {
         originalCover: book.cover,
         processedCover: processedBook.cover?.substring(0, 100) + '...'

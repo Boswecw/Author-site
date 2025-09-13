@@ -1,7 +1,13 @@
 <!-- src/lib/components/NewsletterModal.svelte -->
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+  
   // Runes-friendly props + instance methods (Svelte 5)
-  const props = $props<{ onClose?: () => void; initialEmail?: string }>();
+  const props = $props<{ 
+    onClose?: () => void; 
+    initialEmail?: string;
+    success?: Snippet; // Use snippet instead of slot
+  }>();
 
   let open = $state(false);
   let emailPrefill = $state(props.initialEmail ?? '');
@@ -25,10 +31,10 @@
 {#if open}
   <div
     class="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
-    role="dialog" tabindex="-1" tabindex="-1"
+    role="dialog" 
+    tabindex="-1"
     aria-modal="true"
     aria-labelledby="nl-title"
-    tabindex="-1" 
     onclick={(e) => e.currentTarget === e.target && close()}
     onkeydown={(e) => e.key === 'Escape' && close()}
   >
@@ -42,9 +48,9 @@
         >✕</button>
       </div>
 
-      <!-- optional success slot -->
-       {#if $$slots.success}
-        {@render $$slots.success()}
+      <!-- optional success snippet -->
+      {#if props.success}
+        {@render props.success()}
       {/if}
 
       <form method="POST" action="?/subscribe" class="mt-4 space-y-4">
@@ -83,7 +89,7 @@
 
         <!-- Resend helper -->
         <p class="text-xs text-neutral-500 mt-2">
-          Didn’t get the email?
+          Didn't get the email?
           <a class="underline text-red-600" href="/newsletter/resend">Resend</a>
         </p>
 
