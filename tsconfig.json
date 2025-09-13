@@ -16,5 +16,5 @@
     "types": []
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["node_modules", "build", ".svelte-kit"]
+  "exclude": ["node_modules", "newsletter", "build", ".svelte-kit"]
 }
