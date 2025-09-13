@@ -1,7 +1,6 @@
-// postcss.config.js - FIXED CONFIGURATION
 export default {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  };
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}

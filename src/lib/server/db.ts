@@ -1,6 +1,6 @@
 // src/lib/server/db.ts - Optimized for Render + MongoDB Atlas (with SvelteKit env + cursor-like mock)
 import { MongoClient, type MongoClientOptions, Db, ServerApiVersion } from 'mongodb';
-import { env } from '$env/dynamic/private';
+
 
 let client: MongoClient | null = null;
 let dbPromise: Promise<Db> | null = null;
@@ -70,8 +70,8 @@ function getAtlasConnectionString(baseUri: string, dbName: string): string {
 
 async function connectToMongoDB(): Promise<Db> {
   // ✅ Use SvelteKit env API so .env.local works
-  const MONGODB_URI = env.MONGODB_URI;
-  const MONGODB_DB = env.MONGODB_DB;
+  const MONGODB_URI = process.env.MONGODB_URI;
+  const MONGODB_DB = process.env.MONGODB_DB;
 
   if (!MONGODB_URI || !MONGODB_DB) {
     throw new Error('Missing MONGODB_URI or MONGODB_DB environment variables');

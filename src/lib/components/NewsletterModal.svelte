@@ -25,10 +25,12 @@
 {#if open}
   <div
     class="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
-    role="dialog"
+    role="dialog" tabindex="-1" tabindex="-1"
     aria-modal="true"
     aria-labelledby="nl-title"
+    tabindex="-1" 
     onclick={(e) => e.currentTarget === e.target && close()}
+    onkeydown={(e) => e.key === 'Escape' && close()}
   >
     <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900">
       <div class="flex items-start justify-between gap-4">
@@ -41,7 +43,9 @@
       </div>
 
       <!-- optional success slot -->
-      <slot name="success"></slot>
+       {#if $$slots.success}
+        {@render $$slots.success()}
+      {/if}
 
       <form method="POST" action="?/subscribe" class="mt-4 space-y-4">
         <div class="space-y-1">

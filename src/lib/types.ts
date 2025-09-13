@@ -1,30 +1,30 @@
-// src/lib/types.ts
-
-export type BookStatus =
-  | 'writing'
-  | 'coming-soon'
-  | 'draft'        // ← include 'draft'
-  | 'featured'
-  | 'published'
-  | 'upcoming';
-
-export type BookGenre = 'faith' | 'epic' | 'sci-fi' | string;
-
-export interface Book {
-  id: string;
-  title: string;
-  description?: string | null;
-  cover?: string | null;         // Firebase Storage path
-  genre?: BookGenre | null;
-  status?: BookStatus | null;
-  publishDate?: string | null;       // ISO string for client/UI
-  isbn?: string | null;
-  format?: string | null;
-  pages?: number | null;
-  buyLinks?: Record<string, string> | null;
+export interface NewsletterSignupData {
+  name?: string;
+  email: string;
+  source?: string;
 }
 
-// Mongo document shape (publishDate can be Date or string in DB)
-export interface BookDoc extends Omit<Book, 'publishDate'> {
+export interface BookDoc {
+  _id?: import('mongodb').ObjectId;
+  title: string;
+  description: string;
+  cover?: string | null;
+  genre: string;
+  status: BookStatus;
   publishDate?: Date | string | null;
+  isbn?: string | null;
+  format: string;
+  pages?: number | null;
+  buyLinks?: Record<string, string>;
+  featured?: boolean;
+  links?: Record<string, string>;
+}
+
+export type BookStatus = 'published' | 'upcoming' | 'draft';
+
+export interface ContactFormData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
 }

@@ -65,7 +65,11 @@ export async function upsertSubscriber(
       { returnDocument: 'after' }
     );
     
-    return result.value!;
+    if (!result) {
+      throw new Error('Failed to update subscriber');
+    }
+    
+    return result;  
   } else {
     // Create new subscriber
     const newSubscriber: Omit<Subscriber, '_id'> = {

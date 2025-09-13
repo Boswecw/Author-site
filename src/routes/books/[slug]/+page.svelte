@@ -105,9 +105,9 @@
           {#if book.status === 'published'}
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Get Your Copy</h3>
             <div class="space-y-3">
-              {#if book.buyLinks?.amazon || book.links?.amazon}
+               {#if book.buyLinks?.amazon}
                 <a 
-                  href={book.buyLinks?.amazon || book.links?.amazon} 
+                  href={book.buyLinks.amazon}
                   class="block w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-3 px-6 rounded-lg text-center transition-colors"
                   target="_blank" 
                   rel="noopener noreferrer"
@@ -115,9 +115,9 @@
                   Buy on Amazon
                 </a>
               {/if}
-              {#if book.buyLinks?.barnes || book.links?.barnes}
+              {#if book.buyLinks?.barnes}
                 <a 
-                  href={book.buyLinks?.barnes || book.links?.barnes} 
+                  href={book.buyLinks.barnes}
                   class="block w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg text-center transition-colors"
                   target="_blank" 
                   rel="noopener noreferrer"
