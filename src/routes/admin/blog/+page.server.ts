@@ -1,8 +1,26 @@
-// src/routes/admin/blog/+page.server.ts
+// src/routes/admin/blog/+page.server.ts - FIXED
 import { getDb } from '$lib/server/db';
-import { getGoogleDocsPosts } from '$lib/server/blog-google-docs';
-import type { ExtendedPostDoc } from '$lib/server/blog-google-docs';
 import type { PageServerLoad } from './$types';
+
+// Use the correct types
+interface ExtendedPostDoc {
+  _id?: any;
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  contentMarkdown?: string | null;
+  heroImage?: string | null;
+  publishDate?: Date | string | null;
+  publishedAt?: Date | string | null;
+  tags?: string[] | null;
+  genre?: string | null;
+  status: 'published' | 'draft';
+  source?: 'google-docs' | 'manual' | 'admin';
+  googleDocId?: string;
+  lastSyncedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 export const load: PageServerLoad = async ({ url, setHeaders }) => {
   console.log('[admin-blog] Loading blog management page...');
@@ -89,7 +107,9 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
         _id: post._id?.toString(),
         publishDate: post.publishDate?.toString(),
         publishedAt: post.publishedAt?.toString(),
-        lastSyncedAt: post.lastSyncedAt?.toString()
+        lastSyncedAt: post.lastSyncedAt?.toString(),
+        createdAt: post.createdAt?.toString(),
+        updatedAt: post.updatedAt?.toString()
       })),
       stats: {
         total: posts.length,
