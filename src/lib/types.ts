@@ -9,7 +9,7 @@ export interface NewsletterSignupData {
   firstName?: string;
 }
 
-// Contact form data and action result
+// Contact form data and action result  
 export interface ContactFormData {
   name: string;
   email: string;
@@ -106,14 +106,24 @@ export interface Post {
   status: PostStatus;
 }
 
-// Image component props
+// ✅ FIXED: Image component props with loading attribute
 export interface ImageProps {
-  src: string | null;
+  src: string | null | undefined;
   alt?: string;
   className?: string;
   fallbackText?: string;
   fallbackType?: 'book' | 'avatar' | 'logo';
   loading?: 'eager' | 'lazy'; // ✅ FIXED: Added loading prop
+}
+
+// ✅ FIXED: Pagination interface with pages property
+export interface Pagination {
+  current: number;
+  total: number;
+  pages: number; // ✅ ADDED: Missing pages property
+  hasMore: boolean;
+  hasPrevious: boolean;
+  totalPosts: number;
 }
 
 // API response types
@@ -123,3 +133,19 @@ export interface ApiResponse<T = any> {
   error?: string;
   message?: string;
 }
+
+// Page data interfaces
+export interface PageData {
+  post?: any;
+  posts?: Post[];
+  books?: Book[];
+  featured?: Book;
+  upcoming?: Book[];
+  pagination?: Pagination;
+}
+
+// ✅ FIXED: Action data type for contact form
+export type ActionData = ContactActionData;
+
+// Export alias for backward compatibility
+export type PostDoc = ExtendedPostDoc;

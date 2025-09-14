@@ -1,36 +1,57 @@
-<!-- src/routes/contact/+page.svelte - Fixed with Svelte 5 runes -->
+<!-- src/routes/contact/+page.svelte -->
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import type { ContactActionData } from '$lib/types'; // ✅ FIXED: Import proper type
-  
-  // ✅ FIXED: Use $props() instead of export let
-  let { data } = $props<{ data: { form?: ContactActionData } }>();
-  
-  let submitMessage = $state('');
+  import type { ContactActionData } from '$lib/types';
+
+  // ✅ FIXED: Proper props interface and destructuring
+  interface Props {
+    form: ContactActionData;
+  }
+
+  let { form }: Props = $props();
+
+  // ✅ FIXED: Proper state management with runes
+  let isSubmitting = $state(false);
   let showToast = $state(false);
-  
-  // ✅ FIXED: Access form from data object
-  const form = $derived(data.form);
-  
-  // Handle form result
+
+  // ✅ FIXED: Derived reactive values
+  let hasFieldErrors = $derived(Boolean(form?.fieldErrors));
+  let submitMessage = $derived(() => {
+    if (form?.success) {
+      return 'Message sent successfully!';
+    } else if (form?.error) {
+      return form.error;
+    } else if (hasFieldErrors) {
+      return 'Please fix the errors below.';
+    }
+    return '';
+  });
+
+  // ✅ FIXED: Functions for toast management
+  function hideToast() {
+    showToast = false;
+  }
+
+  // ✅ FIXED: Effect for handling form responses
   $effect(() => {
-    if (form) {
-      if (form.success) {
-        submitMessage = form.message || 'Message sent successfully!';
-        showToast = true;
-        // Auto-hide success toast after 5 seconds
-        setTimeout(() => { showToast = false; }, 5000);
-      } else {
-        // ✅ FIXED: Proper string coercion
-        submitMessage = String(form.error ?? 'Failed to send message');
-        showToast = true;
+    if (form?.success || form?.error || hasFieldErrors) {
+      showToast = true;
+      // Auto-hide success messages after 5 seconds
+      if (form?.success) {
+        setTimeout(() => {
+          showToast = false;
+        }, 5000);
       }
     }
   });
-  
-  function hideToast() {
-    showToast = false;
-    submitMessage = '';
+
+  // ✅ FIXED: Enhanced form submission handling
+  function handleSubmit() {
+    return async ({ update }) => {
+      isSubmitting = true;
+      await update();
+      isSubmitting = false;
+    };
   }
 </script>
 
@@ -40,7 +61,7 @@
 </svelte:head>
 
 <!-- Toast notification -->
-{#if showToast}
+{#if showToast && submitMessage}
   <div class="fixed top-4 right-4 z-50 max-w-sm w-full">
     <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-4 flex items-center justify-between">
       <div class="flex items-center">
@@ -83,7 +104,7 @@
       <div class="px-6 py-8">
         <form 
           method="POST" 
-          use:enhance
+          use:enhance={handleSubmit}
           class="space-y-6"
         >
           <!-- Name Field -->
@@ -96,7 +117,8 @@
               id="name"
               name="name"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              value={form?.values?.name || ''}
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 {form?.fieldErrors?.name ? 'border-red-300' : ''}"
               placeholder="Your full name"
             />
             {#if form?.fieldErrors?.name}
@@ -114,7 +136,8 @@
               id="email"
               name="email"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              value={form?.values?.email || ''}
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 {form?.fieldErrors?.email ? 'border-red-300' : ''}"
               placeholder="your.email@example.com"
             />
             {#if form?.fieldErrors?.email}
@@ -132,7 +155,8 @@
               id="subject"
               name="subject"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              value={form?.values?.subject || ''}
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 {form?.fieldErrors?.subject ? 'border-red-300' : ''}"
               placeholder="What would you like to discuss?"
             />
             {#if form?.fieldErrors?.subject}
@@ -150,7 +174,8 @@
               name="message"
               rows="6"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              value={form?.values?.message || ''}
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 {form?.fieldErrors?.message ? 'border-red-300' : ''}"
               placeholder="Tell me about your thoughts, questions, or ideas..."
             ></textarea>
             {#if form?.fieldErrors?.message}
@@ -162,9 +187,18 @@
           <div>
             <button
               type="submit"
-              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              disabled={isSubmitting}
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send Message
+              {#if isSubmitting}
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Sending...
+              {:else}
+                Send Message
+              {/if}
             </button>
           </div>
         </form>

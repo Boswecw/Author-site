@@ -1,0 +1,8 @@
+# render.yaml
+services:
+  - type: web
+    name: charles-boswell-author-site
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node build  # Changed from node build/index.js

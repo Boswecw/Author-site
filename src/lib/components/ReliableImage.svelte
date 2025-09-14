@@ -1,13 +1,27 @@
-<!-- src/lib/components/ReliableImage.svelte - COMPLETE and WORKING -->
+<!-- src/lib/components/ReliableImage.svelte - FIXED for Svelte 5 with loading prop -->
+<!-- @component
+### Props
+- `! alt` **unknown**
+- `! className` **unknown**
+- `! fallbackText` **unknown**
+- `! fallbackType` **unknown** = `book`
+- `! loading` **unknown** = `'lazy' // ✅ FIXED: Added missing loading prop`
+
+no description yet
+-->
 <script lang="ts">
   import { createFallbackImage } from '$lib/utils/image';
+  import type { ImageProps } from '$lib/types';
 
-  // Props
-  export let src: string | null | undefined;
-  export let alt: string = '';
-  export let className: string = '';
-  export let fallbackText: string = '';
-  export let fallbackType: 'book' | 'avatar' | 'logo' = 'book';
+  // ✅ FIXED: Use $props() instead of export let for Svelte 5
+  let {
+    src,
+    alt = '',
+    className = '',
+    fallbackText = '',
+    fallbackType = 'book',
+    loading = 'lazy'  // ✅ FIXED: Added missing loading prop
+  }: ImageProps = $props();
 
   // Use server-built URLs directly with fallback
   function getImageUrl(): string {
@@ -36,8 +50,8 @@
 <img
   src={getImageUrl()}
   {alt}
+  {loading}
   class={className}
-  loading="lazy"
   decoding="async"
-  on:error={handleError}
+  onerror={handleError}
 />

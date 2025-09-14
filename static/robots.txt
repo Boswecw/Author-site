@@ -1,0 +1,7 @@
+# static/robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://YOUR-DOMAIN/sitemap.xml

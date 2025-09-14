@@ -1,36 +1,64 @@
-// src/lib/utils/firebase.ts - FIXED
-export const BUCKET_NAME = 'endless-fire-467204-n2.firebasestorage.app';
-export const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o`;
+// src/lib/utils/firebase.ts - Firebase URL builders
+import { PUBLIC_FIREBASE_STORAGE_BUCKET } from '$env/static/public';
+
+const BASE_URL = `https://firebasestorage.googleapis.com/v0/b/${PUBLIC_FIREBASE_STORAGE_BUCKET}/o`;
 
 /**
- * Build Firebase Storage URL with folder support
+ * Build a Firebase public URL for any file
+ * @param nameOrPath - Filename or path (e.g., "cover.png" or "books/cover.png")
+ * @param folder - Optional folder prefix (only if nameOrPath doesn't include path)
  */
-export function buildImageUrl(path: string, folder?: string): string {
-  // If it's already a full URL, return as-is
-  if (path.startsWith('http')) {
-    return path;
+export function buildImageUrl(nameOrPath: string, folder?: string): string {
+  if (!nameOrPath?.trim()) {
+    console.warn('[buildImageUrl] Empty nameOrPath provided');
+    return '';
   }
   
-  // If path includes a folder or no folder specified, use as-is
-  // Otherwise, prepend the folder
-  const finalPath = (folder && !path.includes('/')) 
-    ? `${folder}/${path}` 
-    : path;
-    
-  return `${BASE_URL}/${encodeURIComponent(finalPath)}?alt=media`;
+  // If it's already a full URL, return as-is
+  if (/^https?:\/\//i.test(nameOrPath)) {
+    return nameOrPath;
+  }
+  
+  // Build the path
+  let path = nameOrPath;
+  if (folder && !nameOrPath.includes('/')) {
+    path = `${folder}/${nameOrPath}`;
+  }
+  
+  // URL encode the path
+  const encodedPath = encodeURIComponent(path);
+  return `${BASE_URL}/${encodedPath}?alt=media`;
 }
 
 /**
- * CRITICAL: Book covers must include books/ folder
+ * Build a Firebase URL specifically for book covers (always in books/ folder)
  */
-export function buildBookCoverUrl(filename: string): string {
-  return buildImageUrl(filename, 'books');
+export function buildBookCoverUrl(nameOrPath: string): string {
+  return buildImageUrl(nameOrPath, 'books');
 }
 
-export function buildIconUrl(filename: string): string {
-  return buildImageUrl(filename, 'icons');
+/**
+ * Build a Firebase URL specifically for icons (always in icons/ folder)
+ */
+export function buildIconUrl(nameOrPath: string): string {
+  return buildImageUrl(nameOrPath, 'icons');
 }
 
-export function buildPostImageUrl(filename: string): string {
-  return buildImageUrl(filename, 'posts');
+/**
+ * Build a Firebase URL for blog hero images (posts/ folder by default)
+ */
+export function buildHeroImageUrl(nameOrPath: string): string {
+  if (!nameOrPath?.trim()) return '';
+  
+  // If already a full URL, return as-is
+  if (/^https?:\/\//i.test(nameOrPath)) {
+    return nameOrPath;
+  }
+  
+  // If it includes a path, use as-is, otherwise default to posts/ folder
+  if (nameOrPath.includes('/')) {
+    return buildImageUrl(nameOrPath);
+  } else {
+    return buildImageUrl(nameOrPath, 'posts');
+  }
 }

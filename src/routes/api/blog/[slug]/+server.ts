@@ -4,7 +4,7 @@ import { json } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { ObjectId } from 'mongodb';
 import type { RequestHandler } from './$types';
-import type { ExtendedPostDoc } from '$lib/server/blog-google-docs';
+import type { ExtendedPostDoc } from '$lib/types';
 
 const API_KEY = process.env.BLOG_API_KEY || process.env.CONTENT_API_KEY || 'your-blog-api-key';
 
@@ -65,15 +65,14 @@ export const GET: RequestHandler = async ({ params, request, url }) => {
     
     console.log(`[blog-get-api] ✅ Found post: "${post.title}" (slug: ${post.slug})`);
     
-    // Format response
+    // Format response - only include fields that exist in ExtendedPostDoc
     const formattedPost = {
       ...post,
       _id: post._id?.toString(),
       publishDate: post.publishDate?.toString(),
       publishedAt: post.publishedAt?.toString(),
-      lastSyncedAt: post.lastSyncedAt?.toString(),
-      createdAt: post.createdAt?.toString(),
-      updatedAt: post.updatedAt?.toString()
+      lastSyncedAt: post.lastSyncedAt?.toString()
+      // ✅ FIXED: Removed createdAt and updatedAt references since they don't exist in ExtendedPostDoc
     };
     
     const response = {

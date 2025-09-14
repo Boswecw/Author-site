@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build
-    startCommand: node build/index.js
+    startCommand: node build
     
     # Health check endpoint
     healthCheckPath: /health
