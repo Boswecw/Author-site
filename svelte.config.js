@@ -1,18 +1,11 @@
-import adapter from '@sveltejs/adapter-node';
+// svelte.config.js
+import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-  preprocess: vitePreprocess(),
+const isDev = process.env.NODE_ENV !== 'production';
 
-  kit: {
-    adapter: adapter({
-      // Configure for Render
-      out: 'build',
-      precompress: false,
-      envPrefix: ''
-    })
-  }
+export default {
+  kit: { adapter: adapter() },      // <-- invoke adapter()
+  preprocess: vitePreprocess(),     // <-- correct import location
+  vitePlugin: { inspector: isDev }  // dev-only inspector
 };
-
-export default config;

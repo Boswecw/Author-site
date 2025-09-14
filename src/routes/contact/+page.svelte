@@ -1,213 +1,201 @@
+<!-- src/routes/contact/+page.svelte - Fixed with Svelte 5 runes -->
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { onMount } from 'svelte';
-  import type { ActionData } from './$types';
-  import NewsletterModal from '$lib/components/NewsletterModal.svelte';
-
-  // Runes props
-  const props = $props<{ form: ActionData }>();
-  const form = $derived(props.form);
-
-  // Form state (must use $state because we mutate them)
-  let name = $state('');
-  let email = $state('');
-  let subject = $state('');
-  let message = $state('');
-
-  // Runes-safe derived hint
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const emailHint = $derived(
-    email ? (emailRegex.test(email) ? '' : 'Please enter a valid email address') : ''
-  );
-
-  // Toast + loading (must be $state if mutated)
-  let showToast = $state(false);
+  import type { ContactActionData } from '$lib/types'; // ✅ FIXED: Import proper type
+  
+  // ✅ FIXED: Use $props() instead of export let
+  let { data } = $props<{ data: { form?: ContactActionData } }>();
+  
   let submitMessage = $state('');
-  let loading = $state(false);
-
-  const enhanceSubmit = (node: HTMLFormElement) =>
-    enhance(node, () => {
-      loading = true;
-      return async ({ result, update }) => {
-        loading = false;
-
-        if (result.type === 'success') {
-          showToast = true;
-          submitMessage = 'Message sent successfully!';
-          name = ''; email = ''; subject = ''; message = '';
-          setTimeout(() => (showToast = false), 5000);
-        } else if (result.type === 'failure') {
-          submitMessage = result.data?.error || 'Failed to send message';
-          showToast = true;
-          setTimeout(() => (showToast = false), 5000);
-        }
-        await update();
-      };
-    });
-
-  function toast(msg: string) {
-    submitMessage = msg;
-    showToast = true;
-    setTimeout(() => (showToast = false), 5000);
-  }
-
-  let modalRef: { show: (initialEmail?: string) => void; close?: () => void } | null = null;
-  function openSubscribeModal() {
-    modalRef?.show?.(email || '');
-  }
-
-  onMount(() => {
-    const handler = (e: Event) => {
-      const target = e.target as HTMLFormElement | null;
-      if (!target) return;
-      const action = target.getAttribute('action') || '';
-      if (!action.includes('?/subscribe')) return;
-      if ((target as any).__enhanced) return;
-      (target as any).__enhanced = true;
-
-      enhance(target, () => {
-        return async ({ result, update }) => {
-          if (result.type === 'success' && (result.data as any)?.success) {
-            toast('Subscribed! Check your email to confirm.');
-            modalRef?.close?.();
-          } else if (result.type === 'failure') {
-            const err = (result.data as any)?.error || 'Subscription failed. Please try again.';
-            toast(err);
-          }
-          await update();
-        };
-      });
-    };
-
-    document.addEventListener('submit', handler, true);
-    return () => document.removeEventListener('submit', handler, true);
+  let showToast = $state(false);
+  
+  // ✅ FIXED: Access form from data object
+  const form = $derived(data.form);
+  
+  // Handle form result
+  $effect(() => {
+    if (form) {
+      if (form.success) {
+        submitMessage = form.message || 'Message sent successfully!';
+        showToast = true;
+        // Auto-hide success toast after 5 seconds
+        setTimeout(() => { showToast = false; }, 5000);
+      } else {
+        // ✅ FIXED: Proper string coercion
+        submitMessage = String(form.error ?? 'Failed to send message');
+        showToast = true;
+      }
+    }
   });
+  
+  function hideToast() {
+    showToast = false;
+    submitMessage = '';
+  }
 </script>
 
 <svelte:head>
-  <title>Contact — Charles W. Boswell</title>
-  <meta name="description" content="Get in touch with Charles Boswell and subscribe to his newsletter for updates on new releases and adventures." />
+  <title>Contact - Charles W. Boswell</title>
+  <meta name="description" content="Get in touch with Charles Boswell - Fantasy author, Navy veteran, and wildland firefighter. Send a message about his books, writing, or speaking opportunities." />
 </svelte:head>
 
+<!-- Toast notification -->
 {#if showToast}
-  <div class="fixed top-4 right-4 z-50 max-w-md bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg transition-all" role="alert">
-    <span class="font-semibold">{submitMessage || 'Action completed.'}</span>
+  <div class="fixed top-4 right-4 z-50 max-w-sm w-full">
+    <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-4 flex items-center justify-between">
+      <div class="flex items-center">
+        {#if form?.success}
+          <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+        {:else}
+          <svg class="h-5 w-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        {/if}
+        <span class="text-sm text-gray-700">{submitMessage}</span>
+      </div>
+      <button 
+        onclick={hideToast}
+        class="text-gray-400 hover:text-gray-600 ml-2"
+        aria-label="Close"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
   </div>
 {/if}
 
-<section class="pt-28 pb-16 bg-white">
+<div class="min-h-screen bg-gray-50 py-12">
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-    {#if form?.success}
-      <div class="rounded-xl border border-green-200 bg-green-50 p-6 mb-10">
-        <h2 class="text-lg font-semibold text-green-800 mb-2">Message Sent Successfully!</h2>
-        <p class="text-green-800/90">{form.message ?? "Thanks for reaching out. I'll get back to you soon."}</p>
-      </div>
-    {/if}
-
-    <header class="text-center mb-12">
-      <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Get in Touch</h1>
-      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-        Have questions about my books, want to discuss a project, or just want to say hello?
-        I'd love to hear from you.
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Get in Touch</h1>
+      <p class="text-xl text-gray-600">
+        I'd love to hear from you about my books, writing, or speaking opportunities.
       </p>
-    </header>
-
-    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-8">
-      <!-- ✅ FIXED: Added action="?/contact" to use the named action -->
-      <form method="POST" action="?/contact" use:enhanceSubmit class="space-y-6">
-        <!-- Name -->
-        <div>
-          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
-          <input id="name" name="name" type="text" required
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
-            bind:value={name}
-            aria-invalid={form?.errors?.name ? 'true' : 'false'}
-            aria-describedby={form?.errors?.name ? 'name-error' : undefined}
-          />
-          {#if form?.errors?.name}
-            <p id="name-error" class="mt-1 text-sm text-red-600">{form.errors.name}</p>
-          {/if}
-        </div>
-
-        <!-- Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-          <input id="email" name="email" type="email" required
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
-            bind:value={email}
-            aria-invalid={form?.errors?.email ? 'true' : 'false'}
-            aria-describedby={form?.errors?.email ? 'email-error' : (emailHint ? 'email-hint' : undefined)}
-          />
-          {#if emailHint && !form?.errors?.email}
-            <p id="email-hint" class="mt-1 text-sm text-amber-700">{emailHint}</p>
-          {/if}
-          {#if form?.errors?.email}
-            <p id="email-error" class="mt-1 text-sm text-red-600">{form.errors.email}</p>
-          {/if}
-        </div>
-
-        <!-- Subject -->
-        <div>
-          <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-          <input id="subject" name="subject" type="text"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
-            bind:value={subject}
-            aria-invalid={form?.errors?.subject ? 'true' : 'false'}
-            aria-describedby={form?.errors?.subject ? 'subject-error' : undefined}
-          />
-          {#if form?.errors?.subject}
-            <p id="subject-error" class="mt-1 text-sm text-red-600">{form.errors.subject}</p>
-          {/if}
-        </div>
-
-        <!-- Message -->
-        <div>
-          <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message *</label>
-          <textarea id="message" name="message" rows="5" required
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
-            bind:value={message}
-            aria-invalid={form?.errors?.message ? 'true' : 'false'}
-            aria-describedby={form?.errors?.message ? 'message-error' : undefined}
-          ></textarea>
-          {#if form?.errors?.message}
-            <p id="message-error" class="mt-1 text-sm text-red-600">{form.errors.message}</p>
-          {/if}
-        </div>
-
-        <button type="submit" disabled={loading}
-          class="w-full bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed">
-          {loading ? 'Sending…' : 'Send Message'}
-        </button>
-      </form>
     </div>
 
-    <!-- Contact Info -->
-    <div class="mt-16 text-center">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Other Ways to Connect</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-        <div class="bg-gray-50 rounded-xl p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Newsletter</h3>
-          <p class="text-gray-600 mb-4">Stay updated on new releases, writing process insights, and exclusive content.</p>
-          <!-- Svelte 5: use native onclick -->
-          <button
-            type="button"
-            class="text-red-600 font-medium hover:text-red-700 transition-colors underline underline-offset-4 decoration-red-300"
-            onclick={openSubscribeModal}
-            aria-haspopup="dialog"
-          >
-            Subscribe →
-          </button>
-        </div>
+    <!-- Contact Form -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+      <div class="px-6 py-8">
+        <form 
+          method="POST" 
+          use:enhance
+          class="space-y-6"
+        >
+          <!-- Name Field -->
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700">
+              Name *
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              placeholder="Your full name"
+            />
+            {#if form?.fieldErrors?.name}
+              <p class="mt-1 text-sm text-red-600">{form.fieldErrors.name}</p>
+            {/if}
+          </div>
 
-        <div class="bg-gray-50 rounded-xl p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Professional Inquiries</h3>
-          <p class="text-gray-600 mb-4">For speaking engagements, interviews, or collaboration opportunities.</p>
-          <p class="text-red-600 font-medium">Use the form above</p>
-        </div>
+          <!-- Email Field -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">
+              Email *
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              placeholder="your.email@example.com"
+            />
+            {#if form?.fieldErrors?.email}
+              <p class="mt-1 text-sm text-red-600">{form.fieldErrors.email}</p>
+            {/if}
+          </div>
+
+          <!-- Subject Field -->
+          <div>
+            <label for="subject" class="block text-sm font-medium text-gray-700">
+              Subject *
+            </label>
+            <input
+              type="text"
+              id="subject"
+              name="subject"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              placeholder="What would you like to discuss?"
+            />
+            {#if form?.fieldErrors?.subject}
+              <p class="mt-1 text-sm text-red-600">{form.fieldErrors.subject}</p>
+            {/if}
+          </div>
+
+          <!-- Message Field -->
+          <div>
+            <label for="message" class="block text-sm font-medium text-gray-700">
+              Message *
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              rows="6"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+              placeholder="Tell me about your thoughts, questions, or ideas..."
+            ></textarea>
+            {#if form?.fieldErrors?.message}
+              <p class="mt-1 text-sm text-red-600">{form.fieldErrors.message}</p>
+            {/if}
+          </div>
+
+          <!-- Submit Button -->
+          <div>
+            <button
+              type="submit"
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+            >
+              Send Message
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="mt-12 text-center">
+      <p class="text-gray-600 mb-4">
+        You can also connect with me on social media or through my newsletter.
+      </p>
+      <div class="flex justify-center space-x-6">
+        <a 
+          href="#" 
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Twitter"
+        >
+          <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
+          </svg>
+        </a>
+        <a 
+          href="#" 
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Facebook"
+        >
+          <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M22 12C22 6.477 17.523 2 12 2S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"/>
+          </svg>
+        </a>
       </div>
     </div>
   </div>
-</section>
-
-<!-- Newsletter modal -->
-<NewsletterModal bind:this={modalRef} />
+</div>

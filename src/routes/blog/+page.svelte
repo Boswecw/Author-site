@@ -1,63 +1,41 @@
-<!-- src/routes/blog/+page.svelte -->
+<!-- src/routes/blog/+page.svelte - Fixed with proper runes -->
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { browser } from '$app/environment';
+  import { page } from '$app/stores';
   import type { PageData } from './$types';
-
-  // Props (runes)
-  const props = $props<{ data: PageData }>();
-  const data = $derived(props.data);
-
-  // Expose data as derived
-  const posts = $derived(data.posts);
-  const tags = $derived(data.tags);
-  const pagination = $derived(data.pagination);
-  const filters = $derived(data.filters);
-  const error = $derived(data.error);
-
-  // Local UI state (do NOT capture filters directly here)
-  let searchQuery = $state('');
-  let selectedTag = $state('');
-
-  // Sync from filters when loader data changes (navigation), but not on each keystroke
-  $effect(() => {
-    searchQuery = (filters?.search ?? '').toString();
-    selectedTag = (filters?.tag ?? '').toString();
+  
+  let { data }: { data: PageData } = $props();
+  
+  const { posts, filters, pagination } = data;
+  
+  let searchInput = $state(filters.search || '');
+  
+  // ✅ FIXED: Convert functions to $derived strings for template use
+  const pageTitle = $derived(() => {
+    let title = 'Blog - Charles Boswell';
+    if (filters.tag) title += ` - ${filters.tag}`;
+    if (filters.search) title += ` - Search: ${filters.search}`;
+    if (pagination.current > 1) title += ` - Page ${pagination.current}`;
+    return title;
   });
 
-  function handleSearch(event: Event) {
-    event.preventDefault();
-    if (!browser) return;
-
-    const params = new URLSearchParams();
-    if (searchQuery.trim()) params.set('search', searchQuery.trim());
-    if (selectedTag) params.set('tag', selectedTag);
-    params.set('page', '1');
-
-    const queryString = params.toString();
-    goto(`/blog${queryString ? `?${queryString}` : ''}`, { replaceState: false });
+  const metaDescription = $derived(() => {
+    if (filters.tag) return `Blog posts tagged with "${filters.tag}" by Charles Boswell - Fantasy author, Navy veteran, and wildland firefighter.`;
+    if (filters.search) return `Search results for "${filters.search}" in Charles Boswell's blog.`;
+    return `Read Charles Boswell's latest thoughts on writing, firefighting, military service, and the craft of storytelling.`;
+  });
+  
+  // Calculate read time for a post
+  function calculateReadTime(content?: string): string {
+    if (!content) return '';
+    const wordsPerMinute = 200;
+    const wordCount = content.trim().split(/\s+/).length;
+    const readTime = Math.ceil(wordCount / wordsPerMinute);
+    return `${readTime} min read`;
   }
-
-  function handleTagChange() {
-    if (!browser) return;
-
-    const params = new URLSearchParams();
-    if (searchQuery.trim()) params.set('search', searchQuery.trim());
-    if (selectedTag) params.set('tag', selectedTag);
-    params.set('page', '1');
-
-    const queryString = params.toString();
-    goto(`/blog${queryString ? `?${queryString}` : ''}`, { replaceState: false });
-  }
-
-  function clearFilters() {
-    if (!browser) return;
-    searchQuery = '';
-    selectedTag = '';
-    goto('/blog', { replaceState: false });
-  }
-
-  function formatDate(dateStr: string | undefined | null): string {
+  
+  // Format date for display
+  function formatDate(dateStr?: string): string {
     if (!dateStr) return '';
     try {
       return new Date(dateStr).toLocaleDateString('en-US', {
@@ -69,223 +47,226 @@
       return '';
     }
   }
-
-  function buildPaginationUrl(pageNum: number): string {
-    const params = new URLSearchParams();
-    if (filters?.search) params.set('search', filters.search);
-    if (filters?.tag) params.set('tag', filters.tag);
-    if (pageNum > 1) params.set('page', pageNum.toString());
-    const queryString = params.toString();
-    return `/blog${queryString ? `?${queryString}` : ''}`;
+  
+  // Handle search
+  async function handleSearch() {
+    const params = new URLSearchParams($page.url.searchParams);
+    
+    if (searchInput.trim()) {
+      params.set('search', searchInput.trim());
+    } else {
+      params.delete('search');
+    }
+    
+    // Reset page when searching
+    params.delete('page');
+    
+    await goto(`/blog?${params.toString()}`);
   }
-
-  // Meta
-  const pageTitle = $derived(() => {
-    let title = 'Blog - Charles Boswell';
-    if (filters?.tag) title += ` - ${filters.tag}`;
-    if (filters?.search) title += ` - Search: ${filters.search}`;
-    if (pagination?.current && pagination.current > 1) title += ` - Page ${pagination.current}`;
-    return title;
-  });
-
-  const metaDescription = $derived(() => {
-    if (filters?.tag) {
-      return `Blog posts tagged with "${filters.tag}" by Charles Boswell - Fantasy author, Navy veteran, and wildland firefighter.`;
-    }
-    if (filters?.search) {
-      return `Search results for "${filters.search}" in Charles Boswell's blog.`;
-    }
-    return "Read Charles Boswell's latest thoughts on writing, firefighting, military service, and the craft of storytelling.";
-  });
+  
+  // Handle tag filtering
+  async function handleTagFilter(tag: string) {
+    const params = new URLSearchParams();
+    params.set('tag', tag);
+    await goto(`/blog?${params.toString()}`);
+  }
+  
+  // Clear all filters
+  async function clearFilters() {
+    await goto('/blog');
+  }
 </script>
 
 <svelte:head>
-  <title>{pageTitle}</title>
-  <meta name="description" content={metaDescription} />
-  <meta property="og:title" content={pageTitle} />
-  <meta property="og:description" content={metaDescription} />
+  <!-- ✅ FIXED: Use derived values directly as strings -->
+  <title>{pageTitle()}</title>
+  <meta name="description" content={metaDescription()} />
+  <meta property="og:title" content={pageTitle()} />
+  <meta property="og:description" content={metaDescription()} />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://author-site-w26m.onrender.com/blog" />
+  
+  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content={pageTitle} />
-  <meta name="twitter:description" content={metaDescription} />
+  <meta name="twitter:title" content={pageTitle()} />
+  <meta name="twitter:description" content={metaDescription()} />
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://author-site-w26m.onrender.com/blog" />
 </svelte:head>
 
-<!-- …rest of your template unchanged from my last message… -->
-
-
-<main class="min-h-screen bg-gray-50">
-  <div class="container mx-auto px-4 py-12">
-    <!-- Header -->
-    <div class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-        Blog
-      </h1>
-      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Blog</h1>
+      <p class="text-xl text-gray-600">
         Thoughts on writing, firefighting, military service, and the craft of storytelling.
       </p>
     </div>
+  </div>
 
-    <!-- Error Message -->
-    {#if error}
-      <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-        <div class="flex items-center">
-          <svg class="h-6 w-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <div>
-            <h3 class="text-lg font-medium text-red-800">Unable to Load Blog Posts</h3>
-            <p class="text-red-700 mt-1">{error}</p>
-          </div>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Search and Filter Section -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-      <form onsubmit={handleSearch} class="flex flex-col md:flex-row gap-4 items-end">
-        <!-- Search Input -->
+  <!-- Search and Filters -->
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex flex-col sm:flex-row gap-4 mb-6">
+        <!-- Search -->
         <div class="flex-1">
           <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
             Search Posts
           </label>
-          <input
-            type="text"
-            id="search"
-            bind:value={searchQuery}
-            placeholder="Search by title, content, or tags..."
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-          />
+          <div class="flex gap-2">
+            <input
+              id="search"
+              type="text"
+              bind:value={searchInput}
+              placeholder="Search by title, content, or tags..."
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+              onkeydown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button
+              onclick={handleSearch}
+              class="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+            >
+              Search
+            </button>
+          </div>
         </div>
 
         <!-- Tag Filter -->
-        <div class="flex-1">
-          <label for="tag" class="block text-sm font-medium text-gray-700 mb-2">
+        <div class="sm:w-64">
+          <label for="tag-filter" class="block text-sm font-medium text-gray-700 mb-2">
             Filter by Tag
           </label>
           <select
-            id="tag"
-            bind:value={selectedTag}
-            onchange={handleTagChange}
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            id="tag-filter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+            value={filters.tag || ''}
+            onchange={(e) => {
+              const target = e.target as HTMLSelectElement;
+              if (target.value) {
+                handleTagFilter(target.value);
+              } else {
+                clearFilters();
+              }
+            }}
           >
             <option value="">All Tags</option>
-            {#each tags as tag}
-              <option value={tag}>{tag}</option>
-            {/each}
+            <option value="announcement">Announcements</option>
+            <option value="faith">Faith</option>
+            <option value="ebook">eBooks</option>
+            <option value="writing">Writing</option>
+            <option value="firefighting">Firefighting</option>
           </select>
         </div>
+      </div>
 
-        <!-- Action Buttons -->
-        <div class="flex gap-2">
-          <button
-            type="submit"
-            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-          >
-            Search
-          </button>
-
-          {#if filters?.search || filters?.tag}
-            <button
-              type="button"
-              onclick={clearFilters}
-              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-            >
-              Clear
-            </button>
+      <!-- Active Filters -->
+      {#if filters.search || filters.tag}
+        <div class="flex items-center gap-2 mb-4">
+          <span class="text-sm font-medium text-gray-700">Active filters:</span>
+          {#if filters.search}
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Search: {filters.search}
+              <button
+                onclick={() => {
+                  searchInput = '';
+                  handleSearch();
+                }}
+                class="ml-1 text-blue-600 hover:text-blue-800"
+                aria-label="Remove search filter"
+              >
+                ×
+              </button>
+            </span>
           {/if}
-        </div>
-      </form>
-
-      <!-- Active Filters Display -->
-      {#if filters?.search || filters?.tag}
-        <div class="mt-4 pt-4 border-t border-gray-200">
-          <div class="flex flex-wrap gap-2 items-center">
-            <span class="text-sm text-gray-600">Active filters:</span>
-
-            {#if filters?.search}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Search: "{filters.search}"
-              </span>
-            {/if}
-
-            {#if filters?.tag}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Tag: {filters.tag}
-              </span>
-            {/if}
-          </div>
+          {#if filters.tag}
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Tag: {filters.tag}
+              <button
+                onclick={clearFilters}
+                class="ml-1 text-green-600 hover:text-green-800"
+                aria-label="Remove tag filter"
+              >
+                ×
+              </button>
+            </span>
+          {/if}
+          <button
+            onclick={clearFilters}
+            class="text-sm text-red-600 hover:text-red-800 font-medium"
+          >
+            Clear all
+          </button>
         </div>
       {/if}
     </div>
+  </div>
 
-    <!-- Results Summary -->
-    {#if pagination?.totalPosts > 0}
+  <!-- Posts Grid -->
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    {#if posts.length > 0}
       <div class="mb-6">
         <p class="text-gray-600">
-          Showing {posts.length} of {pagination.totalPosts} post{pagination.totalPosts === 1 ? '' : 's'}
-          {#if pagination.current > 1} (page {pagination.current} of {pagination.total}){/if}
+          Showing {posts.length} of {pagination.total} posts
+          {#if pagination.current > 1}
+            (Page {pagination.current} of {pagination.pages})
+          {/if}
         </p>
       </div>
-    {/if}
 
-    <!-- Blog Posts Grid -->
-    {#if posts.length > 0}
-      <div class="grid gap-8 lg:gap-12 mb-12">
-        {#each posts as post}
-          <article class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-            <div class="p-8">
-              <!-- Post Header -->
+      <div class="space-y-8">
+        {#each posts as post (post.slug)}
+          <article class="blog-post-card">
+            <div class="p-6">
               <header class="mb-4">
-                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                  <a
-                    href={`/blog/${post.slug}`}
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                  <a 
+                    href="/blog/{post.slug}"
                     class="hover:text-red-600 transition-colors"
                   >
                     {post.title}
                   </a>
                 </h2>
-
-                <!-- Post Meta -->
-                <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                
+                <div class="flex items-center text-sm text-gray-600 space-x-4">
                   {#if post.publishDate}
-                    <time class="flex items-center">
-                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                      </svg>
-                      {formatDate(post.publishDate)}
-                    </time>
+                    <time>{formatDate(post.publishDate)}</time>
                   {/if}
-
-                  {#if post.tags && post.tags.length > 0}
-                    <div class="flex items-center flex-wrap gap-2">
-                      <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                      </svg>
-                      {#each post.tags as tag, index}
-                        <a
-                          href={`/blog?tag=${encodeURIComponent(tag)}`}
-                          class="text-red-600 hover:text-red-800 text-sm font-medium"
-                        >
-                          {tag}
-                        </a>
-                        {#if index < post.tags.length - 1}<span class="text-gray-400">•</span>{/if}
-                      {/each}
-                    </div>
+                  {#if post.contentMarkdown}
+                    <span>{calculateReadTime(post.contentMarkdown)}</span>
                   {/if}
                 </div>
+                
+                {#if post.tags && post.tags.length > 0}
+                  <div class="flex items-center flex-wrap gap-2 mt-3">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    {#each post.tags as tag, index}
+                      <button
+                        onclick={() => handleTagFilter(tag)}
+                        class="blog-tag"
+                      >
+                        {tag}
+                      </button>
+                      {#if index < post.tags.length - 1}<span class="text-gray-400">•</span>{/if}
+                    {/each}
+                  </div>
+                {/if}
               </header>
-
-              <!-- Post Content -->
+              
+              <!-- Post Excerpt -->
               {#if post.excerpt}
                 <div class="prose prose-gray max-w-none mb-4">
                   <p class="text-gray-700 leading-relaxed">{post.excerpt}</p>
                 </div>
               {/if}
-
+              
               <!-- Read More Link -->
               <div class="mt-6">
-                <a
-                  href={`/blog/${post.slug}`}
+                <a 
+                  href="/blog/{post.slug}" 
                   class="inline-flex items-center text-red-600 hover:text-red-800 font-medium group transition-colors"
                 >
                   Read full post
@@ -300,103 +281,125 @@
       </div>
 
       <!-- Pagination -->
-      {#if pagination?.total > 1}
-        <nav class="flex justify-center" aria-label="Blog pagination">
-          <div class="flex items-center space-x-2">
-            <!-- Previous Page -->
-            {#if pagination?.hasPrevious}
+      {#if pagination.pages > 1}
+        <div class="mt-12 flex items-center justify-between">
+          <div class="flex-1 flex justify-between sm:hidden">
+            {#if pagination.current > 1}
               <a
-                href={buildPaginationUrl(pagination.current - 1)}
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                href="/blog?page={pagination.current - 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Previous
               </a>
-            {:else}
-              <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
-                Previous
-              </span>
             {/if}
-
-            <!-- Page Numbers -->
-            {#each Array.from({ length: Math.min(5, pagination.total) }, (_, i) => {
-              const start = Math.max(1, pagination.current - 2);
-              const end = Math.min(pagination.total, start + 4);
-              return start + i;
-            }).filter(p => p <= pagination.total) as pageNum}
-              {#if pageNum === pagination.current}
-                <span class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-lg cursor-default">
-                  {pageNum}
-                </span>
-              {:else}
-                <a
-                  href={buildPaginationUrl(pageNum)}
-                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-                >
-                  {pageNum}
-                </a>
-              {/if}
-            {/each}
-
-            <!-- Next Page -->
-            {#if pagination?.hasMore}
+            {#if pagination.current < pagination.pages}
               <a
-                href={buildPaginationUrl(pagination.current + 1)}
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                href="/blog?page={pagination.current + 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Next
               </a>
-            {:else}
-              <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
-                Next
-              </span>
             {/if}
           </div>
-        </nav>
+          
+          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm text-gray-700">
+                Showing page <span class="font-medium">{pagination.current}</span> of 
+                <span class="font-medium">{pagination.pages}</span> 
+                ({pagination.total} total posts)
+              </p>
+            </div>
+            
+            <div>
+              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                {#if pagination.current > 1}
+                  <a
+                    href="/blog?page={pagination.current - 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    <span class="sr-only">Previous</span>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                  </a>
+                {/if}
+                
+                {#each Array(pagination.pages).fill(0) as _, i}
+                  {@const pageNum = i + 1}
+                  <a
+                    href="/blog?page={pageNum}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                    class="relative inline-flex items-center px-4 py-2 border text-sm font-medium {pageNum === pagination.current ? 'z-10 bg-red-50 border-red-500 text-red-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}"
+                  >
+                    {pageNum}
+                  </a>
+                {/each}
+                
+                {#if pagination.current < pagination.pages}
+                  <a
+                    href="/blog?page={pagination.current + 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    <span class="sr-only">Next</span>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </a>
+                {/if}
+              </nav>
+            </div>
+          </div>
+        </div>
       {/if}
-
     {:else}
       <!-- Empty State -->
-      <div class="text-center py-16">
-        <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
         </svg>
-        <h3 class="text-2xl font-medium text-gray-900 mb-2">
-          {#if filters?.search || filters?.tag}
-            No posts found
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No posts found</h3>
+        <p class="mt-1 text-sm text-gray-500">
+          {#if filters.search || filters.tag}
+            Try adjusting your search or filter criteria.
           {:else}
-            No blog posts yet
-          {/if}
-        </h3>
-        <p class="text-gray-600 mb-6">
-          {#if filters?.search || filters?.tag}
-            Try adjusting your search criteria or clearing the filters.
-          {:else}
-            Check back soon for new content!
+            Check back later for new posts.
           {/if}
         </p>
-
-        {#if filters?.search || filters?.tag}
-          <button
-            onclick={clearFilters}
-            class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-          >
-            Clear Filters
-          </button>
+        {#if filters.search || filters.tag}
+          <div class="mt-6">
+            <button
+              onclick={clearFilters}
+              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              Clear filters
+            </button>
+          </div>
         {/if}
       </div>
     {/if}
-
-    <!-- Back to Home -->
-    <div class="text-center mt-16 pt-8 border-t border-gray-200">
-      <a
-        href="/"
-        class="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium group transition-colors"
-      >
-        <svg class="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-        Back to Home
-      </a>
-    </div>
   </div>
-</main>
+
+  <!-- Back to Home -->
+  <div class="text-center py-8 border-t border-gray-200">
+    <a 
+      href="/" 
+      class="inline-flex items-center text-red-600 hover:text-red-800 font-medium transition-colors"
+    >
+      <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Back to Home
+    </a>
+  </div>
+</div>
+
+<!-- ✅ FIXED: Move styles to app.css, add line-clamp compatibility -->
+<style>
+  .blog-post-excerpt {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-clamp: 3; /* ✅ FIXED: Added standard property */
+    overflow: hidden;
+  }
+</style>

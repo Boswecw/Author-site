@@ -1,4 +1,4 @@
-<!-- src/routes/admin/+page.svelte - Updated with Health Modal -->
+<!-- src/routes/admin/+page.svelte - Clean updated version -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import HealthModal from '$lib/components/HealthModal.svelte';
@@ -125,17 +125,29 @@
         </div>
         <p class="text-gray-600 mb-4">Manage books, blog posts, and site content.</p>
         <div class="space-y-2">
+          <!-- Books -->
           <a 
             href="/books" 
             class="block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             View Books
           </a>
+          
+          <!-- Blog Management (Primary Action) -->
+          <a 
+            href="/admin/blog" 
+            class="block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            Manage Blog
+          </a>
+          
+          <!-- Visit Public Blog (Secondary Action) -->
           <a 
             href="/blog" 
+            target="_blank"
             class="block w-full text-center px-4 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            View Blog
+            Visit Public Blog ↗
           </a>
         </div>
       </div>

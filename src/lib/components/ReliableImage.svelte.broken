@@ -1,43 +1,86 @@
-<!-- src/lib/components/ReliableImage.svelte - COMPLETE and WORKING -->
+<!-- src/lib/components/ImageWithFallback.svelte - Complete fix with loading prop -->
 <script lang="ts">
-  import { createFallbackImage } from '$lib/utils/image';
-
-  // Props
-  export let src: string | null | undefined;
-  export let alt: string = '';
-  export let className: string = '';
-  export let fallbackText: string = '';
-  export let fallbackType: 'book' | 'avatar' | 'logo' = 'book';
-
-  // Use server-built URLs directly with fallback
-  function getImageUrl(): string {
-    if (src && typeof src === 'string' && src.trim()) {
-      return src.trim();
+  import type { ImageProps } from '$lib/types';
+  
+  // ✅ FIXED: Use proper interface and add loading prop
+  let {
+    src = null,
+    alt = '',
+    className = '',
+    fallbackText = undefined,
+    fallbackType = undefined,
+    loading = 'lazy'
+  }: ImageProps = $props();
+  
+  let imageError = $state(false);
+  let imageLoaded = $state(false);
+  
+  function handleImageError() {
+    imageError = true;
+  }
+  
+  function handleImageLoad() {
+    imageLoaded = true;
+  }
+  
+  // Generate fallback based on type
+  function getFallbackContent(): { text: string; bgColor: string; textColor: string } {
+    if (fallbackText) {
+      return {
+        text: fallbackText,
+        bgColor: 'bg-gray-200',
+        textColor: 'text-gray-600'
+      };
     }
     
-    const text = fallbackText || alt || fallbackType.toUpperCase();
-    return createFallbackImage(text.substring(0, 10), fallbackType);
+    switch (fallbackType) {
+      case 'book':
+        return {
+          text: '📚',
+          bgColor: 'bg-blue-100',
+          textColor: 'text-blue-600'
+        };
+      case 'avatar':
+        return {
+          text: '👤',
+          bgColor: 'bg-gray-100',
+          textColor: 'text-gray-500'
+        };
+      case 'logo':
+        return {
+          text: '🏢',
+          bgColor: 'bg-indigo-100',
+          textColor: 'text-indigo-600'
+        };
+      default:
+        return {
+          text: '🖼️',
+          bgColor: 'bg-gray-100',
+          textColor: 'text-gray-500'
+        };
+    }
   }
-
-  // Error handler
-  function handleError(event: Event) {
-    const img = event.currentTarget as HTMLImageElement;
-    const fallbackSrc = createFallbackImage(
-      (fallbackText || alt || fallbackType.toUpperCase()).substring(0, 10), 
-      fallbackType
-    );
-    
-    img.src = fallbackSrc;
-    img.style.opacity = '0.8';
-    console.warn('[ReliableImage] Failed to load image:', src);
-  }
+  
+  const fallbackContent = $derived(getFallbackContent());
+  const shouldShowImage = $derived(src && !imageError);
 </script>
 
-<img
-  src={getImageUrl()}
-  {alt}
-  class={className}
-  loading="lazy"
-  decoding="async"
-  on:error={handleError}
-/>
+{#if shouldShowImage}
+  <!-- ✅ FIXED: Pass through the loading prop -->
+  <img 
+    {src} 
+    {alt} 
+    {loading}
+    class={className}
+    onerror={handleImageError}
+    onload={handleImageLoad}
+  />
+{:else}
+  <!-- Fallback content -->
+  <div class="flex items-center justify-center {className} {fallbackContent.bgColor} {fallbackContent.textColor}">
+    <span class="text-4xl" aria-hidden="true">
+      {fallbackContent.text}
+    </span>
+    <span class="sr-only">{alt || 'Image not available'}</span>
+  </div>
+{/if}

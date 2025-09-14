@@ -1,6 +1,6 @@
-// src/lib/server/books.ts
+// src/lib/server/books.ts - Complete fix
 import { getDb } from '$lib/server/db';
-import type { Book, BookDoc, BookStatus } from '$lib/types';
+import type { Book, BookDoc, BookStatus } from '$lib/types'; // ✅ FIXED: Import BookStatus
 
 // Re-export for convenience
 export type { BookDoc } from '$lib/types';
@@ -30,7 +30,8 @@ function sanitizeBook(doc: any): Book {
     isbn: doc.isbn ?? null,
     format: doc.format ?? 'EPUB',
     pages: typeof doc.pages === 'number' ? doc.pages : null,
-    buyLinks: doc.buyLinks ?? null
+    buyLinks: doc.buyLinks ?? {},
+    featured: Boolean(doc.featured) // ✅ FIXED: Add featured property
   };
 }
 
@@ -46,7 +47,8 @@ const baseProjection = {
   isbn: 1,
   format: 1,
   pages: 1,
-  buyLinks: 1
+  buyLinks: 1,
+  featured: 1 // ✅ FIXED: Add featured to projection
 } as const;
 
 /* --------------------- helpers: cursor-or-array bridge ------------------- */
@@ -89,176 +91,99 @@ function sortArray<T extends Record<string, any>>(arr: T[], spec?: Record<string
   return copy;
 }
 
-function filterArrayByQuery<T extends Record<string, any>>(arr: T[], query?: any): T[] {
+function filterArrayByQuery<T extends Record<string, any>>(arr: T[], query?: Record<string, any>): T[] {
   if (!query || Object.keys(query).length === 0) return arr;
-
-  let out = arr;
-
-  // handle very small subset we actually use in this file
-  // { status: { $in: [...] } }
-  if (query.status?.$in && Array.isArray(query.status.$in)) {
-    const set = new Set(query.status.$in);
-    out = out.filter((d) => set.has(d.status));
-  }
-
-  // { id: 'xyz' }
-  if (query.id && typeof query.id === 'string') {
-    out = out.filter((d) => d.id === query.id);
-  }
-
-  // { $or: [{ featured: true }, { status: 'featured' }] }
-  if (query.$or && Array.isArray(query.$or)) {
-    out = out.filter((d) =>
-      query.$or.some((cond: any) => {
-        // featured: true
-        if (typeof cond?.featured === 'boolean') return !!d.featured === cond.featured;
-        // status: 'featured'
-        if (typeof cond?.status === 'string') return d.status === cond.status;
+  
+  return arr.filter(doc => {
+    return Object.entries(query).every(([key, val]) => {
+      if (val && typeof val === 'object') {
+        if ('$in' in val) return val.$in.includes(doc[key]);
+        if ('$ne' in val) return doc[key] !== val.$ne;
+        if ('$exists' in val) return (key in doc) === val.$exists;
         return false;
-      })
-    );
-  }
-
-  // publishDate filters aren’t used directly here (we sort by it), but add minimal support if needed:
-  if (query.publishDate?.$gte) {
-    const gte = new Date(query.publishDate.$gte).getTime();
-    out = out.filter((d) => new Date(d.publishDate ?? 0).getTime() >= gte);
-  }
-
-  return out;
+      }
+      return doc[key] === val;
+    });
+  });
 }
 
 async function safeFind<T extends Record<string, any>>(
-  collection: any,
-  query?: any,
-  options?: { projection?: Record<string, 0 | 1> },
-  sortSpec?: Record<string, 1 | -1>,
-  limit?: number
+  source: any,
+  query?: Record<string, any>,
+  options?: { projection?: Record<string, 0 | 1>; sort?: Record<string, 1 | -1>; limit?: number }
 ): Promise<T[]> {
-  const res = collection.find(query ?? {}, options ?? {});
-
-  // Case 1: Real Mongo cursor (or cursor-like with full methods)
-  if (res && typeof res.toArray === 'function') {
-    let cursor: any = res;
-
-    const hasSort = typeof cursor.sort === 'function';
-    const hasLimit = typeof cursor.limit === 'function';
-
-    if (sortSpec && hasSort) cursor = cursor.sort(sortSpec);
-    if (Number.isFinite(limit) && hasLimit) cursor = cursor.limit(limit as number);
-
-    try {
-      // Try the fast path first (DB-side ops)
-      const out = (await cursor.toArray()) as T[];
-      if (hasSort && hasLimit) return out; // already sorted/limited by DB
-
-      // Fallback if cursor lacked sort/limit
-      let arr = out;
-      arr = sortArray(arr, sortSpec);
-      if (Number.isFinite(limit)) arr = arr.slice(0, limit as number);
-      if (options?.projection) arr = arr.map((d) => applyProjection(d, options.projection));
-      return arr;
-    } catch {
-      // Extra safety: if something odd happens, fall back to array pipeline
-      let arr = (await res.toArray()) as T[];
-      arr = filterArrayByQuery(arr, query);
-      if (options?.projection) arr = arr.map((d) => applyProjection(d, options.projection));
-      arr = sortArray(arr, sortSpec);
-      if (Number.isFinite(limit)) arr = arr.slice(0, limit as number);
-      return arr;
+  if (isCursor(source)) {
+    // Real MongoDB cursor
+    let cursor = source;
+    if (options?.sort) cursor = cursor.sort(options.sort);
+    if (options?.limit) cursor = cursor.limit(options.limit);
+    return await cursor.toArray();
+  } else {
+    // Mock array
+    let result = filterArrayByQuery(source, query);
+    if (options?.projection) {
+      result = result.map(doc => applyProjection(doc, options.projection));
     }
+    if (options?.sort) {
+      result = sortArray(result, options.sort);
+    }
+    if (options?.limit) {
+      result = result.slice(0, options.limit);
+    }
+    return result;
   }
-
-  // Case 2: Pure array mock
-  let arr: T[] = Array.isArray(res) ? (res as T[]) : [];
-  arr = filterArrayByQuery(arr, query);
-  if (options?.projection) arr = arr.map((d) => applyProjection(d, options.projection));
-  arr = sortArray(arr, sortSpec);
-  if (Number.isFinite(limit)) arr = arr.slice(0, limit as number);
-  return arr;
 }
 
-
-async function safeFindOne<T extends Record<string, any>>(
-  collection: any,
-  query?: any,
-  options?: { projection?: Record<string, 0 | 1> }
-): Promise<T | null> {
-  if (typeof collection.findOne === 'function') {
-    // real driver (or mock that supports findOne)
-    const doc = await collection.findOne(query ?? {}, options ?? {});
-    return doc ?? null;
-  }
-  // mock path: use safeFind and pick first
-  const arr = await safeFind<T>(collection, query, options, undefined, 1);
-  return arr[0] ?? null;
-}
-
-/* ------------------------------- queries -------------------------------- */
-
-export async function getBookById(id: string): Promise<Book | null> {
-  const db = await getDb();
-  const col = db.collection<BookDoc>('books');
-  const doc = await safeFindOne<BookDoc>(col, { id }, { projection: baseProjection });
-  return doc ? sanitizeBook(doc) : null;
-}
-
-export async function getFeaturedBook(): Promise<Book | null> {
-  const db = await getDb();
-  const col = db.collection<BookDoc>('books');
-  const doc = await safeFindOne<BookDoc>(
-    col,
-    { $or: [{ featured: true }, { status: 'featured' }] },
-    { projection: baseProjection }
-  );
-  return doc ? sanitizeBook(doc) : null;
-}
-
-export async function getUpcomingBooks(limit = 6): Promise<Book[]> {
-  const db = await getDb();
-  const col = db.collection<BookDoc>('books');
-  const statuses: BookStatus[] = ['writing', 'coming-soon', 'draft'];
-  const docs = await safeFind<BookDoc>(
-    col,
-    { status: { $in: statuses } },
-    {
-      projection: {
-        _id: 0,
-        id: 1,
-        title: 1,
-        description: 1,
-        cover: 1,
-        genre: 1,
-        status: 1,
-        publishDate: 1
-      }
-    },
-    { publishDate: 1, title: 1 },
-    limit
-  );
-  return docs.map(sanitizeBook).filter((b) => b.cover);
-}
+/* ----------------------------- Public API ----------------------------- */
 
 export async function getAllBooks(): Promise<Book[]> {
   const db = await getDb();
   const col = db.collection<BookDoc>('books');
   const docs = await safeFind<BookDoc>(
-    col,
+    col.find({}, { projection: baseProjection }),
     {},
-    {
-      projection: {
-        _id: 0,
-        id: 1,
-        title: 1,
-        description: 1,
-        cover: 1,
-        genre: 1,
-        status: 1,
-        publishDate: 1,
-        buyLinks: 1
-      }
-    },
-    { status: 1, publishDate: 1, title: 1 }
+    { sort: { publishDate: -1 } }
   );
   return docs.map(sanitizeBook);
+}
+
+export async function getPublishedBooks(): Promise<Book[]> {
+  const db = await getDb();
+  const col = db.collection<BookDoc>('books');
+  const docs = await safeFind<BookDoc>(
+    col.find({ status: 'published' }, { projection: baseProjection }),
+    {},
+    { sort: { publishDate: -1 } }
+  );
+  return docs.map(sanitizeBook);
+}
+
+export async function getFeaturedBook(): Promise<Book | null> {
+  const db = await getDb();
+  const col = db.collection<BookDoc>('books');
+  const docs = await safeFind<BookDoc>(
+    col.find({ featured: true }, { projection: baseProjection }),
+    {},
+    { limit: 1 }
+  );
+  return docs.length ? sanitizeBook(docs[0]) : null;
+}
+
+export async function getUpcomingBooks(): Promise<Book[]> {
+  const db = await getDb();
+  const col = db.collection<BookDoc>('books');
+  const statuses: BookStatus[] = ['writing', 'coming-soon', 'draft']; // ✅ FIXED: Now BookStatus is imported
+  const docs = await safeFind<BookDoc>(
+    col.find({ status: { $in: statuses } }, { projection: baseProjection }),
+    {},
+    { sort: { publishDate: 1 } }
+  );
+  return docs.map(sanitizeBook);
+}
+
+export async function getBookById(id: string): Promise<Book | null> {
+  const db = await getDb();
+  const col = db.collection<BookDoc>('books');
+  const doc = await col.findOne({ id }, { projection: baseProjection });
+  return doc ? sanitizeBook(doc) : null;
 }
