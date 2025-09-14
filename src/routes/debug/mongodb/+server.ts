@@ -1,4 +1,4 @@
-// src/routes/debug/mongodb/+server.ts - Enhanced MongoDB diagnostic
+// src/routes/debug/mongodb/+server.ts - Fixed TLS configuration
 import { json } from '@sveltejs/kit';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
@@ -71,21 +71,24 @@ export async function GET() {
         strict: true,
         deprecationErrors: true,
       },
-      // Enhanced TLS configuration
+      // Fixed TLS configuration - removed conflicting tlsInsecure option
       tls: true,
       tlsAllowInvalidCertificates: false,
       tlsAllowInvalidHostnames: false,
-      tlsInsecure: false,
+      // tlsInsecure: false,  // ← REMOVED: This was causing the conflict!
+      
       // Extended timeouts for Render
       connectTimeoutMS: 60000,
       socketTimeoutMS: 60000,
       serverSelectionTimeoutMS: 60000,
       heartbeatFrequencyMS: 10000,
+      
       // Connection pool
       maxPoolSize: 10,
       minPoolSize: 1,
       maxIdleTimeMS: 30000,
       waitQueueTimeoutMS: 5000,
+      
       // Network configuration
       retryWrites: true,
       retryReads: true,
