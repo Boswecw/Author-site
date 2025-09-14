@@ -238,7 +238,7 @@
     line-clamp: 2; /* Standard property for compatibility */
     overflow: hidden;
   }
-  .text-clamp-3 {
+  .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;

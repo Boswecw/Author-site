@@ -281,7 +281,7 @@
 
               {#if post.excerpt}
                 <div class="prose prose-gray max-w-none mb-4">
-                  <p class="text-gray-700 leading-relaxed">{post.excerpt}</p>
+                  <p class="text-gray-700 leading-relaxed line-clamp-3">{post.excerpt}</p>
                 </div>
               {/if}
 
@@ -418,13 +418,3 @@
   </div>
 </div>
 
-<!-- Keep utility styles minimal; no Tailwind @apply here -->
-<style>
-  .blog-post-excerpt {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    line-clamp: 3;
-    overflow: hidden;
-  }
-</style>
