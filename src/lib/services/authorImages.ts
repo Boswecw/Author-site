@@ -61,6 +61,10 @@ export function toBase64UnicodeSafe(svg: string): string {
 
 // ✅ ADD MISSING EXPORT - Preload helper
 export async function preloadImage(url: string): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(true);
