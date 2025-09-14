@@ -3,14 +3,14 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import type { PageData } from './$types';
-  
+
   let { data }: { data: PageData } = $props();
-  
   const { posts, filters, pagination } = data;
-  
+
+  // Local, editable search state (seeded from initial filters)
   let searchInput = $state(filters.search || '');
-  
-  // ✅ FIXED: Convert functions to $derived strings for template use
+
+  // ✅ Derived (function forms; call them in markup)
   const pageTitle = $derived(() => {
     let title = 'Blog - Charles Boswell';
     if (filters.tag) title += ` - ${filters.tag}`;
@@ -20,11 +20,22 @@
   });
 
   const metaDescription = $derived(() => {
-    if (filters.tag) return `Blog posts tagged with "${filters.tag}" by Charles Boswell - Fantasy author, Navy veteran, and wildland firefighter.`;
-    if (filters.search) return `Search results for "${filters.search}" in Charles Boswell's blog.`;
+    if (filters.tag)
+      return `Blog posts tagged with "${filters.tag}" by Charles Boswell - Fantasy author, Navy veteran, and wildland firefighter.`;
+    if (filters.search)
+      return `Search results for "${filters.search}" in Charles Boswell's blog.`;
     return `Read Charles Boswell's latest thoughts on writing, firefighting, military service, and the craft of storytelling.`;
   });
-  
+
+  // Some backends don't send `pages`; derive it safely if missing
+  const totalPages = $derived(() => {
+    const anyPag = pagination as any;
+    if (typeof anyPag?.pages === 'number') return Math.max(1, anyPag.pages);
+    const total = Number(anyPag?.total ?? anyPag?.totalPosts ?? posts.length) || 1;
+    const limit = Number(anyPag?.limit ?? posts.length) || 1; // () to avoid ?? / || mixing warning
+    return Math.max(1, Math.ceil(total / limit));
+  });
+
   // Calculate read time for a post
   function calculateReadTime(content?: string): string {
     if (!content) return '';
@@ -33,7 +44,12 @@
     const readTime = Math.ceil(wordCount / wordsPerMinute);
     return `${readTime} min read`;
   }
-  
+
+  // Prefer contentMarkdown if present; fall back to excerpt
+  function getPostReadSample(p: any): string {
+    return (p?.contentMarkdown ?? p?.excerpt ?? '') as string;
+  }
+
   // Format date for display
   function formatDate(dateStr?: string): string {
     if (!dateStr) return '';
@@ -47,30 +63,37 @@
       return '';
     }
   }
-  
+
+  // Build hrefs without nested template strings (avoids TS "Unexpected token")
+  function pageHref(pageNum: number) {
+    const params = new URLSearchParams();
+    params.set('page', String(pageNum));
+    if (filters.search) params.set('search', filters.search);
+    if (filters.tag) params.set('tag', filters.tag);
+    return `/blog?${params.toString()}`;
+  }
+
   // Handle search
   async function handleSearch() {
     const params = new URLSearchParams($page.url.searchParams);
-    
-    if (searchInput.trim()) {
-      params.set('search', searchInput.trim());
-    } else {
-      params.delete('search');
-    }
-    
-    // Reset page when searching
+    const q = searchInput.trim();
+
+    if (q) params.set('search', q);
+    else params.delete('search');
+
+    // Reset pagination on new search
     params.delete('page');
-    
+
     await goto(`/blog?${params.toString()}`);
   }
-  
+
   // Handle tag filtering
   async function handleTagFilter(tag: string) {
     const params = new URLSearchParams();
     params.set('tag', tag);
     await goto(`/blog?${params.toString()}`);
   }
-  
+
   // Clear all filters
   async function clearFilters() {
     await goto('/blog');
@@ -78,19 +101,19 @@
 </script>
 
 <svelte:head>
-  <!-- ✅ FIXED: Use derived values directly as strings -->
+  <!-- ✅ Call derived values (they’re functions) -->
   <title>{pageTitle()}</title>
   <meta name="description" content={metaDescription()} />
   <meta property="og:title" content={pageTitle()} />
   <meta property="og:description" content={metaDescription()} />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://author-site-w26m.onrender.com/blog" />
-  
+
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content={pageTitle()} />
   <meta name="twitter:description" content={metaDescription()} />
-  
+
   <!-- Canonical URL -->
   <link rel="canonical" href="https://author-site-w26m.onrender.com/blog" />
 </svelte:head>
@@ -203,41 +226,39 @@
     </div>
   </div>
 
-  <!-- Posts Grid -->
+  <!-- Posts List -->
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
     {#if posts.length > 0}
       <div class="mb-6">
         <p class="text-gray-600">
           Showing {posts.length} of {pagination.total} posts
           {#if pagination.current > 1}
-            (Page {pagination.current} of {pagination.pages})
+            (Page {pagination.current} of {totalPages()})
           {/if}
         </p>
       </div>
 
       <div class="space-y-8">
         {#each posts as post (post.slug)}
-          <article class="blog-post-card">
+          <article class="bg-white border border-gray-200 rounded-lg shadow-sm">
             <div class="p-6">
               <header class="mb-4">
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">
-                  <a 
-                    href="/blog/{post.slug}"
+                  <a
+                    href={'/blog/' + post.slug}
                     class="hover:text-red-600 transition-colors"
                   >
                     {post.title}
                   </a>
                 </h2>
-                
+
                 <div class="flex items-center text-sm text-gray-600 space-x-4">
                   {#if post.publishDate}
                     <time>{formatDate(post.publishDate)}</time>
                   {/if}
-                  {#if post.contentMarkdown}
-                    <span>{calculateReadTime(post.contentMarkdown)}</span>
-                  {/if}
+                  <span>{calculateReadTime(getPostReadSample(post))}</span>
                 </div>
-                
+
                 {#if post.tags && post.tags.length > 0}
                   <div class="flex items-center flex-wrap gap-2 mt-3">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,27 +267,27 @@
                     {#each post.tags as tag, index}
                       <button
                         onclick={() => handleTagFilter(tag)}
-                        class="blog-tag"
+                        class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
                       >
                         {tag}
                       </button>
-                      {#if index < post.tags.length - 1}<span class="text-gray-400">•</span>{/if}
+                      {#if index < post.tags.length - 1}
+                        <span class="text-gray-400">•</span>
+                      {/if}
                     {/each}
                   </div>
                 {/if}
               </header>
-              
-              <!-- Post Excerpt -->
+
               {#if post.excerpt}
                 <div class="prose prose-gray max-w-none mb-4">
                   <p class="text-gray-700 leading-relaxed">{post.excerpt}</p>
                 </div>
               {/if}
-              
-              <!-- Read More Link -->
+
               <div class="mt-6">
-                <a 
-                  href="/blog/{post.slug}" 
+                <a
+                  href={'/blog/' + post.slug}
                   class="inline-flex items-center text-red-600 hover:text-red-800 font-medium group transition-colors"
                 >
                   Read full post
@@ -281,41 +302,41 @@
       </div>
 
       <!-- Pagination -->
-      {#if pagination.pages > 1}
+      {#if totalPages() > 1}
         <div class="mt-12 flex items-center justify-between">
           <div class="flex-1 flex justify-between sm:hidden">
             {#if pagination.current > 1}
               <a
-                href="/blog?page={pagination.current - 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                href={pageHref(pagination.current - 1)}
                 class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Previous
               </a>
             {/if}
-            {#if pagination.current < pagination.pages}
+            {#if pagination.current < totalPages()}
               <a
-                href="/blog?page={pagination.current + 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                href={pageHref(pagination.current + 1)}
                 class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Next
               </a>
             {/if}
           </div>
-          
+
           <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p class="text-sm text-gray-700">
-                Showing page <span class="font-medium">{pagination.current}</span> of 
-                <span class="font-medium">{pagination.pages}</span> 
+                Showing page <span class="font-medium">{pagination.current}</span> of
+                <span class="font-medium">{totalPages()}</span>
                 ({pagination.total} total posts)
               </p>
             </div>
-            
+
             <div>
               <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                 {#if pagination.current > 1}
                   <a
-                    href="/blog?page={pagination.current - 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                    href={pageHref(pagination.current - 1)}
                     class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                   >
                     <span class="sr-only">Previous</span>
@@ -324,20 +345,24 @@
                     </svg>
                   </a>
                 {/if}
-                
-                {#each Array(pagination.pages).fill(0) as _, i}
+
+                {#each Array(totalPages()).fill(0) as _, i}
                   {@const pageNum = i + 1}
                   <a
-                    href="/blog?page={pageNum}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
-                    class="relative inline-flex items-center px-4 py-2 border text-sm font-medium {pageNum === pagination.current ? 'z-10 bg-red-50 border-red-500 text-red-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}"
+                    href={pageHref(pageNum)}
+                    class="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                    class:z-10={pageNum === pagination.current}
+                    class:bg-red-50={pageNum === pagination.current}
+                    class:border-red-500={pageNum === pagination.current}
+                    class:text-red-600={pageNum === pagination.current}
                   >
                     {pageNum}
                   </a>
                 {/each}
-                
-                {#if pagination.current < pagination.pages}
+
+                {#if pagination.current < totalPages()}
                   <a
-                    href="/blog?page={pagination.current + 1}{filters.search ? `&search=${filters.search}` : ''}{filters.tag ? `&tag=${filters.tag}` : ''}"
+                    href={pageHref(pagination.current + 1)}
                     class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                   >
                     <span class="sr-only">Next</span>
@@ -381,8 +406,8 @@
 
   <!-- Back to Home -->
   <div class="text-center py-8 border-t border-gray-200">
-    <a 
-      href="/" 
+    <a
+      href="/"
       class="inline-flex items-center text-red-600 hover:text-red-800 font-medium transition-colors"
     >
       <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,13 +418,13 @@
   </div>
 </div>
 
-<!-- ✅ FIXED: Move styles to app.css, add line-clamp compatibility -->
+<!-- Keep utility styles minimal; no Tailwind @apply here -->
 <style>
   .blog-post-excerpt {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
-    line-clamp: 3; /* ✅ FIXED: Added standard property */
+    line-clamp: 3;
     overflow: hidden;
   }
 </style>

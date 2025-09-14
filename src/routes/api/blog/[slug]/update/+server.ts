@@ -1,178 +1,140 @@
-// src/routes/api/blog/update/+server.ts
-// Blog API endpoint for updating blog posts
+// src/routes/api/blog/[slug]/update/+server.ts
 import { json } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
-import { ObjectId } from 'mongodb';
+import { ObjectId, type ModifyResult, type WithId } from 'mongodb';
 import type { RequestHandler } from './$types';
 import type { ExtendedPostDoc } from '$lib/server/blog-google-docs';
 
-const API_KEY = process.env.BLOG_API_KEY || process.env.CONTENT_API_KEY || 'your-blog-api-key';
+const API_KEY =
+  process.env.BLOG_API_KEY || process.env.CONTENT_API_KEY || 'your-blog-api-key';
 
 interface UpdateBlogPayload {
-  id: string;
+  id?: string;
+  slug?: string;
   title?: string;
   contentMarkdown?: string;
-  excerpt?: string;
-  heroImage?: string;
+  excerpt?: string | null;
+  heroImage?: string | null;
   tags?: string[];
-  genre?: string;
+  genre?: string | null;
   status?: 'draft' | 'published';
-  publishDate?: string;
+  publishDate?: string | null;
 }
 
 function createSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-export const POST: RequestHandler = async ({ request }) => {
-  console.log('[blog-update-api] 📝 Updating blog post...');
-  
+export const POST: RequestHandler = async ({ request, params }) => {
   try {
-    // API key authentication
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.includes(API_KEY)) {
-      console.log('[blog-update-api] ❌ Unauthorized request');
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const payload: UpdateBlogPayload = await request.json();
-    
-    // Validate required fields
-    if (!payload.id) {
-      console.log('[blog-update-api] ❌ Missing post ID');
-      return json({ 
-        success: false,
-        error: 'Missing required field: id' 
-      }, { status: 400 });
-    }
+    const paramSlug = params.slug;
 
-    if (!ObjectId.isValid(payload.id)) {
-      return json({
-        success: false,
-        error: 'Invalid post ID format'
-      }, { status: 400 });
+    // Build filter: id OR slug (body or route)
+    let filter: Record<string, any> | null = null;
+    if (payload.id && ObjectId.isValid(payload.id)) {
+      filter = { _id: new ObjectId(payload.id) };
+    } else if (payload.slug) {
+      filter = { slug: payload.slug };
+    } else if (paramSlug) {
+      filter = { slug: paramSlug };
+    }
+    if (!filter) {
+      return json(
+        { success: false, error: 'Missing identifier: provide id or slug' },
+        { status: 400 }
+      );
     }
 
     const db = await getDb();
-    const collection = db.collection<ExtendedPostDoc>('posts');
-    
-    // Get existing post
-    const existingPost = await collection.findOne({ _id: new ObjectId(payload.id) });
-    
-    if (!existingPost) {
-      return json({
-        success: false,
-        error: 'Post not found'
-      }, { status: 404 });
+    const col = db.collection<ExtendedPostDoc>('posts');
+
+    const existing = await col.findOne(filter);
+    if (!existing) {
+      return json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
-    console.log(`[blog-update-api] Updating blog post: "${existingPost.title}"`);
-    
     const now = new Date();
-    const updateData: Partial<ExtendedPostDoc> = {
-      updatedAt: now
-    };
-    
-    // Handle title change (which affects slug)
-    if (payload.title && payload.title !== existingPost.title) {
+
+    const updateData: Partial<ExtendedPostDoc> & {
+      updatedAt?: Date;
+      publishedAt?: Date | null;
+      slug?: string;
+      excerpt?: string | null;
+    } = { updatedAt: now };
+
+    // Title → slug (check conflicts)
+    if (payload.title && payload.title !== existing.title) {
       const newSlug = createSlug(payload.title);
-      
-      // Check if new slug conflicts with another post
-      const slugConflict = await collection.findOne({ 
-        slug: newSlug, 
-        _id: { $ne: new ObjectId(payload.id) } 
+      const conflict = await col.findOne({
+        slug: newSlug,
+        _id: { $ne: (existing as any)._id }
       });
-      
-      if (slugConflict) {
-        return json({
-          success: false,
-          error: `A post with slug "${newSlug}" already exists`
-        }, { status: 409 });
+      if (conflict) {
+        return json(
+          { success: false, error: `A post with slug "${newSlug}" already exists` },
+          { status: 409 }
+        );
       }
-      
       updateData.title = payload.title;
       updateData.slug = newSlug;
     }
-    
-    // Handle other fields
+
     if (payload.contentMarkdown !== undefined) {
       updateData.contentMarkdown = payload.contentMarkdown;
+      if (!payload.excerpt && payload.contentMarkdown) {
+        updateData.excerpt =
+          payload.contentMarkdown.substring(0, 160).replace(/[#*\[\]]/g, '').trim() +
+          '...';
+      }
     }
-    
-    if (payload.excerpt !== undefined) {
-      updateData.excerpt = payload.excerpt;
-    } else if (payload.contentMarkdown && !payload.excerpt) {
-      // Auto-generate excerpt if content changed but no explicit excerpt
-      updateData.excerpt = payload.contentMarkdown.substring(0, 160).replace(/[#*\[\]]/g, '').trim() + '...';
-    }
-    
-    if (payload.heroImage !== undefined) {
-      updateData.heroImage = payload.heroImage || null;
-    }
-    
-    if (payload.tags !== undefined) {
-      updateData.tags = payload.tags;
-    }
-    
-    if (payload.genre !== undefined) {
-      updateData.genre = payload.genre || null;
-    }
-    
+    if (payload.excerpt !== undefined) updateData.excerpt = payload.excerpt ?? null;
+    if (payload.heroImage !== undefined) updateData.heroImage = payload.heroImage ?? null;
+    if (payload.tags !== undefined) updateData.tags = payload.tags ?? [];
+    if (payload.genre !== undefined) updateData.genre = payload.genre ?? null;
     if (payload.publishDate !== undefined) {
       updateData.publishDate = payload.publishDate ? new Date(payload.publishDate) : null;
     }
-    
-    // Handle status change
+
     if (payload.status !== undefined) {
       updateData.status = payload.status;
-      
-      // Set publishedAt when publishing, clear it when setting to draft
-      if (payload.status === 'published') {
-        updateData.publishedAt = now;
-      } else {
-        updateData.publishedAt = null;
-      }
+      updateData.publishedAt = payload.status === 'published' ? now : null;
     }
-    
-    // Update the post
-    const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(payload.id) },
+
+    const res: ModifyResult<ExtendedPostDoc> = await col.findOneAndUpdate(
+      { _id: (existing as any)._id },
       { $set: updateData },
-      { returnDocument: 'after' }
+      { returnDocument: 'after' as const }
     );
-    
-    if (!result) {
-      throw new Error('Failed to update post');
+
+    const updated: WithId<ExtendedPostDoc> | null = res.value ?? null;
+    if (!updated) {
+      return json({ success: false, error: 'Failed to update post' }, { status: 500 });
     }
-    
-    console.log(`[blog-update-api] ✅ Updated blog post: ${result.title} (slug: ${result.slug})`);
-    
-    // Build response
-    const baseUrl = process.env.PUBLIC_SITE_URL || 'https://author-site-w26m.onrender.com';
-    const postUrl = `${baseUrl}/blog/${result.slug}`;
-    
-    const response = {
-      success: true,
-      id: result._id.toString(),
-      slug: result.slug,
-      url: postUrl,
-      message: `Blog post "${result.title}" updated successfully!`,
-      status: result.status,
-      publishedAt: result.publishedAt?.toString(),
-      updatedAt: result.updatedAt?.toString()
-    };
 
-    return json(response);
+    const baseUrl =
+      process.env.PUBLIC_SITE_URL || 'https://author-site-w26m.onrender.com';
 
-  } catch (error) {
-    console.error('[blog-update-api] 💥 Error updating blog post:', error);
-    
     return json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    }, { status: 500 });
+      success: true,
+      id: (updated as any)._id?.toString?.(),
+      slug: updated.slug,
+      url: `${baseUrl}/blog/${updated.slug}`,
+      message: `Blog post "${updated.title}" updated successfully!`,
+      status: updated.status,
+      publishedAt: updated.publishedAt?.toString(),
+      updatedAt: (updated as any).updatedAt?.toString()
+    });
+  } catch (err) {
+    console.error('[blog-update-api] Error:', err);
+    return json(
+      { success: false, error: err instanceof Error ? err.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 };

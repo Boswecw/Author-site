@@ -7,14 +7,11 @@
     "node": ">=20.0.0",
     "npm": ">=9.0.0"
   },
-  "scripts": {
+   "scripts": {
     "dev": "vite dev",
-    "build": "vite build", 
-    "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "sync": "svelte-kit sync",
-    "format": "prettier --write .",
-    "lint": "eslint ."
+    "build": "vite build",
+    "preview": "node build",
+    "start": "node build"
   },
   "packageManager": "npm@11.6.0",
   "devDependencies": {

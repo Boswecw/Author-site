@@ -82,21 +82,20 @@ export async function getBookBySlug(slug: string): Promise<Book | null> {
 }
 
 // ✅ FIXED: Ensure sanitizeBook always returns proper Book type with featured property
-function sanitizeBook(doc: WithId<BookDoc> | BookDoc): Book {
+// src/lib/server/books.ts
+function sanitizeBook(doc: any): Book {
   return {
-    id: doc.id || doc._id?.toString() || '',
-    title: doc.title || '',
-    description: doc.description || '',
-    cover: doc.cover || null,
-    genre: doc.genre || '',
-    status: doc.status || 'draft',
-    publishDate: doc.publishDate ? 
-      (doc.publishDate instanceof Date ? doc.publishDate.toISOString() : String(doc.publishDate)) 
-      : null,
-    isbn: doc.isbn || null,
-    format: doc.format || '',
-    pages: doc.pages || null,
-    buyLinks: doc.buyLinks || {},
-    featured: Boolean(doc.featured) // ✅ FIXED: Ensure featured is always boolean
+    id: doc.id,
+    title: doc.title,
+    description: doc.description,
+    cover: doc.cover ?? null,
+    genre: doc.genre,
+    status: doc.status,
+    publishDate: doc.publishDate ? String(doc.publishDate) : null,
+    isbn: doc.isbn,
+    format: doc.format,
+    pages: doc.pages,
+    buyLinks: doc.buyLinks ?? {},
+    featured: Boolean(doc.featured) // <-- add this
   };
 }

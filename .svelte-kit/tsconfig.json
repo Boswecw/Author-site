@@ -7,6 +7,12 @@
 			"$lib/*": [
 				"../src/lib/*"
 			],
+			"$routes": [
+				"../src/routes"
+			],
+			"$routes/*": [
+				"../src/routes/*"
+			],
 			"$app/types": [
 				"./types/index.d.ts"
 			]

@@ -1,18 +1,16 @@
-// svelte.config.js - FIXED: Enable runes mode for Svelte 5
-import adapter from '@sveltejs/adapter-auto';
+// svelte.config.js
+import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-const isDev = process.env.NODE_ENV !== 'production';
-
-export default {
-  kit: { 
-    adapter: adapter() 
-  },
+const config = {
   preprocess: vitePreprocess(),
-  vitePlugin: { 
-    inspector: isDev 
-  },
-  compilerOptions: {
-    runes: true  // 🔥 CRITICAL: This enables Svelte 5 runes mode
+  kit: {
+    adapter: adapter(),
+    alias: {
+      $lib: 'src/lib',
+      $routes: 'src/routes'
+    }
   }
 };
+
+export default config;
