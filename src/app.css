@@ -169,9 +169,7 @@
   }
   .btn-secondary:hover { background-color: var(--primary-100); border-color: var(--primary-400); }
 
-  /* ✅ ADDED: Tailwind @apply rules moved from component <style> blocks */
-  /* This fixes the Svelte CSS parser complaints about @apply */
-  
+  /* ===== TAILWIND UTILITY COMPONENTS ===== */
   /* Additional button variants using Tailwind utilities */
   .btn-danger { 
     @apply inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200; 
@@ -225,7 +223,7 @@
     @apply bg-red-100 text-red-800; 
   }
 
-  /* ✅ FIXED: Text truncation with proper line-clamp compatibility */
+  /* ===== TEXT TRUNCATION ===== */
   .text-clamp-1 {
     display: -webkit-box;
     -webkit-line-clamp: 1;
@@ -247,64 +245,4 @@
     line-clamp: 3; /* Standard property for compatibility */
     overflow: hidden;
   }
-  .text-clamp-4 {
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    line-clamp: 4; /* Standard property for compatibility */
-    overflow: hidden;
-  }
-
-  /* Loading spinner */
-  .spinner {
-    @apply inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin;
-  }
-
-  /* Modal components */
-  .modal-overlay {
-    @apply fixed inset-0 bg-black bg-opacity-50 transition-opacity;
-  }
-  .modal-panel {
-    @apply relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4;
-  }
-
-  /* Toast components */
-  .toast {
-    @apply fixed top-4 right-4 z-50 max-w-sm w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4;
-  }
-  .toast.success {
-    @apply border-green-200 bg-green-50;
-  }
-  .toast.error {
-    @apply border-red-200 bg-red-50;
-  }
-
-  /* Admin interface components */
-  .admin-card {
-    @apply bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow;
-  }
-  .admin-button-primary {
-    @apply block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500;
-  }
-  .admin-button-secondary {
-    @apply block w-full text-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500;
-  }
-
-  /* Blog components */
-  .blog-post-card {
-    @apply bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow;
-  }
-  .blog-tag {
-    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors;
-  }
-
-  /* ===== LAYOUT ===== */
-  .layout-container { min-height: 100vh; display: flex; flex-direction: column; }
-  .layout-container main { flex: 1; }
-}
-
-@layer utilities {
-  .text-balance { text-wrap: balance; }
-  .shadow-soft { box-shadow: 0 4px 6px -1px rgba(0,0,0,.05), 0 2px 4px -1px rgba(0,0,0,.03); }
-  .shadow-accent { box-shadow: 0 4px 6px -1px rgba(230,197,77,.2), 0 2px 4px -1px rgba(230,197,77,.1); }
 }
