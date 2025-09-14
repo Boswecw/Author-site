@@ -2,7 +2,7 @@
 
 import { getDb } from '$lib/server/db';
 import type { BookDoc, Book } from '$lib/types';
-import type { ObjectId, WithId } from 'mongodb';
+import type { WithId } from 'mongodb';
 
 // ✅ FIXED: Make the generic constraint more specific
 export async function getBooks<T extends Record<string, any> = BookDoc>(

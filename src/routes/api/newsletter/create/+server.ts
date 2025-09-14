@@ -3,7 +3,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getDb } from '$lib/server/db';
-import { ObjectId } from 'mongodb';
 
 const API_KEY = process.env.NEWSLETTER_WEBHOOK_SECRET || 'your-secret-key';
 
