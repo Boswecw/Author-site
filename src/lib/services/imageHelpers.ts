@@ -9,7 +9,8 @@ export function getImageWithFallback(url: string | null | undefined): string {
 
 export function preloadImage(url?: string | null): Promise<boolean> {
   if (!url) return Promise.resolve(false);
-  
+  if (typeof window === 'undefined') return Promise.resolve(false);
+
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(true);
