@@ -217,13 +217,3 @@
   {/if}
 </div>
 
-<style>
-  /* Custom line-clamp utility for description truncation */
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-clamp: 3;
-  }
-</style>
