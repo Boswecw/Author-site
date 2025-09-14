@@ -132,17 +132,17 @@ export async function saveGoogleDocsPost(data: {
   
   if (existingPost) {
     // Update existing post
-     const result = await collection.findOneAndUpdate(
+    const { value } = await collection.findOneAndUpdate(
       { _id: existingPost._id },
       { $set: postDoc },
       { returnDocument: 'after' }
     );
-    
-    if (!result) {
+
+    if (!value) {
       throw new Error('Failed to update post');
     }
-    
-    return result; 
+
+    return value as ExtendedPostDoc;
   } else {
     // Create new post
     const result = await collection.insertOne(postDoc);
