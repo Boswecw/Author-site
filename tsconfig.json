@@ -1,16 +1,35 @@
 {
-  "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "module": "ESNext",
-    "target": "es2020",
-    "lib": ["es2020", "dom", "dom.iterable"],
-    "types": ["svelte", "vite/client"],
-    "strict": true,
+    "baseUrl": ".",
+    "target": "esnext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
     "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
-  }
+    "module": "esnext",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["svelte", "vite/client"],
+    "paths": {
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"],
+      "$app/environment": ["./node_modules/@sveltejs/kit/types"],
+      "$app/forms": ["./node_modules/@sveltejs/kit/types"], 
+      "$app/navigation": ["./node_modules/@sveltejs/kit/types"],
+      "$app/paths": ["./node_modules/@sveltejs/kit/types"],
+      "$app/stores": ["./node_modules/@sveltejs/kit/types"]
+    }
+  },
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.svelte"
+  ],
+  "exclude": ["node_modules"]
 }
