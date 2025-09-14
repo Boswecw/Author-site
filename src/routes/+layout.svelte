@@ -1,4 +1,4 @@
-<!-- src/routes/+layout.svelte - FIXED HYDRATION ISSUE -->
+<!-- src/routes/+layout.svelte - FIXED: Ensure Header is properly rendered -->
 <script lang="ts">
   // ✅ CRITICAL: Import CSS first
   import '../app.css';
@@ -39,72 +39,30 @@
         return 'Navy veteran, wildland firefighter, and fantasy novelist. Discover epic tales forged from real-world experience.';
     }
   }
-
-  $: pageTitle = getPageTitle(pathname);
-  $: pageDescription = getPageDescription(pathname);
-
-  onMount(() => {
-    document.body.classList.add('loaded');
-  });
 </script>
 
 <svelte:head>
-  <title>{pageTitle}</title>
-  <meta name="description" content={pageDescription} />
-  <meta property="og:title" content={pageTitle} />
-  <meta property="og:description" content={pageDescription} />
-  <meta property="twitter:title" content={pageTitle} />
-  <meta property="twitter:description" content={pageDescription} />
+  <title>{getPageTitle(pathname)}</title>
+  <meta name="description" content={getPageDescription(pathname)} />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.ico" />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;500;600&family=Orbitron:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
 </svelte:head>
 
-<!-- ✅ FIXED: Add proper Tailwind classes -->
-<div class="min-h-screen flex flex-col bg-gray-50">
+<div class="layout-container">
+  <!-- ✅ FIXED: Ensure Header component is actually rendered -->
   <Header />
-  <main class="flex-1">
+  
+  <main>
     <slot />
   </main>
+  
   <Footer />
 </div>
-
-<style>
-  :global(body) {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.6s ease-out;
-  }
-  
-  :global(body.loaded) {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  
-  :global(.fade-in) {
-    animation: fadeIn 0.6s ease-out forwards;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  :global(.slide-in-right) {
-    animation: slideInRight 0.8s ease-out forwards;
-  }
-  
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-</style>

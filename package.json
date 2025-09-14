@@ -7,11 +7,14 @@
     "node": ">=20.0.0",
     "npm": ">=9.0.0"
   },
-   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "node build",
-    "start": "node build"
+  "scripts": {
+    "dev": "dotenv -e .env.local -- vite dev --port 3000",
+    "build": "svelte-kit sync && dotenv -e .env.local -- vite build",
+    "preview": "dotenv -e .env.local -- vite preview --port 3000",
+    "start": "dotenv -e .env.local -- node build",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "format": "prettier --write .",
+    "test": "vitest"
   },
   "packageManager": "npm@11.6.0",
   "devDependencies": {
@@ -30,7 +33,6 @@
     "rollup": "^4",
     "svelte": "^5.38.8",
     "svelte-check": "^4.0.4",
-    "svelte-preprocess": "^6.0.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.2",
     "vite": "^5.4.19",
