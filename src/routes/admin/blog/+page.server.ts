@@ -27,13 +27,19 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
   
   try {
     const db = await getDb();
+    
+    // CRITICAL: Ensure we're using the 'posts' collection, not 'books'
     const postsCollection = db.collection<ExtendedPostDoc>('posts');
+    
+    console.log('[admin-blog] Connected to posts collection');
     
     // Get filter parameters
     const status = url.searchParams.get('status') || '';
     const source = url.searchParams.get('source') || '';
     const search = url.searchParams.get('search') || '';
     const sortBy = url.searchParams.get('sort') || 'newest';
+    
+    console.log('[admin-blog] Filters:', { status, source, search, sortBy });
     
     // Build query
     const query: any = {};
@@ -53,6 +59,8 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
         { tags: { $in: [new RegExp(search, 'i')] } }
       ];
     }
+    
+    console.log('[admin-blog] MongoDB query:', JSON.stringify(query, null, 2));
     
     // Build sort options
     let sortOptions: any = {};
@@ -77,6 +85,19 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
       .limit(100) // Reasonable limit for admin interface
       .toArray();
     
+    console.log(`[admin-blog] Found ${posts.length} posts`);
+    
+    // Debug: Log the first post to verify structure
+    if (posts.length > 0) {
+      console.log('[admin-blog] First post sample:', {
+        _id: posts[0]._id,
+        slug: posts[0].slug,
+        title: posts[0].title,
+        status: posts[0].status,
+        hasHeroImage: !!posts[0].heroImage
+      });
+    }
+    
     // Get summary statistics
     const stats = await Promise.all([
       postsCollection.countDocuments({ status: 'published' }),
@@ -91,17 +112,23 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
     const [publishedCount, draftCount, googleDocsCount, recentSyncCount] = stats;
     
     // Get available tags for filtering
-    const allTags = await postsCollection.distinct('tags');
-    const tags = allTags.filter(Boolean).sort();
+    let allTags: string[] = [];
+    try {
+      const distinctTags = await postsCollection.distinct('tags');
+      allTags = distinctTags.filter(Boolean).sort();
+    } catch (error) {
+      console.log('[admin-blog] Could not get distinct tags:', error);
+      allTags = [];
+    }
     
-    console.log(`[admin-blog] ✅ Loaded ${posts.length} posts`);
+    console.log(`[admin-blog] ✅ Loaded ${posts.length} posts, ${allTags.length} tags`);
     
     // Set cache headers (short cache for admin)
     setHeaders({
       'cache-control': 'private, max-age=60' // 1 minute cache
     });
     
-    return {
+    const result = {
       posts: posts.map(post => ({
         ...post,
         _id: post._id?.toString(),
@@ -118,7 +145,7 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
         googleDocs: googleDocsCount,
         recentSync: recentSyncCount
       },
-      tags,
+      tags: allTags,
       filters: {
         status,
         source,
@@ -126,6 +153,15 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
         sortBy
       }
     };
+    
+    console.log('[admin-blog] Returning result structure:', {
+      postsCount: result.posts.length,
+      statsTotal: result.stats.total,
+      tagsCount: result.tags.length,
+      filtersApplied: Object.keys(result.filters).filter(k => result.filters[k as keyof typeof result.filters])
+    });
+    
+    return result;
     
   } catch (error) {
     console.error('[admin-blog] Error loading blog posts:', error);

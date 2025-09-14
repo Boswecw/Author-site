@@ -1,330 +1,374 @@
-<!-- src/routes/blog/[slug]/+page.svelte - UPDATED with improved hero layout -->
+<!-- src/routes/admin/blog/+page.svelte -->
 <script lang="ts">
-  import { marked } from 'marked';
-  import { browser } from '$app/environment';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
-  const { post } = data;
+  const { posts, stats, tags, filters } = data;
 
-  // Configure marked
-  marked.setOptions({
-    breaks: true,
-    gfm: true
-  });
+  // Local state for filters
+  let searchInput = $state(filters.search || '');
+  let selectedStatus = $state(filters.status || '');
+  let selectedSource = $state(filters.source || '');
+  let selectedSort = $state(filters.sortBy || 'newest');
 
-  // ✅ Derived values (typed so svelte-check is happy)
-  let htmlContent: string = $derived(
-    post?.contentMarkdown ? (marked(post.contentMarkdown) as string) : ''
-  );
+  // Handle filter changes
+  function updateFilters() {
+    const params = new URLSearchParams();
+    
+    if (searchInput.trim()) params.set('search', searchInput.trim());
+    if (selectedStatus) params.set('status', selectedStatus);
+    if (selectedSource) params.set('source', selectedSource);
+    if (selectedSort && selectedSort !== 'newest') params.set('sort', selectedSort);
+    
+    const queryString = params.toString();
+    const newUrl = queryString ? `/admin/blog?${queryString}` : '/admin/blog';
+    goto(newUrl);
+  }
+
+  function clearFilters() {
+    searchInput = '';
+    selectedStatus = '';
+    selectedSource = '';
+    selectedSort = 'newest';
+    goto('/admin/blog');
+  }
 
   function formatDate(dateStr: string | undefined | null): string {
-    if (!dateStr) return '';
+    if (!dateStr) return 'No date';
     try {
       return new Date(dateStr).toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric'
       });
     } catch {
-      return '';
+      return 'Invalid date';
     }
   }
 
-  function calculateReadTime(content: string | null | undefined): string {
-    if (!content || typeof content !== 'string') return '';
-    const wordsPerMinute = 200;
-    const wordCount = content.trim().split(/\s+/).filter((w) => w.length > 0).length;
-    if (wordCount === 0) return '';
-    const readTime = Math.ceil(wordCount / wordsPerMinute);
-    return `${readTime} min read`;
-  }
-
-  function resolveHeroImage(ref?: string | null): string | null {
-    if (!ref) return null;
-    const s = ref.trim();
-    if (!s) return null;
-    if (/^https?:\/\//i.test(s)) return s; // Already a full URL
-    if (s.includes('/')) {
-      // Path in bucket
-      return `https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/${encodeURIComponent(
-        s
-      )}?alt=media`;
+  function getStatusBadge(status: string): string {
+    switch (status) {
+      case 'published':
+        return 'bg-green-100 text-green-800';
+      case 'draft':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
-    // Fallback: books folder
-    return `https://firebasestorage.googleapis.com/v0/b/endless-fire-467204-n2.firebasestorage.app/o/books%2F${encodeURIComponent(
-      s
-    )}?alt=media`;
   }
 
-  let pageTitle: string = $derived(`${post.title} - Charles Boswell`);
-  let metaDescription: string = $derived(
-    post.excerpt ||
-      `Read "${post.title}" by Charles Boswell - Fantasy author, Navy veteran, and wildland firefighter.`
-  );
-  let heroImageUrl: string | null = $derived(resolveHeroImage(post.heroImage));
-  let readTimeText: string = $derived(calculateReadTime(post.contentMarkdown));
-  let formattedDate: string = $derived(formatDate(post.publishDate || post.publishedAt));
-
-  let structuredData: Record<string, any> = $derived({
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: post.title,
-    description: post.excerpt || '',
-    author: {
-      '@type': 'Person',
-      name: 'Charles Boswell',
-      url: 'https://author-site-w26m.onrender.com/about'
-    },
-    publisher: {
-      '@type': 'Person',
-      name: 'Charles Boswell'
-    },
-    datePublished: post.publishedAt || post.publishDate,
-    dateModified: post.publishedAt || post.publishDate,
-    url: `https://author-site-w26m.onrender.com/blog/${post.slug}`,
-    image: heroImageUrl || undefined,
-    keywords: post.tags?.join(', ') || '',
-    genre: post.genre || 'Writing'
-  });
-
-  // Social sharing (executed only in browser on click)
-  function shareOnTwitter() {
-    const url = encodeURIComponent(`https://author-site-w26m.onrender.com/blog/${post.slug}`);
-    const text = encodeURIComponent(`"${post.title}" by Charles Boswell`);
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+  function getSourceBadge(source: string): string {
+    switch (source) {
+      case 'google-docs':
+        return 'bg-blue-100 text-blue-800';
+      case 'admin':
+        return 'bg-purple-100 text-purple-800';
+      case 'manual':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   }
-  function shareOnFacebook() {
-    const url = encodeURIComponent(`https://author-site-w26m.onrender.com/blog/${post.slug}`);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-  }
-  function copyLink() {
-    if (!browser) return;
-    const url = `https://author-site-w26m.onrender.com/blog/${post.slug}`;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => alert('Link copied to clipboard!'))
-      .catch(() => {
-        // Fallback prompt if clipboard API not available
-        // eslint-disable-next-line no-alert
-        prompt('Copy this link:', url);
-      });
+
+  function deletePost(postId: string) {
+    if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      // TODO: Implement delete functionality
+      console.log('Delete post:', postId);
+    }
   }
 </script>
 
 <svelte:head>
-  <title>{pageTitle}</title>
-  <meta name="description" content={metaDescription} />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content={pageTitle} />
-  <meta property="og:description" content={metaDescription} />
-  <meta property="og:type" content="article" />
-  <meta property="og:url" content={`https://author-site-w26m.onrender.com/blog/${post.slug}`} />
-  {#if heroImageUrl}
-    <meta property="og:image" content={heroImageUrl} />
-  {/if}
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={pageTitle} />
-  <meta name="twitter:description" content={metaDescription} />
-  {#if heroImageUrl}
-    <meta name="twitter:image" content={heroImageUrl} />
-  {/if}
-
-  <!-- Article specific meta -->
-  {#if post.publishedAt || post.publishDate}
-    <meta property="article:published_time" content={post.publishedAt || post.publishDate} />
-  {/if}
-  <meta property="article:author" content="Charles Boswell" />
-  {#if post.tags}
-    {#each post.tags as tag}
-      <meta property="article:tag" content={tag} />
-    {/each}
-  {/if}
-
-  <!-- Structured Data -->
-  {@html `<script type="application/ld+json">${JSON.stringify(structuredData, null, 2)}</script>`}
-
-  <!-- Canonical URL -->
-  <link rel="canonical" href={`https://author-site-w26m.onrender.com/blog/${post.slug}`} />
+  <title>Blog Management - Admin - Charles Boswell</title>
+  <meta name="description" content="Manage blog posts and content" />
 </svelte:head>
 
-<main class="min-h-screen bg-gray-50">
-  <!-- UPDATED Hero Section - Fixed layout for book covers -->
-  {#if heroImageUrl}
-    <!-- Enhanced Hero with Proper Book Cover Display -->
-    <div class="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div class="max-w-6xl mx-auto px-4 py-16 md:py-20">
-        <div class="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-          
-          <!-- Book Cover Display (shows full cover without cropping) -->
-          <div class="flex-shrink-0">
-            <div class="w-64 md:w-80 aspect-[2/3] bg-white/10 rounded-lg shadow-2xl overflow-hidden backdrop-blur-sm border border-white/20">
-              <img
-                src={heroImageUrl}
-                alt={post.title}
-                class="w-full h-full object-contain bg-white/5"
-                loading="eager"
-              />
-            </div>
-          </div>
-          
-          <!-- Content Overlay -->
-          <div class="flex-1 text-center md:text-left">
-            <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-              {post.title}
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="py-6">
+        <div class="md:flex md:items-center md:justify-between">
+          <div class="flex-1 min-w-0">
+            <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+              Blog Management
             </h1>
-            
-            <!-- Meta Info with Icons -->
-            <div class="flex flex-wrap items-center justify-center md:justify-start text-white/90 text-sm space-x-6 mb-6">
-              {#if formattedDate}
-                <time class="flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                  </svg>
-                  {formattedDate}
-                </time>
-              {/if}
-              
-              {#if readTimeText}
-                <span class="flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                  </svg>
-                  {readTimeText}
-                </span>
-              {/if}
-            </div>
-            
-            <!-- Tags -->
-            {#if post.tags && post.tags.length > 0}
-              <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-6">
-                {#each post.tags as tag}
-                  <a
-                    href={`/blog?tag=${encodeURIComponent(tag)}`}
-                    class="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border border-white/10 hover:bg-white/30 transition-all duration-200"
-                  >
-                    {tag}
-                  </a>
-                {/each}
+            <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+              <div class="mt-2 flex items-center text-sm text-gray-500">
+                <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {stats.total} total posts
               </div>
-            {/if}
-
-            <!-- Excerpt Preview -->
-            {#if post.excerpt}
-              <p class="text-white/80 text-lg leading-relaxed max-w-2xl">
-                {post.excerpt}
-              </p>
-            {/if}
+              <div class="mt-2 flex items-center text-sm text-gray-500">
+                <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                {stats.published} published
+              </div>
+              <div class="mt-2 flex items-center text-sm text-gray-500">
+                <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                {stats.draft} drafts
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a
+              href="/blog"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+              View Public Blog
+            </a>
+            <button
+              class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+              New Post
+            </button>
           </div>
         </div>
-      </div>
-      
-      <!-- Decorative background elements -->
-      <div class="absolute inset-0 opacity-10 pointer-events-none">
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
-        <div class="absolute top-1/4 right-1/4 w-64 h-64 bg-accent-500/10 rounded-full blur-2xl"></div>
-      </div>
-    </div>
-  {:else}
-    <!-- No Hero Image Header (unchanged) -->
-    <div class="bg-white border-b">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{post.title}</h1>
-        <div class="flex items-center text-gray-600 text-sm space-x-4">
-          {#if formattedDate}<time>{formattedDate}</time>{/if}
-          {#if readTimeText}<span>{readTimeText}</span>{/if}
-          {#if post.tags && post.tags.length > 0}
-            <div class="flex items-center space-x-2">
-              {#each post.tags as tag}
-                <a
-                  href={`/blog?tag=${encodeURIComponent(tag)}`}
-                  class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs hover:bg-red-200 transition-colors"
-                >
-                  {tag}
-                </a>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Article Content -->
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <article class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800">
-      {#if htmlContent}
-        {@html htmlContent}
-      {:else if post.excerpt}
-        <p class="text-gray-700 leading-relaxed text-lg">{post.excerpt}</p>
-      {:else}
-        <p class="text-gray-500 italic">Content not available</p>
-      {/if}
-    </article>
-
-    <!-- Enhanced Sharing and Navigation -->
-    <div class="mt-12 pt-8 border-t border-gray-200">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <!-- Social Sharing -->
-        <div class="flex items-center space-x-4">
-          <span class="text-sm font-medium text-gray-700">Share this post:</span>
-          <button
-            on:click={shareOnTwitter}
-            class="flex items-center gap-1 text-blue-500 hover:text-blue-700 transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md"
-            aria-label="Share on Twitter"
-          >
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84"
-              />
-            </svg>
-            <span class="text-xs">Tweet</span>
-          </button>
-          <button
-            on:click={shareOnFacebook}
-            class="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md"
-            aria-label="Share on Facebook"
-          >
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M20 10C20 4.477 15.523 0 10 0S0 4.477 0 10c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V10h2.54V7.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V10h2.773l-.443 2.89h-2.33v6.988C16.343 19.128 20 14.991 20 10z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <span class="text-xs">Share</span>
-          </button>
-          <button
-            on:click={copyLink}
-            class="flex items-center gap-1 text-gray-500 hover:text-gray-700 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1 rounded-md"
-            aria-label="Copy link"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-              />
-            </svg>
-            <span class="text-xs">Copy</span>
-          </button>
-        </div>
-
-        <!-- Back to Blog -->
-        <a
-          href="/blog"
-          class="inline-flex items-center text-red-600 hover:text-red-800 font-medium transition-colors bg-red-50 hover:bg-red-100 px-4 py-2 rounded-md"
-        >
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Blog
-        </a>
       </div>
     </div>
   </div>
-</main>
+
+  <!-- Filters -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Search -->
+        <div>
+          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+          <input
+            id="search"
+            type="text"
+            bind:value={searchInput}
+            placeholder="Search posts..."
+            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            onkeydown={(e) => e.key === 'Enter' && updateFilters()}
+          />
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select
+            id="status"
+            bind:value={selectedStatus}
+            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="">All Statuses</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+
+        <!-- Source Filter -->
+        <div>
+          <label for="source" class="block text-sm font-medium text-gray-700 mb-1">Source</label>
+          <select
+            id="source"
+            bind:value={selectedSource}
+            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="">All Sources</option>
+            <option value="admin">Admin</option>
+            <option value="google-docs">Google Docs</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+
+        <!-- Sort -->
+        <div>
+          <label for="sort" class="block text-sm font-medium text-gray-700 mb-1">Sort</label>
+          <select
+            id="sort"
+            bind:value={selectedSort}
+            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="title">Title A-Z</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-4 flex space-x-2">
+        <button
+          onclick={updateFilters}
+          class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Apply Filters
+        </button>
+        <button
+          onclick={clearFilters}
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        {#if posts.length > 0}
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Title
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Source
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tags
+                  </th>
+                  <th class="relative px-6 py-3">
+                    <span class="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                {#each posts as post (post._id || post.slug)}
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div>
+                          <div class="text-sm font-medium text-gray-900">
+                            <a 
+                              href={`/blog/${post.slug || '#'}`}
+                              class="hover:text-indigo-600"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {post.title || 'Untitled'}
+                            </a>
+                          </div>
+                          <div class="text-sm text-gray-500 truncate max-w-xs">
+                            {post.excerpt || post.description || 'No excerpt'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(post.status || 'draft')}`}>
+                        {post.status || 'draft'}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSourceBadge(post.source || 'manual')}`}>
+                        {post.source || 'manual'}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(post.publishDate || post.publishedAt)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex flex-wrap gap-1">
+                        {#if post.tags && Array.isArray(post.tags) && post.tags.length > 0}
+                          {#each post.tags.slice(0, 3) as tag}
+                            <span class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
+                              {tag}
+                            </span>
+                          {/each}
+                          {#if post.tags.length > 3}
+                            <span class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
+                              +{post.tags.length - 3}
+                            </span>
+                          {/if}
+                        {:else}
+                          <span class="text-xs text-gray-400">No tags</span>
+                        {/if}
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div class="flex items-center space-x-2">
+                        <a
+                          href={`/blog/${post.slug || '#'}`}
+                          class="text-indigo-600 hover:text-indigo-900"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View
+                        </a>
+                        <button
+                          class="text-gray-600 hover:text-gray-900"
+                          onclick={() => {/* TODO: Edit functionality */}}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          class="text-red-600 hover:text-red-900"
+                          onclick={() => deletePost(post._id || post.slug)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {:else}
+          <!-- Empty State -->
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No blog posts found</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              {#if filters.search || filters.status || filters.source}
+                Try adjusting your filters or create a new post.
+              {:else}
+                Get started by creating your first blog post.
+              {/if}
+            </p>
+            <div class="mt-6">
+              <button
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Create New Post
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
+    </div>
+
+    <!-- Back to Admin -->
+    <div class="mt-6">
+      <a
+        href="/admin"
+        class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Admin Dashboard
+      </a>
+    </div>
+  </div>
+</div>
