@@ -3,11 +3,25 @@ services:
     name: charles-boswell-author-site
     runtime: node
     plan: free
-    buildCommand: npm install --no-optional && npm run build
-    startCommand: node build
+    # Fixed build command - no dotenv required on Render
+    buildCommand: npm ci && npm run build:production
+    startCommand: npm start
     
     # Health check endpoint
     healthCheckPath: /health
+    
+    # Build environment
+    buildFilter:
+      paths:
+      - src/**
+      - static/**
+      - package.json
+      - package-lock.json
+      - svelte.config.js
+      - vite.config.ts
+      - tsconfig.json
+      - tailwind.config.js
+      - postcss.config.js
     
     envVars:
       # Application Environment
@@ -18,9 +32,11 @@ services:
       - key: NPM_CONFIG_PRODUCTION
         value: "false"
 
-      # Rollup Fix for Deployment
+      # Build optimization for Render
       - key: ROLLUP_NO_NATIVE
         value: "1"
+      - key: VITE_OPTIMIZE_DEPS_INCLUDE_NODE_MODULES
+        value: "true"
 
       # TLS Configuration for MongoDB Atlas
       - key: NODE_TLS_REJECT_UNAUTHORIZED

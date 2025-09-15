@@ -9,10 +9,14 @@
   },
   "scripts": {
     "dev": "dotenv -e .env.local -- vite dev --port 3000",
-    "build": "svelte-kit sync && dotenv -e .env.local -- vite build",
+    "build": "npm run build:production",
+    "build:production": "svelte-kit sync && vite build",
+    "build:local": "svelte-kit sync && dotenv -e .env.local -- vite build",
     "preview": "dotenv -e .env.local -- vite preview --port 3000",
-    "start": "dotenv -e .env.local -- node build",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "preview:production": "vite preview --port 3000",
+    "start": "node build",
+    "start:local": "dotenv -e .env.local -- node build",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "format": "prettier --write .",
     "test": "vitest"
   },

@@ -126,7 +126,7 @@ no description yet
       font-style: italic;
       color: #FDE68A;
     ">
-      Author's Weekly
+      Author's Monthly Update
     </p>
     <!-- Genre badges -->
     <div style="
@@ -152,7 +152,7 @@ no description yet
       color: #92400E;
       font-weight: bold;
     ">
-      📖 This week's spotlight!
+      📖 This Month's spotlight!
     </h2>
     {#if newsletterData.preheader}
     <p style="
@@ -441,35 +441,37 @@ no description yet
   </section>
   {/if}
 
-  <!-- Call to Action Section -->
+  <!-- Call to Action Section - FIXED TABLE STRUCTURE -->
   <section style="
     padding: 40px 30px;
     text-align: center;
     background-color: #ffffff;
   ">
     <table role="presentation" style="margin: 0 auto;">
-      <tr>
-        <td style="
-          background: linear-gradient(135deg, #D97706, #B45309);
-          padding: 15px 40px;
-          border-radius: 6px;
-          box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
-        ">
-          <a 
-            href={newsletterData.websiteUrl}
-            style="
-              color: white;
-              text-decoration: none;
-              font-weight: bold;
-              font-size: 16px;
-              letter-spacing: 0.5px;
-              display: block;
-            "
-          >
-            🌐 EXPLORE ALL GENRES ON MY WEBSITE
-          </a>
-        </td>
-      </tr>
+      <tbody> <!-- ✅ FIXED: Added tbody wrapper -->
+        <tr>
+          <td style="
+            background: linear-gradient(135deg, #D97706, #B45309);
+            padding: 15px 40px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
+          ">
+            <a 
+              href={newsletterData.websiteUrl}
+              style="
+                color: white;
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 16px;
+                letter-spacing: 0.5px;
+                display: block;
+              "
+            >
+              🌐 EXPLORE ALL GENRES ON MY WEBSITE
+            </a>
+          </td>
+        </tr>
+      </tbody> <!-- ✅ FIXED: Added closing tbody -->
     </table>
   </section>
 
