@@ -1,4 +1,4 @@
-// vite.config.ts - Optimized for Render deployment
+// vite.config.ts - Fixed for Render deployment
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
 
@@ -21,8 +21,8 @@ export default defineConfig(({ command, mode }) => {
       // Target modern browsers in production
       target: isProduction ? 'es2020' : 'esnext',
       
-      // Optimize bundle size
-      minify: isProduction ? 'terser' : false,
+      // Use esbuild for minification (faster and built-in)
+      minify: isProduction ? 'esbuild' : false,
       
       // Rollup options
       rollupOptions: {
@@ -81,42 +81,11 @@ export default defineConfig(({ command, mode }) => {
     // Environment variables handling
     envPrefix: ['VITE_', 'PUBLIC_'],
     
-    // Build performance optimizations for Render
+    // Enhanced esbuild configuration
     esbuild: {
       target: 'es2020',
       // Drop console logs in production (optional)
       drop: isProduction ? ['console', 'debugger'] : []
-    },
-    
-    // CSS configuration
-    css: {
-      // PostCSS configuration
-      postcss: './postcss.config.js',
-      
-      // CSS modules configuration
-      modules: {
-        localsConvention: 'camelCase'
-      }
-    },
-    
-    // Resolve configuration
-    resolve: {
-      alias: {
-        // Path aliases (sync with svelte.config.js)
-        '$lib': './src/lib',
-        '$routes': './src/routes'
-      }
-    },
-    
-    // Worker configuration for Node.js compatibility
-    worker: {
-      format: 'es'
-    },
-    
-    // SSR configuration for SvelteKit
-    ssr: {
-      // Don't externalize these packages in SSR
-      noExternal: ['firebase']
     }
   };
 });

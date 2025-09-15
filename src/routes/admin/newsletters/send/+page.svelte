@@ -29,6 +29,14 @@
   function cancelSend() {
     showConfirmDialog = false;
   }
+
+  // Handle keyboard events for modal backdrop
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      cancelSend();
+    }
+  }
 </script>
 
 <svelte:head>
@@ -109,19 +117,19 @@
           
           <div class="space-y-4">
             <div>
-              <label class="text-sm font-medium text-gray-700">Subject</label>
+              <span class="text-sm font-medium text-gray-700">Subject</span>
               <p class="text-lg font-medium text-gray-900">{data.newsletter.subject}</p>
             </div>
             
             {#if data.newsletter.preheader}
               <div>
-                <label class="text-sm font-medium text-gray-700">Preheader</label>
+                <span class="text-sm font-medium text-gray-700">Preheader</span>
                 <p class="text-gray-600">{data.newsletter.preheader}</p>
               </div>
             {/if}
             
             <div>
-              <label class="text-sm font-medium text-gray-700">Content Preview</label>
+              <span class="text-sm font-medium text-gray-700">Content Preview</span>
               <div class="bg-gray-50 rounded p-4 text-sm text-gray-700">
                 {formatContent(data.newsletter.content.html)}
               </div>
@@ -271,7 +279,14 @@
 {#if showConfirmDialog}
   <div class="fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4">
-      <div class="fixed inset-0 bg-black opacity-50" onclick={cancelSend}></div>
+      <div 
+        class="fixed inset-0 bg-black opacity-50" 
+        onclick={cancelSend}
+        onkeydown={handleBackdropKeydown}
+        role="button"
+        tabindex="0"
+        aria-label="Close modal"
+      ></div>
       
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full relative z-10">
         <div class="p-6">
