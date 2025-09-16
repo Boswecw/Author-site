@@ -1,4 +1,4 @@
-<!-- src/routes/contact/+page.svelte -->
+<!-- src/routes/contact/+page.svelte - FIXED with proper form actions -->
 <script lang="ts">
   import { enhance } from '$app/forms';
   import type { ContactActionData } from '$lib/types';
@@ -12,6 +12,7 @@
 
   // ✅ FIXED: Proper state management with runes
   let isSubmitting = $state(false);
+  let isSubscribing = $state(false);
   let showToast = $state(false);
 
   // ✅ FIXED: Derived reactive values
@@ -45,12 +46,21 @@
     }
   });
 
-  // ✅ FIXED: Enhanced form submission handling
-  function handleSubmit() {
+  // ✅ FIXED: Enhanced form submission handling for contact form
+  function handleContactSubmit() {
     return async ({ update }) => {
       isSubmitting = true;
       await update();
       isSubmitting = false;
+    };
+  }
+
+  // ✅ FIXED: Enhanced form submission handling for newsletter
+  function handleNewsletterSubmit() {
+    return async ({ update }) => {
+      isSubscribing = true;
+      await update();
+      isSubscribing = false;
     };
   }
 </script>
@@ -100,11 +110,13 @@
     </div>
 
     <!-- Contact Form -->
-    <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="bg-white shadow rounded-lg overflow-hidden mb-12">
       <div class="px-6 py-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Send Me a Message</h2>
         <form 
           method="POST" 
-          use:enhance={handleSubmit}
+          action="?/contact"
+          use:enhance={handleContactSubmit}
           class="space-y-6"
         >
           <!-- Name Field -->
@@ -205,10 +217,93 @@
       </div>
     </div>
 
+    <!-- Newsletter Signup Section -->
+    <div class="bg-blue-50 shadow rounded-lg overflow-hidden">
+      <div class="px-6 py-8">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Join My Newsletter</h2>
+          <p class="text-gray-600">
+            Get updates about new books, writing progress, and exclusive content delivered to your inbox.
+          </p>
+        </div>
+        
+        <form 
+          method="POST" 
+          action="?/subscribe"
+          use:enhance={handleNewsletterSubmit}
+          class="max-w-md mx-auto"
+        >
+          <!-- Name Field (Optional) -->
+          <div class="mb-4">
+            <label for="newsletter-name" class="block text-sm font-medium text-gray-700">
+              Name (optional)
+            </label>
+            <input
+              type="text"
+              id="newsletter-name"
+              name="name"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Your name"
+            />
+          </div>
+
+          <!-- Email Field -->
+          <div class="mb-4">
+            <label for="newsletter-email" class="block text-sm font-medium text-gray-700">
+              Email *
+            </label>
+            <input
+              type="email"
+              id="newsletter-email"
+              name="email"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="your@email.com"
+            />
+          </div>
+
+          <!-- Hidden source field -->
+          <input type="hidden" name="source" value="contact-page" />
+
+          <!-- Honeypot (spam protection) -->
+          <div class="hidden" aria-hidden="true">
+            <label>
+              Do not fill this field
+              <input name="website" tabindex="-1" autocomplete="off" />
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="mb-4">
+            <button
+              type="submit"
+              disabled={isSubscribing}
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {#if isSubscribing}
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Subscribing...
+              {:else}
+                Subscribe to Newsletter
+              {/if}
+            </button>
+          </div>
+
+          <!-- Legal text -->
+          <p class="text-xs text-gray-500 text-center">
+            By subscribing you agree to receive occasional updates. Unsubscribe anytime.
+          </p>
+        </form>
+      </div>
+    </div>
+
     <!-- Additional Info -->
     <div class="mt-12 text-center">
       <p class="text-gray-600 mb-4">
-        You can also connect with me on social media or through my newsletter.
+        You can also connect with me on social media.
       </p>
       <div class="flex justify-center space-x-6">
         <a 
