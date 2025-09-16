@@ -1,35 +1,14 @@
 {
+  "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "target": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
+    "checkJs": true,
     "esModuleInterop": true,
-    "module": "esnext",
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "types": ["svelte", "vite/client"],
-    "paths": {
-      "$lib": ["./src/lib"],
-      "$lib/*": ["./src/lib/*"],
-      "$app/environment": ["./node_modules/@sveltejs/kit/types"],
-      "$app/forms": ["./node_modules/@sveltejs/kit/types"], 
-      "$app/navigation": ["./node_modules/@sveltejs/kit/types"],
-      "$app/paths": ["./node_modules/@sveltejs/kit/types"],
-      "$app/stores": ["./node_modules/@sveltejs/kit/types"]
-    }
-  },
-  "include": [
-    "src/**/*.d.ts",
-    "src/**/*.ts",
-    "src/**/*.js",
-    "src/**/*.svelte"
-  ],
-  "exclude": ["node_modules"]
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "moduleResolution": "bundler"
+  }
 }

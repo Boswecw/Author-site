@@ -1,5 +1,11 @@
-// src/lib/types.ts - Complete fix for all TypeScript issues
+// src/lib/types.ts - FIXED: Complete type definitions
 import type { ObjectId } from 'mongodb';
+
+// All possible book statuses
+export type BookStatus = 'published' | 'upcoming' | 'draft' | 'writing' | 'coming-soon' | 'featured';
+
+// All possible post statuses  
+export type PostStatus = 'published' | 'draft';
 
 // Newsletter subscription data
 export interface NewsletterSignupData {
@@ -27,13 +33,47 @@ export interface ContactActionData {
     subject?: string;
     message?: string;
   };
+  values?: {
+    name?: string;
+    email?: string;
+    subject?: string;
+    message?: string;
+  };
 }
 
-// All possible book statuses
-export type BookStatus = 'published' | 'upcoming' | 'draft' | 'writing' | 'coming-soon' | 'featured';
+// FIXED: Post interface defined BEFORE it's used
+export interface Post {
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  contentMarkdown?: string | null;
+  heroImage?: string | null;
+  publishDate?: string | null;
+  tags?: string[];
+  genre?: string | null;
+  status: PostStatus;
+}
 
-// All possible post statuses
-export type PostStatus = 'published' | 'draft';
+// Blog page data interface
+export interface BlogFilters {
+  search?: string | null;
+  tag?: string | null;
+}
+
+export interface BlogPagination {
+  current: number;
+  total: number;
+  hasMore: boolean;
+  hasPrevious: boolean;
+  totalPosts: number;
+}
+
+// FIXED: Now Post is defined above this usage
+export interface PageData {
+  posts?: Post[];
+  filters?: BlogFilters;
+  pagination?: BlogPagination;
+}
 
 // MongoDB book document (raw database structure)
 export interface BookDoc {
@@ -49,7 +89,7 @@ export interface BookDoc {
   format: string;
   pages?: number | null;
   buyLinks?: Record<string, string>;
-  featured?: boolean; // ✅ FIXED: Added optional featured property
+  featured?: boolean;
   links?: Record<string, string>;
 }
 
@@ -66,10 +106,10 @@ export interface Book {
   format: string;
   pages: number | null;
   buyLinks: Record<string, string>;
-  featured: boolean; // ✅ FIXED: Make this required to match sanitizeBook function
+  featured: boolean;
 }
 
-// ✅ FIXED: ExtendedPostDoc with ALL missing timestamp fields
+// Extended post document with ALL missing timestamp fields
 export interface ExtendedPostDoc {
   _id?: ObjectId;
   slug: string;
@@ -88,64 +128,34 @@ export interface ExtendedPostDoc {
   googleDocId?: string;
   lastSyncedAt?: Date;
   
-  // ✅ FIXED: Added ALL missing timestamp fields
+  // Timestamp fields
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-// Client-side Post interface
-export interface Post {
-  slug: string;
-  title: string;
-  excerpt?: string | null;
-  contentMarkdown?: string | null;
-  heroImage?: string | null;
-  publishDate?: string | null;
-  tags?: string[];
-  genre?: string | null;
-  status: PostStatus;
-}
-
-// ✅ FIXED: Image component props with loading attribute
+// Image component props with loading attribute
 export interface ImageProps {
   src: string | null | undefined;
   alt?: string;
   className?: string;
   fallbackText?: string;
   fallbackType?: 'book' | 'avatar' | 'logo';
-  loading?: 'eager' | 'lazy'; // ✅ FIXED: Added loading prop
+  loading?: 'lazy' | 'eager';
 }
 
-// ✅ FIXED: Pagination interface with pages property
-export interface Pagination {
-  current: number;
-  total: number;
-  pages: number; // ✅ ADDED: Missing pages property
-  hasMore: boolean;
-  hasPrevious: boolean;
-  totalPosts: number;
-}
-
-// API response types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
+// Newsletter admin page data
+export interface NewsletterPageData {
+  newsletters: Array<{
+    id: string;
+    subject: string;
+    preheader?: string;
+    status: 'draft' | 'ready' | 'sent';
+    createdAt: string;
+    processedAt?: string;
+    sentAt?: string;
+    googleDocUrl?: string;
+    fileName?: string;
+    source?: string;
+  }>;
   error?: string;
-  message?: string;
 }
-
-// Page data interfaces
-export interface PageData {
-  post?: any;
-  posts?: Post[];
-  books?: Book[];
-  featured?: Book;
-  upcoming?: Book[];
-  pagination?: Pagination;
-}
-
-// ✅ FIXED: Action data type for contact form
-export type ActionData = ContactActionData;
-
-// Export alias for backward compatibility
-export type PostDoc = ExtendedPostDoc;
