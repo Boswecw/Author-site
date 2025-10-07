@@ -59,8 +59,8 @@
           <p class="text-white/80 text-sm">
             Get updates on new releases and behind-the-scenes stories.
           </p>
-          <!-- Updated button styling -->
-          <a href="/contact" class="inline-block bg-white text-primary-700 hover:bg-primary-50 transition-colors py-2 px-4 text-sm font-medium rounded">
+          <!-- Updated button styling for better visibility -->
+          <a href="/contact" class="inline-block bg-white/90 text-primary-800 hover:bg-white hover:text-primary-900 transition-all duration-200 py-2 px-4 text-sm font-medium rounded shadow-md hover:shadow-lg border border-white/20">
             Subscribe Now
           </a>
         </div>

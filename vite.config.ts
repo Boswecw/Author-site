@@ -69,7 +69,6 @@ export default defineConfig(({ command, mode }) => {
       // Include dependencies that should be optimized
       include: [
         'mongodb',
-        'firebase',
         'nodemailer',
         'marked'
       ],
